@@ -1,0 +1,181 @@
+@import '@wikimedia/codex-design-tokens/theme-wikimedia-ui.css';
+@import "tailwindcss";
+@plugin "daisyui";
+
+@theme {
+  --font-serif: "Georgia", "Charter", "serif";
+  --font-sans: "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Lato", "Helvetica", "Arial", "sans-serif";
+  
+  --color-wiki-blue: #36c;
+  --color-wiki-blueHover: #447ff5;
+  --color-wiki-blue-hover: #447ff5;
+  --color-wiki-red: #d33;
+  --color-wiki-green: #00af89;
+  --color-wiki-border: #a2a9b1;
+  --color-wiki-bg: #f8f9fa;
+  --color-wiki-darkBg: #eaecf0;
+  --color-wiki-dark-bg: #eaecf0;
+  --color-wiki-text: #202122;
+  --color-wiki-muted: #72777d;
+}
+
+/* Custom styling to merge Wikimedia Codex normcore with mobile layout */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Lato, Helvetica, Arial, sans-serif;
+  color: #202122;
+  background-color: #f8f9fa;
+  margin: 0;
+  padding: 0;
+}
+
+.wiki-serif {
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
+}
+
+.wiki-border {
+  border: 1px solid #a2a9b1;
+}
+
+.wiki-border-bottom {
+  border-bottom: 1px solid #a2a9b1;
+}
+
+/* Scrollbar customizations matching wikipedia */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+::-webkit-scrollbar-thumb {
+  background: #c8ccd1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a2a9b1;
+}
+
+/* Custom animation for Gacha Tapping globes */
+@keyframes pulse-shake {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.05) rotate(-2deg); }
+  50% { transform: scale(0.98) rotate(2deg); }
+  75% { transform: scale(1.03) rotate(-1deg); }
+  100% { transform: scale(1); }
+}
+
+.animate-pulse-shake {
+  animation: pulse-shake 0.2s ease-in-out;
+}
+
+/* --- Codex Progress Bar & Locked/Unlocked Tease Styles --- */
+
+.cdx-progress-bar {
+  background-color: var(--color-wiki-darkBg, #eaecf0);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+  display: block;
+}
+
+.cdx-progress-bar--determinate {
+  /* Thick, clean progress bar */
+  height: 14px; 
+}
+
+.cdx-progress-bar__bar {
+  background-color: var(--color-wiki-blue, #36c);
+  height: 100%;
+  width: calc(100% * (var(--cdx-progress-value, 0) / var(--cdx-progress-max, 100)));
+  transition: width 0.1s ease-out;
+  border-radius: 2px;
+}
+
+/* Micro-interaction: Shaking lock icon */
+@keyframes lockShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-2px) rotate(-3deg); }
+  40%, 80% { transform: translateX(2px) rotate(3deg); }
+}
+
+.animate-lock-shake {
+  animation: lockShake 0.4s ease-in-out;
+}
+
+/* Normcore Unlock Animation: Subtle scale pop and progressive blue linear gradient pulse */
+@keyframes scalePop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gacha-unlock-pop {
+  animation: scalePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.gacha-unlock-pulse {
+  background: linear-gradient(90deg, #36c, #4c82f7, #36c);
+  background-size: 200% auto;
+  animation: gradientShift 1s ease-out 2; /* Pulse shifts exactly 2 times at unlock, then stays clean/static progressive blue */
+  border-color: #36c !important;
+  color: #fff !important;
+}
+
+/* Utilitarian lock container shadow transition */
+.gacha-tease-container {
+  transition: border-color 0.5s ease, background-color 0.5s ease, box-shadow 0.5s ease;
+}
+
+.gacha-tease-container--unlocked {
+  border-color: #36c;
+  background-color: #f0f4fd;
+  box-shadow: 0 2px 8px rgba(51, 102, 204, 0.12);
+}
+
+/* Fallback styles for standard Codex buttons */
+.cdx-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Lato, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  border-radius: 2px;
+  padding: 8px 16px;
+  border: 1px solid #a2a9b1;
+  background-color: #f8f9fa;
+  color: #202122;
+  cursor: pointer;
+  transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+  box-sizing: border-box;
+  text-decoration: none;
+}
+
+.cdx-button--action-progressive.cdx-button--weight-primary {
+  background-color: var(--color-wiki-blue, #36c);
+  border-color: var(--color-wiki-blue, #36c);
+  color: #fff;
+}
+
+.cdx-button--action-progressive.cdx-button--weight-primary:hover {
+  background-color: var(--color-wiki-blueHover, #447ff5);
+  border-color: var(--color-wiki-blueHover, #447ff5);
+}
+
+.cdx-button:disabled,
+.cdx-button[disabled] {
+  background-color: #c8ccd1;
+  border-color: #c8ccd1;
+  color: #72777d;
+  cursor: not-allowed;
+}
+
+
