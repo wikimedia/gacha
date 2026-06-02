@@ -344,8 +344,10 @@ const handleGachaGlobeTap = () => {
     isGlobeJiggling.value = false;
   }, 150);
   
-  // Select a card at random from the database-backed deck
-  const randomCard = gameStore.gameCards[Math.floor(Math.random() * gameStore.gameCards.length)];
+  // Select a card at random from the database-backed deck, filtering only for real cards
+  const realCards = gameStore.gameCards.filter(c => c.isReal);
+  if (realCards.length === 0) return;
+  const randomCard = realCards[Math.floor(Math.random() * realCards.length)];
   
   // Collect the card in inventory
   gameStore.collectCard(randomCard.id);

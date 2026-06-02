@@ -78,7 +78,7 @@ const isCSSImage = computed(() => {
     class="card card-bordered w-full max-w-[280px] h-[400px] flex flex-col justify-between p-4 bg-white border border-base-300 shadow-sm select-none text-left relative overflow-hidden transition-shadow duration-300"
   >
     <!-- Top Section: Header with Title -->
-    <div>
+    <div class="w-full">
       <div class="mb-2">
         <h3 class="text-base leading-tight wiki-serif font-black text-base-content">
           {{ card.title }}
@@ -91,7 +91,7 @@ const isCSSImage = computed(() => {
       <!-- Generative Visual Representation (Wikipedia Style Diagrams & Images) -->
       <div 
         v-if="hasImage"
-        class="w-full aspect-[4/3] mb-2.5 rounded border border-base-300 flex items-center justify-center relative overflow-hidden bg-base-200"
+        class="w-full aspect-[4/3] min-h-[150px] mb-2.5 rounded border border-base-300 flex items-center justify-center relative overflow-hidden bg-base-200"
       >
         <div 
           v-if="isCSSImage"
@@ -129,8 +129,7 @@ const isCSSImage = computed(() => {
     </div>
 
     <!-- Bottom Actions/Links: Pure Wikipedia Citation style -->
-    <div class="mt-2 text-[9px] flex items-center justify-between text-secondary font-sans border-t border-base-200/60 pt-2">
-      <span>ID: {{ card.id }}</span>
+    <div class="mt-2 text-[9px] flex items-center justify-end text-secondary font-sans border-t border-base-200/60 pt-2">
       <a 
         v-if="showLink !== false"
         :href="card.wikipediaLink" 

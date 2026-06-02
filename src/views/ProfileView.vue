@@ -34,6 +34,7 @@ const searchFilter = ref('');
 
 // Fetch/sync profile details based on route
 const loadProfile = () => {
+  console.log(`loadProfile triggered: profileId="${profileId.value}", isLoggedIn=${authStore.isLoggedIn}, isPrivateMode=${isPrivateMode.value}`);
   // Clear lists
   profileUser.value = null;
   profileCards.value = [];
@@ -75,6 +76,7 @@ const loadProfile = () => {
       profileCards.value = [];
     }
   }
+  console.log('loadProfile completed. profileUser:', profileUser.value, 'profileCards count:', profileCards.value.length);
 };
 
 onMounted(async () => {
@@ -120,7 +122,13 @@ const showcaseCards = computed(() => {
   const showcaseCollects = profileCards.value.filter(c => c.isShowcase);
   return showcaseCollects.map(sc => {
     const cardData = gameStore.gameCards.find(mc => mc.id === sc.id) || MOCK_CARDS.find(mc => mc.id === sc.id);
-    return cardData ? { ...cardData, ...sc } : null;
+    if (!cardData) return null;
+    return {
+      ...cardData,
+      collectedAt: sc.collectedAt,
+      isShowcase: sc.isShowcase,
+      customSection: sc.customSection
+    };
   }).filter(c => c !== null) as Array<Card & { isShowcase: boolean, customSection: string | null }>;
 });
 
@@ -158,11 +166,24 @@ const isAvatarCSSImage = computed(() => {
 });
 
 const sortedBinderCards = computed(() => {
-  return profileCards.value.map(c => {
+  console.log(`sortedBinderCards re-evaluating: profileCards count = ${profileCards.value.length}, gameCards count = ${gameStore.gameCards.length}`);
+  const result = profileCards.value.map(c => {
     const cardData = gameStore.gameCards.find(mc => mc.id === c.id) || MOCK_CARDS.find(mc => mc.id === c.id);
-    return cardData ? { ...cardData, ...c } : null;
+    if (!cardData) {
+      console.warn(`Card data not found for collected card ID: "${c.id}"`);
+      return null;
+    }
+    console.log(`Mapping card ${c.id}: title="${cardData.title}", image="${cardData.image}"`);
+    return {
+      ...cardData,
+      collectedAt: c.collectedAt,
+      isShowcase: c.isShowcase,
+      customSection: c.customSection
+    };
   })
-  .filter(c => c !== null)
+  .filter(c => c !== null);
+  console.log(`sortedBinderCards computed result: mapped ${result.length} cards successfully.`);
+  return result
   .sort((a, b) => new Date(b.collectedAt).getTime() - new Date(a.collectedAt).getTime())
   .filter(c => {
     const card = c!;
@@ -273,28 +294,25 @@ const toggleCardShowcase = (cardId: string) => {
           <div 
             v-for="card in sortedBinderCards" 
             :key="card.id" 
-            class="w-full max-w-[280px] flex flex-col items-center relative animate-fade-in"
+            class="w-full max-w-[280px] relative animate-fade-in"
           >
-            <!-- Card Wrapper to support absolute overlay -->
-            <div class="relative w-full">
-              <!-- Card itself (no downscaling) -->
-              <CardComp :card="card" :show-link="true" />
-              
-              <!-- Pin Toggle Button overlay at top-right of the card (only for Private owner) -->
-              <button 
-                v-if="isPrivateMode"
-                @click="toggleCardShowcase(card.id)"
-                class="absolute top-2.5 right-2.5 z-20 btn btn-circle btn-xs shadow-md border"
-                :class="[
-                  card.isShowcase 
-                    ? 'btn-warning text-warning-content border-warning' 
-                    : 'bg-white/90 hover:bg-white text-base-content/75 border-base-300'
-                ]"
-                :title="card.isShowcase ? 'Unpin from Profile' : 'Pin to Profile'"
-              >
-                {{ card.isShowcase ? '📌' : '☆' }}
-              </button>
-            </div>
+            <!-- Card itself (no downscaling) -->
+            <CardComp :card="card" :show-link="true" />
+            
+            <!-- Pin Toggle Button overlay at top-right of the card (only for Private owner) -->
+            <button 
+              v-if="isPrivateMode"
+              @click="toggleCardShowcase(card.id)"
+              class="absolute top-2.5 right-2.5 z-20 btn btn-circle btn-xs shadow-md border"
+              :class="[
+                card.isShowcase 
+                  ? 'btn-warning text-warning-content border-warning' 
+                  : 'bg-white/90 hover:bg-white text-base-content/75 border-base-300'
+              ]"
+              :title="card.isShowcase ? 'Unpin from Profile' : 'Pin to Profile'"
+            >
+              {{ card.isShowcase ? '📌' : '☆' }}
+            </button>
           </div>
         </div>
       </div>

@@ -734,13 +734,8 @@ export const useGameStore = defineStore('game', () => {
             
             const fakeDescription = [s1, s2, s3, replacementSentence4].filter(Boolean).join(' ');
 
-            // Use the replacement article's image (which is a wikimedia commons url) for the fake card
-            let fakeImage = '';
-            if (randomOtherRow && randomOtherRow.image_url) {
-              fakeImage = randomOtherRow.image_url;
-            } else {
-              fakeImage = image;
-            }
+            // Use the base card's image for the fake card to match the real card's visual appearance and prevent giveaways
+            const fakeImage = image;
 
             // Add Altered (Fake) Card
             mapped.push({
@@ -914,8 +909,9 @@ export const useGameStore = defineStore('game', () => {
     
     // Check if we need to pre-populate DevTester to showcase the UI beautifully!
     if (formattedId === 'usr_devtester' && !registeredUsers[formattedId]) {
-      // Pick 9 random cards to seed DevTester's binder!
-      const shuffled = [...gameCards.value].sort(() => 0.5 - Math.random()).slice(0, 9);
+      // Pick 9 random real cards to seed DevTester's binder!
+      const realCards = gameCards.value.filter(c => c.isReal);
+      const shuffled = [...realCards].sort(() => 0.5 - Math.random()).slice(0, 9);
       const collected = shuffled.map((card, idx) => ({
         id: card.id,
         collectedAt: new Date(Date.now() - idx * 24 * 60 * 60 * 1000).toISOString(),
