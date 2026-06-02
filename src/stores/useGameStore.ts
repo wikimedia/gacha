@@ -134,7 +134,7 @@ export const MOCK_CARDS: Card[] = [
     isReal: true,
     explanation: 'Real! The country permanently disbanded its military shortly after this incredibly successful and friendly expedition.'
   },
-  
+
   // SCIENCE
   {
     id: 'sci_tardigrade',
@@ -246,7 +246,7 @@ export const MOCK_CARDS: Card[] = [
     isReal: true,
     explanation: 'Real! Their highly elastic intestinal walls squeeze the waste into flat-faced cubes.'
   },
-  
+
   // POP CULTURE
   {
     id: 'pop_wikipedia_spaghetti',
@@ -358,7 +358,7 @@ export const MOCK_CARDS: Card[] = [
     isReal: true,
     explanation: 'Real! The hoax was finally uncovered in 2022 when Wikipedia editors investigated the article\'s citations.'
   },
-  
+
   // GEOGRAPHY
   {
     id: 'geo_diomede',
@@ -509,11 +509,11 @@ export const useGameStore = defineStore('game', () => {
   const loadGuestState = () => {
     gdPoints.value = getGuestPoints();
     collectedCards.value = getGuestCards();
-    
+
     // Load category cooldowns
     const cooldownsRaw = localStorage.getItem(COOLDOWNS_KEY);
     categoryCooldowns.value = cooldownsRaw ? JSON.parse(cooldownsRaw) : {};
-    
+
     // Load custom sections
     const sectionsRaw = localStorage.getItem(SECTIONS_KEY);
     if (sectionsRaw) {
@@ -640,8 +640,9 @@ export const useGameStore = defineStore('game', () => {
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .is('banned_category', null);
-      
+        .is('banned_category', null)
+        .is('profile_id', null);
+
       if (error) {
         throw error;
       }
@@ -650,12 +651,12 @@ export const useGameStore = defineStore('game', () => {
         // Prepare filtered data for fake card generation source
         const filteredData = data.filter((row: any) => isAppropriateArticle(row));
         const mapped: Card[] = [];
-        
+
         data.forEach((row: any) => {
           // 1. Normalize Category
           let category: 'Science' | 'History' | 'Pop Culture' | 'Geography' = 'History';
           const topic = (row.topic || '').toLowerCase();
-          
+
           if (topic.includes('sci') || topic.includes('nature') || topic.includes('biology')) {
             category = 'Science';
           } else if (topic.includes('hist') || topic.includes('war') || topic.includes('ancient')) {
@@ -672,7 +673,7 @@ export const useGameStore = defineStore('game', () => {
 
           // 2. Normalize Rarity based on Supabase db column
           let rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' = 'Common';
-          
+
           const dbRarity = row.rarity !== undefined ? row.rarity : row.rarity_level;
           if (dbRarity !== undefined && dbRarity !== null) {
             const strRarity = String(dbRarity).trim().toLowerCase();
@@ -734,7 +735,7 @@ export const useGameStore = defineStore('game', () => {
             const randomOtherRow = otherRowsWithS4[Math.floor(Math.random() * otherRowsWithS4.length)];
             const replacementSentence4 = randomOtherRow ? randomOtherRow.sentence_4 : 'This was later proven to be a elaborate hoax invented by student editors.';
             const replacementName = randomOtherRow ? randomOtherRow.name : 'an altered entry';
-            
+
             const fakeDescription = [s1, s2, s3, replacementSentence4].filter(Boolean).join(' ');
 
             // Use the base card's image for the fake card to match the real card's visual appearance and prevent giveaways
@@ -772,7 +773,7 @@ export const useGameStore = defineStore('game', () => {
   // Add Points
   const addPoints = (points: number) => {
     gdPoints.value += points;
-    
+
     // Sync back
     const authStore = useAuthStore();
     if (authStore.isLoggedIn) {
@@ -800,7 +801,7 @@ export const useGameStore = defineStore('game', () => {
   // Collect a Card
   const collectCard = (cardId: string): boolean => {
     const existsIndex = collectedCards.value.findIndex(c => c.id === cardId);
-    
+
     if (existsIndex === -1) {
       collectedCards.value.push({
         id: cardId,
@@ -819,7 +820,7 @@ export const useGameStore = defineStore('game', () => {
     } else {
       saveGuestStateToLocalStorage();
     }
-    
+
     return existsIndex === -1;
   };
 
@@ -833,7 +834,7 @@ export const useGameStore = defineStore('game', () => {
         c.isShowcase = false;
       });
       card.isShowcase = targetState;
-      
+
       const authStore = useAuthStore();
       if (authStore.isLoggedIn) {
         authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
@@ -848,7 +849,7 @@ export const useGameStore = defineStore('game', () => {
     const card = collectedCards.value.find(c => c.id === cardId);
     if (card) {
       card.customSection = sectionName;
-      
+
       const authStore = useAuthStore();
       if (authStore.isLoggedIn) {
         authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
@@ -870,14 +871,14 @@ export const useGameStore = defineStore('game', () => {
   const removeCustomSection = (sectionName: string) => {
     customSections.value = customSections.value.filter(s => s !== sectionName);
     localStorage.setItem(SECTIONS_KEY, JSON.stringify(customSections.value));
-    
+
     // Reset cards inside this section
     collectedCards.value.forEach(c => {
       if (c.customSection === sectionName) {
         c.customSection = null;
       }
     });
-    
+
     const authStore = useAuthStore();
     if (authStore.isLoggedIn) {
       authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
@@ -907,9 +908,9 @@ export const useGameStore = defineStore('game', () => {
   const loadRegisteredProfile = (userId: string): { userProfile: any, cards: any[] } | null => {
     const existingUsersRaw = localStorage.getItem('wiki_registered_users');
     const registeredUsers = existingUsersRaw ? JSON.parse(existingUsersRaw) : {};
-    
+
     const formattedId = userId.startsWith('usr_') ? userId : `usr_${userId.toLowerCase()}`;
-    
+
     // Check if we need to pre-populate DevTester to showcase the UI beautifully!
     if (formattedId === 'usr_devtester' && !registeredUsers[formattedId]) {
       // Pick 9 random real cards to seed DevTester's binder!
@@ -921,11 +922,11 @@ export const useGameStore = defineStore('game', () => {
         // Make the first card the pinned showcase card!
         isShowcase: idx === 0,
         // Distribute some into custom sections
-        customSection: idx === 3 || idx === 4 
-          ? 'Real Rarities' 
+        customSection: idx === 3 || idx === 4
+          ? 'Real Rarities'
           : (idx === 5 || idx === 6 ? 'Historical Gems' : null)
       }));
-      
+
       registeredUsers[formattedId] = {
         id: formattedId,
         username: 'DevTester',
@@ -937,7 +938,7 @@ export const useGameStore = defineStore('game', () => {
       };
       localStorage.setItem('wiki_registered_users', JSON.stringify(registeredUsers));
     }
-    
+
     const publicUser = registeredUsers[formattedId];
     if (publicUser) {
       return {
