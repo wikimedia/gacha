@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
@@ -16,6 +16,9 @@ const selectedCategory = ref<'Science' | 'History' | 'Pop Culture' | 'Geography'
 const gameActive = ref(false);
 const currentRound = ref(1);
 const gameDeck = ref<Card[]>([]);
+const visibleDeck = computed(() => {
+  return gameDeck.value.slice(currentRound.value - 1, currentRound.value + 2);
+});
 const currentCard = ref<Card | null>(null);
 const gameScore = ref(0);
 const collectedThisGame = ref<Card[]>([]);
@@ -460,53 +463,52 @@ const handleGachaGlobeTap = () => {
             
             <div class="stack select-none w-full h-full">
               
-              <template v-for="(card, index) in gameDeck" :key="card.id">
-                <div
-                  v-if="index >= currentRound - 1 && index < currentRound + 2"
-                  class="relative"
+              <div
+                v-for="(card, index) in visibleDeck"
+                :key="card.id"
+                class="relative"
+                :class="[
+                  index === 0
+                    ? (roundAnswered 
+                        ? 'transition-all duration-300 ease-in opacity-0 pointer-events-none' 
+                        : (isSwiping ? 'duration-0' : 'transition-transform duration-200 ease-out'))
+                    : 'pointer-events-none select-none'
+                ]"
+                :style="{ 
+                  opacity: index === 0 && roundAnswered ? 0 : 1,
+                  transform: index === 0
+                    ? (roundAnswered
+                        ? (swipeDirection === 'right' ? 'translateX(600px) rotate(45deg)' : 'translateX(-600px) rotate(-45deg)')
+                        : `translateX(${swipeOffset}px) rotate(${swipeOffset / 12}deg)`)
+                    : ''
+                }"
+                @touchstart="index === 0 ? handleTouchStart($event) : null"
+                @touchmove="index === 0 ? handleTouchMove($event) : null"
+                @touchend="index === 0 ? handleTouchEnd() : null"
+                @mousedown="index === 0 ? handleMouseDown($event) : null"
+                @mousemove="index === 0 ? handleMouseMove($event) : null"
+                @mouseup="index === 0 ? handleMouseUp() : null"
+                @mouseleave="index === 0 ? handleMouseUp() : null"
+              >
+                <CardComp :card="card" :show-link="false" />
+                
+                <!-- Swiping Indicators Overlay -->
+                <div 
+                  v-if="index === 0 && swipeOffset !== 0 && !roundAnswered"
+                  class="absolute inset-0 flex items-center justify-center font-bold text-2xl uppercase pointer-events-none z-40 transition-all rounded"
                   :class="[
-                    // Active Card (Top Card)
-                    index === currentRound - 1
-                      ? (roundAnswered 
-                          ? 'z-30 transition-all duration-300 ease-in opacity-0 pointer-events-none' 
-                          : (isSwiping ? 'z-30 duration-0' : 'z-30 transition-transform duration-200 ease-out'))
-                      : '',
-                    
-                    // Card 2 (Underneath)
-                    index === currentRound
-                      ? 'opacity-60 scale-[0.96] translate-y-3 pointer-events-none select-none z-20 transition-all duration-300'
-                      : '',
-                      
-                    // Card 3 (Deepest)
-                    index === currentRound + 1
-                      ? 'opacity-30 scale-[0.92] translate-y-6 pointer-events-none select-none z-10 transition-all duration-300'
-                      : ''
+                    swipeOffset > 30 ? 'bg-success/20 text-success' : '',
+                    swipeOffset < -30 ? 'bg-error/20 text-error' : ''
                   ]"
-                  :style="{ 
-                    transform: index === currentRound - 1
-                      ? (roundAnswered
-                          ? (swipeDirection === 'right' ? 'translateX(600px) rotate(45deg)' : 'translateX(-600px) rotate(-45deg)')
-                          : `translateX(${swipeOffset}px) rotate(${swipeOffset / 12}deg)`)
-                      : ''
-                  }"
-                  @touchstart="index === currentRound - 1 ? handleTouchStart($event) : null"
-                  @touchmove="index === currentRound - 1 ? handleTouchMove($event) : null"
-                  @touchend="index === currentRound - 1 ? handleTouchEnd() : null"
-                  @mousedown="index === currentRound - 1 ? handleMouseDown($event) : null"
-                  @mousemove="index === currentRound - 1 ? handleMouseMove($event) : null"
-                  @mouseup="index === currentRound - 1 ? handleMouseUp() : null"
-                  @mouseleave="index === currentRound - 1 ? handleMouseUp() : null"
                 >
-                  <!-- Render CardComp with 3D Tilt disabled during swiping -->
-                  <CardComp 
-                    :card="card" 
-                    :show-link="false" 
-                    :disable-hover3d="true" 
-                    :swipe-offset="index === currentRound - 1 ? swipeOffset : 0"
-                    :round-answered="index === currentRound - 1 ? roundAnswered : false"
-                  />
+                  <div v-if="swipeOffset > 30" class="px-4 py-2 border-4 border-success bg-white rounded shadow-md font-sans">
+                    ✓ Real
+                  </div>
+                  <div v-if="swipeOffset < -30" class="px-4 py-2 border-4 border-error bg-white rounded shadow-md font-sans">
+                    ✕ Fake
+                  </div>
                 </div>
-              </template>
+              </div>
               
             </div>
 
@@ -516,7 +518,7 @@ const handleGachaGlobeTap = () => {
               class="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
             >
               <div 
-                class="px-6 py-3 border-[6px] font-mono font-black text-3xl uppercase tracking-widest bg-base-100/95 shadow-xl select-none animate-stamp-scale"
+                class="px-6 py-3 border-[6px] font-mono font-black text-3xl uppercase tracking-widest bg-white/95 shadow-xl select-none animate-stamp-scale"
                 :class="[
                   roundWasCorrect 
                     ? 'border-success text-success' 
@@ -578,7 +580,7 @@ const handleGachaGlobeTap = () => {
           >
             <span class="text-white text-6xl font-black font-serif select-none">W</span>
             <span class="text-[10px] uppercase tracking-widest text-white/80 font-black font-sans mt-3 select-none">TAP HERE!</span>
-            <div class="badge badge-secondary badge-sm font-sans font-bold mt-1.5 select-none">Taps: {{ gachaTapCount }}</div>
+            <span class="text-xs text-white font-sans font-bold mt-1.5 select-none">Taps: {{ gachaTapCount }}</span>
           </button>
         </div>
 
@@ -590,7 +592,7 @@ const handleGachaGlobeTap = () => {
           <div 
             v-for="(card, i) in gachaDroppedCards.slice(0, 5)" 
             :key="i"
-            class="card card-bordered card-compact bg-base-100 w-32 shadow flex-shrink-0 text-left p-2.5 animate-fade-in border-primary/20"
+            class="card card-bordered card-compact bg-white w-32 shadow flex-shrink-0 text-left p-2.5 animate-fade-in border-primary/20"
           >
             <span class="text-[8px] badge badge-outline badge-xs font-bold font-sans uppercase mb-1">{{ card.rarity }}</span>
             <div class="font-serif font-black text-base-content text-xs truncate">{{ card.title }}</div>
