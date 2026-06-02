@@ -2,7 +2,6 @@
 import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
-import { CdxDialog } from '@wikimedia/codex';
 
 const props = withDefaults(defineProps<{
   displayedPoints?: number;
@@ -29,6 +28,7 @@ const authEmail = ref('');
 const otpCode = ref('');
 const otpSent = ref(false);
 const isVerifying = ref(false);
+const authError = ref('');
 
 // Lock shaking micro-interaction state
 const isLockShaking = ref(false);
@@ -41,35 +41,51 @@ const triggerLockShake = () => {
   }, 400);
 };
 
-// Supabase OTP Email Auth flow simulations
-const handleSendOtp = () => {
+const closeModal = () => {
+  showAuthModal.value = false;
+  otpSent.value = false;
+  authEmail.value = '';
+  otpCode.value = '';
+  authError.value = '';
+};
+
+// Real Supabase OTP Email Auth flow
+const handleSendOtp = async () => {
   if (!authEmail.value.trim() || !authEmail.value.includes('@')) return;
   
   isVerifying.value = true;
-  setTimeout(() => {
+  authError.value = '';
+  try {
+    await authStore.sendOtp(authEmail.value.trim());
     otpSent.value = true;
+  } catch (err: any) {
+    authError.value = err.message || 'Failed to send verification passcode.';
+  } finally {
     isVerifying.value = false;
-  }, 600);
+  }
 };
 
-const handleVerifyOtp = () => {
+const handleVerifyOtp = async () => {
   if (!otpCode.value.trim() || otpCode.value.trim().length < 6) return;
   
-  authStore.login(authEmail.value.trim());
-  showAuthModal.value = false;
-  
-  // Clear states
-  authEmail.value = '';
-  otpCode.value = '';
-  otpSent.value = false;
-  
-  emit('login-success');
+  isVerifying.value = true;
+  authError.value = '';
+  try {
+    await authStore.verifyOtp(authEmail.value.trim(), otpCode.value.trim());
+    closeModal();
+    emit('login-success');
+  } catch (err: any) {
+    authError.value = err.message || 'Invalid passcode or authentication failure.';
+  } finally {
+    isVerifying.value = false;
+  }
 };
 
-const handleLogout = () => {
-  authStore.logout();
-  emit('logout');
-};
+defineExpose({
+  openAuthModal() {
+    showAuthModal.value = true;
+  }
+});
 </script>
 
 <template>
@@ -77,45 +93,40 @@ const handleLogout = () => {
     <!-- Standard Gacha Teaser Header: active during navigation & games -->
     <div 
       v-if="!gachaActive"
-      class="gacha-tease-container bg-white border-b border-[#a2a9b1] px-3 py-2 flex items-center justify-between gap-3 shadow-sm select-none"
-      :class="{ 'gacha-tease-container--unlocked': points >= 100 }"
+      class="navbar bg-base-100 border-b border-base-300 px-4 py-2 shadow-sm select-none gap-2 justify-between flex-nowrap"
+      :class="{ 'border-primary bg-primary/5': points >= 100 }"
     >
       <!-- Left: Brand Title & Dynamic Microcopy -->
-      <router-link to="/" class="flex flex-col text-left leading-tight min-w-0 flex-shrink no-underline hover:opacity-85">
-        <span class="font-serif font-extrabold text-[12px] text-black tracking-tight leading-none">Moonflower</span>
-        <div class="flex items-center text-[9px] font-sans font-bold mt-0.5 min-w-0">
-          <span v-if="points < 100" class="text-wiki-muted truncate">
+      <router-link to="/" class="flex flex-col text-left leading-none flex-shrink min-w-0 no-underline hover:opacity-85">
+        <span class="font-serif font-black text-sm text-primary tracking-tight">Moonflower</span>
+        <div class="text-[9px] font-sans font-bold mt-1 min-w-0">
+          <span v-if="points < 100" class="text-secondary truncate">
             {{ 100 - points }} Points to Gacha
           </span>
-          <span v-else class="text-wiki-blue uppercase tracking-wider truncate">
+          <span v-else class="text-primary uppercase tracking-wider font-extrabold truncate">
             ★ Ready!
           </span>
         </div>
       </router-link>
 
-      <!-- Middle: Segmented Static Goal Tracker (10 flat blocks) -->
-      <div class="flex-grow flex items-center h-2 max-w-[140px] min-w-[50px] gap-0.5" role="img" aria-label="Gacha Drop progress blocks">
-        <div 
-          class="flex-grow h-full rounded-[1px] transition-colors duration-200"
-          v-for="i in 10" 
-          :key="i"
-          :class="[
-            points >= i * 10 
-              ? 'bg-wiki-blue' 
-              : 'bg-[#eaecf0] border border-[#d8dade]'
-          ]"
-        ></div>
+      <!-- Middle: Segmented/Continuous Goal Tracker (DaisyUI Progress) -->
+      <div class="flex-grow flex justify-center max-w-[140px] min-w-[50px]" role="img" aria-label="Gacha Drop progress">
+        <progress 
+          class="progress progress-primary w-full h-3 border border-base-300 rounded" 
+          :value="points" 
+          max="100"
+        ></progress>
       </div>
 
       <!-- Right: Action Button & Login/Profile Group -->
       <div class="flex items-center gap-2 flex-shrink-0">
-        <!-- Gacha Action Button (w-[80px]) -->
-        <div class="w-[80px]">
+        <!-- Gacha Action Button -->
+        <div class="w-[85px]">
           <!-- Active progressive primary button styled like Log In but excited -->
           <button 
             v-if="points >= 100"
             @click="emit('activate')"
-            class="w-full text-center flex items-center justify-center py-0.5 px-0.5 text-[9px] rounded-sm transition-all duration-200 min-h-[24px] btn-activate-excited select-none focus:outline-none"
+            class="btn btn-primary btn-xs w-full text-[9px] font-black uppercase text-white gacha-gradient-animation select-none shadow hover:scale-105 active:scale-95 transition-transform"
           >
             ⚡ Activate
           </button>
@@ -124,11 +135,11 @@ const handleLogout = () => {
           <button 
             v-else
             @click="triggerLockShake"
-            class="w-full bg-[#eaecf0] text-[#72777d] border border-[#c8ccd1] cursor-not-allowed font-semibold text-[10px] py-0.5 px-1.5 rounded-sm flex items-center justify-center gap-1 select-none focus:outline-none min-h-[24px]"
+            class="btn btn-neutral btn-outline btn-xs w-full text-[9px] flex items-center justify-center gap-1 select-none opacity-60 cursor-not-allowed"
           >
             <span 
               class="inline-block transition-transform duration-200"
-              :class="{ 'animate-lock-shake text-wiki-red': isLockShaking }"
+              :class="{ 'animate-lock-shake text-error': isLockShaking }"
             >
               🔒
             </span>
@@ -136,35 +147,38 @@ const handleLogout = () => {
           </button>
         </div>
 
-        <!-- Vertical Divider -->
-        <div class="h-4 w-[1px] bg-[#eaecf0]"></div>
+        <!-- Divider -->
+        <div class="divider divider-horizontal m-0 h-6"></div>
 
         <!-- Login / User Profile Avatar (to the right of locked button) -->
         <div class="flex items-center flex-shrink-0">
           <button 
             v-if="!authStore.isLoggedIn"
             @click="showAuthModal = true"
-            class="w-[80px] text-center flex items-center justify-center py-0.5 px-1.5 text-[10px] font-semibold text-wiki-blue hover:text-white hover:bg-wiki-blue border border-wiki-blue rounded-sm transition-colors duration-200 min-h-[24px]"
+            class="btn btn-primary btn-outline btn-xs w-[70px]"
           >
             Log In
           </button>
           
-          <div v-else class="flex items-center gap-1.5">
-            <!-- Profile Quick Link -->
-            <router-link 
-              :to="'/@' + authStore.user?.username"
-              class="w-6 h-6 rounded-full overflow-hidden border border-[#a2a9b1] hover:opacity-80 transition-opacity flex items-center justify-center"
-            >
-              <img :src="authStore.user?.profilePic" alt="Avatar" class="w-full h-full object-cover">
-            </router-link>
-            
-            <!-- Compact text-based logout button -->
-            <button 
-              @click="handleLogout"
-              class="text-[9px] text-wiki-muted hover:text-wiki-red font-sans leading-none"
-            >
-              Exit
-            </button>
+          <div v-else class="dropdown dropdown-end z-50">
+            <label tabindex="0" class="btn btn-ghost btn-xs gap-1 font-bold text-primary truncate max-w-[110px] px-1">
+              👤 {{ authStore.user?.username }}
+            </label>
+            <ul tabindex="0" class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box border border-base-300 w-52 mt-2 gap-1 text-sm">
+              <li class="menu-title text-xs font-semibold px-4 py-2 border-b border-base-200 text-secondary mb-1">
+                Binder Dashboard
+              </li>
+              <li>
+                <router-link :to="authStore.user ? '/@' + authStore.user.username : '/'" class="font-medium text-base-content py-2 px-4 hover:bg-base-200 rounded">
+                  📖 View Collection
+                </router-link>
+              </li>
+              <li>
+                <button @click="emit('logout')" class="text-error hover:bg-error/10 font-bold py-2 px-4 rounded">
+                  🚪 Log Out
+                </button>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
@@ -173,131 +187,122 @@ const handleLogout = () => {
     <!-- Simplified header during active Gacha Drop Frenzy or Summary -->
     <div 
       v-else
-      class="bg-white border-b border-[#a2a9b1] px-3 py-2 flex items-center justify-between shadow-sm select-none"
+      class="navbar bg-base-100 border-b border-base-300 px-4 py-2 shadow-sm select-none justify-between flex-nowrap"
     >
-      <router-link to="/" class="flex items-center gap-1.5 no-underline hover:opacity-85">
-        <div class="w-5 h-5 rounded-full border border-[#a2a9b1] flex items-center justify-center bg-[#eaecf0] font-serif text-[11px] text-black font-bold">
+      <router-link to="/" class="flex items-center gap-2 no-underline hover:opacity-85">
+        <div class="w-6 h-6 rounded border border-primary flex items-center justify-center bg-primary text-white font-serif text-xs font-black">
           W
         </div>
-        <span class="text-xs font-bold font-serif text-black leading-none">Moonflower</span>
+        <span class="text-sm font-black font-serif text-primary leading-none">Moonflower</span>
       </router-link>
-      <span class="text-[9px] text-wiki-muted font-sans uppercase font-bold tracking-wider">
+      <span class="badge badge-error badge-outline font-sans uppercase font-extrabold text-[9px] tracking-wider animate-pulse">
         Gacha drop mode
       </span>
     </div>
 
-    <!-- AUTHENTICATION DIALOG / MODAL overlay (Simulated Supabase OTP Flow) -->
-    <cdx-dialog
-      v-model:open="showAuthModal"
-      title="Sign In to Moonflower"
-      @close="showAuthModal = false; otpSent = false; authEmail = ''; otpCode = '';"
-    >
-      <p class="text-xs text-wiki-muted mb-4 leading-relaxed font-sans font-light">
-        Guests use localStorage. Authenticating with your email merges your local binder items and points across devices, allowing you to access Gacha drops securely.
-      </p>
-
-      <!-- Step 1: Request OTP Email -->
-      <form v-if="!otpSent" @submit.prevent="handleSendOtp" class="flex flex-col gap-4">
-        <div>
-          <label class="block text-xs font-semibold text-wiki-text font-sans uppercase mb-1">
-            Email Address
-          </label>
-          <input 
-            v-model="authEmail"
-            type="email" 
-            placeholder="e.g. scholar@moonflower.org"
-            required
-            class="w-full px-3 py-2 bg-white wiki-border text-sm rounded-sm font-sans focus:outline-none focus:border-wiki-blue"
-          >
-        </div>
-
+    <!-- AUTHENTICATION DIALOG / MODAL (DaisyUI Dialog Modal) -->
+    <dialog class="modal modal-bottom sm:modal-middle" :class="{ 'modal-open': showAuthModal }">
+      <div class="modal-box bg-base-100 border border-base-300 p-6 shadow-2xl relative text-left">
+        <!-- Close button -->
         <button 
-          type="submit"
-          :disabled="isVerifying"
-          class="w-full bg-wiki-blue hover:bg-wiki-blueHover text-white font-bold text-xs py-2.5 rounded-sm border border-wiki-blue transition-colors font-sans disabled:opacity-50"
+          @click="closeModal" 
+          class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4"
         >
-          {{ isVerifying ? 'Sending Passcode...' : 'Send One-Time Passcode' }}
+          ✕
         </button>
-      </form>
 
-      <!-- Step 2: Verify OTP Passcode -->
-      <form v-else @submit.prevent="handleVerifyOtp" class="flex flex-col gap-4">
-        <p class="text-xs text-wiki-text leading-relaxed font-sans font-medium bg-[#f0f4fd] border border-[#a2a9b1] p-2.5 rounded-sm">
-          📬 We've sent a 6-digit one-time passcode to <strong class="text-wiki-blue">{{ authEmail }}</strong>. Enter the passcode below to verify your identity.
-        </p>
+        <h3 class="font-serif text-lg font-bold border-b border-base-300 pb-2 text-primary">
+          Sign In to Moonflower
+        </h3>
         
-        <div>
-          <label class="block text-xs font-semibold text-wiki-text font-sans uppercase mb-1">
-            One-Time Passcode (OTP)
-          </label>
-          <input 
-            v-model="otpCode"
-            type="text" 
-            placeholder="123456"
-            maxlength="6"
-            required
-            class="w-full px-3 py-2 bg-white wiki-border text-base rounded-sm font-mono font-bold tracking-widest text-center focus:outline-none focus:border-wiki-blue"
-          >
-        </div>
+        <p class="text-xs text-secondary mt-3 mb-4 leading-relaxed font-sans font-light">
+          Guests use localStorage. Authenticating with your email merges your local binder items and points across devices, allowing you to access Gacha drops securely.
+        </p>
 
-        <div class="flex justify-between text-[10px] font-sans -mt-2">
-          <button 
-            type="button" 
-            @click="otpSent = false; otpCode = '';" 
-            class="text-wiki-blue hover:underline font-semibold"
-          >
-            ← Change email
-          </button>
-          <button 
-            type="button" 
-            @click="handleSendOtp" 
-            class="text-wiki-blue hover:underline font-semibold"
-          >
-            Resend email
-          </button>
-        </div>
-
-        <button 
-          type="submit"
-          class="w-full bg-wiki-blue hover:bg-wiki-blueHover text-white font-bold text-xs py-2.5 rounded-sm border border-wiki-blue transition-colors font-sans"
+        <!-- Error Notice Block -->
+        <div 
+          v-if="authError" 
+          class="alert alert-error text-xs p-3 rounded mb-4 font-sans font-semibold flex items-start gap-1"
         >
-          Verify & Access Binder
-        </button>
+          <span>⚠️ {{ authError }}</span>
+        </div>
+
+        <!-- Step 1: Request OTP Email -->
+        <form v-if="!otpSent" @submit.prevent="handleSendOtp" class="flex flex-col gap-4 mt-2">
+          <div class="form-control w-full">
+            <label class="label py-1">
+              <span class="label-text font-bold text-xs uppercase text-neutral-content/80">Email Address</span>
+            </label>
+            <input 
+              v-model="authEmail"
+              type="email" 
+              placeholder="e.g. scholar@moonflower.org"
+              required
+              class="input input-bordered w-full input-sm font-sans"
+            >
+          </div>
+
+          <button 
+            type="submit"
+            :disabled="isVerifying"
+            class="btn btn-primary btn-sm w-full font-bold uppercase mt-2 text-white"
+          >
+            <span v-if="isVerifying" class="loading loading-spinner loading-xs"></span>
+            {{ isVerifying ? 'Sending Passcode...' : 'Send One-Time Passcode' }}
+          </button>
+        </form>
+
+        <!-- Step 2: Verify OTP Passcode -->
+        <form v-else @submit.prevent="handleVerifyOtp" class="flex flex-col gap-4 mt-2">
+          <div class="bg-base-200 border border-base-300 p-3 rounded text-xs text-base-content font-medium">
+            📬 We've sent a 6-digit one-time passcode to <strong class="text-primary">{{ authEmail }}</strong>. Enter the passcode below to verify.
+          </div>
+          
+          <div class="form-control w-full">
+            <label class="label py-1">
+              <span class="label-text font-bold text-xs uppercase text-neutral-content/80">One-Time Passcode (OTP)</span>
+            </label>
+            <input 
+              v-model="otpCode"
+              type="text" 
+              placeholder="123456"
+              maxlength="6"
+              required
+              class="input input-bordered w-full input-sm font-mono font-bold tracking-widest text-center text-sm"
+            >
+          </div>
+
+          <div class="flex justify-between text-[10px] font-sans -mt-2 px-1">
+            <button 
+              type="button" 
+              @click="otpSent = false; otpCode = '';" 
+              class="link link-primary font-semibold no-underline hover:underline"
+            >
+              ← Change email
+            </button>
+            <button 
+              type="button" 
+              @click="handleSendOtp" 
+              class="link link-primary font-semibold no-underline hover:underline"
+            >
+              Resend email
+            </button>
+          </div>
+
+          <button 
+            type="submit"
+            :disabled="isVerifying"
+            class="btn btn-primary btn-sm w-full font-bold uppercase text-white"
+          >
+            <span v-if="isVerifying" class="loading loading-spinner loading-xs"></span>
+            Verify & Access Binder
+          </button>
+        </form>
+      </div>
+
+      <form method="dialog" class="modal-backdrop" @click="closeModal">
+        <button>close</button>
       </form>
-    </cdx-dialog>
+    </dialog>
   </header>
 </template>
-
-<style scoped>
-/* Excited Activate button pulse */
-@keyframes activeExcitedPulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(51, 102, 204, 0.4);
-    border-color: #36c;
-  }
-  50% {
-    box-shadow: 0 0 8px 3px rgba(68, 127, 245, 0.7);
-    border-color: #447ff5;
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(51, 102, 204, 0.4);
-    border-color: #36c;
-  }
-}
-
-.btn-activate-excited {
-  background: linear-gradient(135deg, #36c 0%, #447ff5 50%, #36c 100%);
-  background-size: 200% auto;
-  color: #ffffff !important;
-  border: 1px solid #36c;
-  font-weight: 800;
-  cursor: pointer;
-  animation: activeExcitedPulse 1.8s infinite ease-in-out, gradientShift 3s infinite linear;
-}
-
-.btn-activate-excited:hover {
-  background: linear-gradient(135deg, #447ff5 0%, #5d92ff 50%, #447ff5 100%);
-  transform: scale(1.03) !important;
-  box-shadow: 0 0 10px 4px rgba(68, 127, 245, 0.85);
-}
-</style>

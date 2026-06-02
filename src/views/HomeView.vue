@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../stores/useAuthStore';
-import { useGameStore, MOCK_CARDS } from '../stores/useGameStore';
+import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
 import AppHeader from '../components/AppHeader.vue';
@@ -45,15 +45,7 @@ const isGlobeJiggling = ref(false);
 const pointsBeforeGame = ref(gameStore.gdPoints);
 const displayedPoints = ref(gameStore.gdPoints);
 const isUnlockedJustNow = ref(false);
-const isLockShaking = ref(false);
-
-const triggerLockShake = () => {
-  if (isLockShaking.value) return;
-  isLockShaking.value = true;
-  setTimeout(() => {
-    isLockShaking.value = false;
-  }, 400);
-};
+const headerRef = ref<any>(null);
 
 const animateProgressBar = (start: number, end: number) => {
   if (start >= end) {
@@ -138,12 +130,15 @@ const updateCooldowns = () => {
 };
 
 // Cooldown decrement loop
-onMounted(() => {
+onMounted(async () => {
   authStore.initAuth();
   gameStore.loadGuestState();
   updateCooldowns();
   
   displayedPoints.value = gameStore.gdPoints;
+  
+  // Load dynamic articles from Supabase (failsafe fallback to MOCK_CARDS built-in)
+  await gameStore.loadCardsFromDatabase();
   
   setInterval(() => {
     updateCooldowns();
@@ -164,7 +159,7 @@ const startFakeoutGame = (category: 'Science' | 'History' | 'Pop Culture' | 'Geo
   playerChoiceReal.value = null;
   
   // Prepare game deck: 10 random cards from this category
-  const catCards = MOCK_CARDS.filter(c => c.category === category);
+  const catCards = gameStore.gameCards.filter(c => c.category === category);
   // Shuffle cards
   const shuffled = [...catCards].sort(() => Math.random() - 0.5);
   // Take up to 10
@@ -294,7 +289,7 @@ const startGachaDrop = () => {
   
   // If guest, block and request sign-up/login
   if (!authStore.isLoggedIn) {
-    showAuthModal.value = true;
+    headerRef.value?.openAuthModal();
     return;
   }
   
@@ -330,8 +325,8 @@ const handleGachaGlobeTap = () => {
     isGlobeJiggling.value = false;
   }, 150);
   
-  // Select a card at random
-  const randomCard = MOCK_CARDS[Math.floor(Math.random() * MOCK_CARDS.length)];
+  // Select a card at random from the database-backed deck
+  const randomCard = gameStore.gameCards[Math.floor(Math.random() * gameStore.gameCards.length)];
   
   // Collect the card in inventory
   gameStore.collectCard(randomCard.id);
@@ -342,123 +337,17 @@ const handleGachaGlobeTap = () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f8f9fa] flex flex-col font-sans text-wiki-text">
+  <div class="min-h-screen bg-base-200/40 flex flex-col font-sans text-base-content">
     
-    <!-- UNIFIED WIKIPEDIA CORE HEADER (GACHA TEASER IS THE GLOBAL HEADER ALWAYS) -->
-    <header class="sticky top-0 z-40">
-      <!-- Standard Gacha Teaser Header: active during navigation & games -->
-      <div 
-        v-if="!gachaActive && !showGachaSummary"
-        class="gacha-tease-container bg-white border-b border-[#a2a9b1] px-3 py-2 flex items-center justify-between gap-3 shadow-sm select-none"
-        :class="{ 'gacha-tease-container--unlocked': displayedPoints >= 100 }"
-      >
-        <!-- Left: Brand Title & Dynamic Microcopy -->
-        <div class="flex flex-col text-left leading-tight min-w-0 flex-shrink">
-          <span class="font-serif font-extrabold text-[12px] text-black tracking-tight leading-none">Moonflower</span>
-          <div class="flex items-center text-[9px] font-sans font-bold mt-0.5 min-w-0">
-            <span v-if="displayedPoints < 100" class="text-wiki-muted truncate">
-              {{ 100 - displayedPoints }} Points to Gacha
-            </span>
-            <span v-else class="text-wiki-blue uppercase tracking-wider truncate">
-              ★ Ready!
-            </span>
-          </div>
-        </div>
-
-        <!-- Middle: Segmented Static Goal Tracker (10 flat blocks) -->
-        <div class="flex-grow flex items-center h-2 max-w-[140px] min-w-[50px] gap-0.5" role="img" aria-label="Gacha Drop progress blocks">
-          <div 
-            class="flex-grow h-full rounded-[1px] transition-colors duration-200"
-            v-for="i in 10" 
-            :key="i"
-            :class="[
-              displayedPoints >= i * 10 
-                ? 'bg-wiki-blue' 
-                : 'bg-[#eaecf0] border border-[#d8dade]'
-            ]"
-          ></div>
-        </div>
-
-        <!-- Right: Action Button & Login/Profile Group -->
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <!-- Gacha Action Button (w-[80px]) -->
-          <div class="w-[80px]">
-            <!-- Active progressive primary button styled like Log In but excited -->
-            <button 
-              v-if="displayedPoints >= 100"
-              @click="startGachaDrop"
-              class="w-full text-center flex items-center justify-center py-0.5 px-0.5 text-[9px] rounded-sm transition-all duration-200 min-h-[24px] btn-activate-excited select-none focus:outline-none"
-              :class="{ 'gacha-unlock-pop': isUnlockedJustNow }"
-            >
-              ⚡ Activate
-            </button>
-            
-            <!-- Disabled locked state button -->
-            <button 
-              v-else
-              @click="triggerLockShake"
-              class="w-full bg-[#eaecf0] text-[#72777d] border border-[#c8ccd1] cursor-not-allowed font-semibold text-[10px] py-0.5 px-1.5 rounded-sm flex items-center justify-center gap-1 select-none focus:outline-none min-h-[24px]"
-            >
-              <span 
-                class="inline-block transition-transform duration-200"
-                :class="{ 'animate-lock-shake text-wiki-red': isLockShaking }"
-              >
-                🔒
-              </span>
-              <span>Locked</span>
-            </button>
-          </div>
-
-          <!-- Vertical Divider -->
-          <div class="h-4 w-[1px] bg-[#eaecf0]"></div>
-
-          <!-- Login / User Profile Avatar (to the right of locked button) -->
-          <div class="flex items-center flex-shrink-0">
-            <button 
-              v-if="!authStore.isLoggedIn"
-              @click="showAuthModal = true"
-              class="w-[80px] text-center flex items-center justify-center py-0.5 px-1.5 text-[10px] font-semibold text-wiki-blue hover:text-white hover:bg-wiki-blue border border-wiki-blue rounded-sm transition-colors duration-200 min-h-[24px]"
-            >
-              Log In
-            </button>
-            
-            <div v-else class="flex items-center gap-1.5">
-              <!-- Profile Quick Link -->
-              <router-link 
-                :to="'/@' + authStore.user?.username"
-                class="w-6 h-6 rounded-full overflow-hidden border border-[#a2a9b1] hover:opacity-80 transition-opacity flex items-center justify-center"
-              >
-                <img :src="authStore.user?.profilePic" alt="Avatar" class="w-full h-full object-cover">
-              </router-link>
-              
-              <!-- Compact text-based logout button -->
-              <button 
-                @click="handleLogout"
-                class="text-[9px] text-wiki-muted hover:text-wiki-red font-sans leading-none"
-              >
-                Exit
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Simplified header during active Gacha Drop Frenzy or Summary -->
-      <div 
-        v-else
-        class="bg-white border-b border-[#a2a9b1] px-3 py-2 flex items-center justify-between shadow-sm select-none"
-      >
-        <div class="flex items-center gap-1.5">
-          <div class="w-5 h-5 rounded-full border border-[#a2a9b1] flex items-center justify-center bg-[#eaecf0] font-serif text-[11px] text-black font-bold">
-            W
-          </div>
-          <span class="text-xs font-bold font-serif text-black leading-none">Moonflower</span>
-        </div>
-        <span class="text-[9px] text-wiki-muted font-sans uppercase font-bold tracking-wider">
-          Gacha drop mode
-        </span>
-      </div>
-    </header>
+    <!-- UNIFIED HEADER COMPONENT -->
+    <AppHeader 
+      ref="headerRef"
+      :displayed-points="displayedPoints" 
+      :gacha-active="gachaActive || showGachaSummary" 
+      @activate="startGachaDrop" 
+      @login-success="handleAuthSuccess" 
+      @logout="handleLogout" 
+    />
 
     <!-- MAIN APP WRAPPER -->
     <main class="flex-grow p-4 max-w-md mx-auto w-full flex flex-col justify-between relative">
@@ -466,65 +355,71 @@ const handleGachaGlobeTap = () => {
       <!-- FAKEOUT GAME CATEGORY SELECTION -->
       <section v-if="!gameActive && !gachaActive && !showGachaSummary" class="flex-grow flex flex-col gap-6 justify-center py-6">
         
-        <!-- Welcome Wiki Box -->
-        <div class="bg-white wiki-border p-4 rounded-sm text-left">
-          <h2 class="wiki-serif text-xl border-b border-[#a2a9b1] pb-1 text-black font-normal">
-            Welcome to Moonflower
-          </h2>
-          <p class="text-xs text-wiki-muted mt-2 leading-relaxed font-sans font-light">
-            Test your knowledge of the absurd and collect real items for your personal Wikipedia Binder. Identify the altered entries to secure items and acquire **GD Points**.
-          </p>
-          
-          <!-- Debug trigger button -->
-          <div v-if="isDev" class="mt-4 pt-3 border-t border-[#eaecf0] flex gap-2">
-            <button 
-              @click="triggerDebugGacha"
-              class="px-2 py-1 text-[10px] font-bold text-wiki-red border border-wiki-red rounded-sm hover:bg-red-50 transition-colors cursor-pointer"
-            >
-              🛠️ [DEV] Force Gacha
-            </button>
-            <button 
-              @click="addDebugPoints"
-              class="px-2 py-1 text-[10px] font-bold text-wiki-blue border border-wiki-blue rounded-sm hover:bg-blue-50 transition-colors cursor-pointer"
-            >
-              🛠️ [DEV] +100 GP
-            </button>
+        <!-- Welcome DaisyUI Card -->
+        <div class="card card-bordered bg-base-100 shadow-md">
+          <div class="card-body p-5">
+            <h2 class="card-title font-serif text-xl border-b border-base-300 pb-2 text-primary font-black">
+              Welcome to Moonflower
+            </h2>
+            <p class="text-xs text-secondary leading-relaxed font-sans font-light mt-1">
+              Test your knowledge of the absurd and collect real items for your personal Wikipedia Binder. Identify the altered entries to secure items and acquire **GD Points**.
+            </p>
+            
+            <!-- Debug tools panel inside collapse -->
+            <div v-if="isDev" class="collapse collapse-arrow border border-base-200 bg-base-200/30 rounded mt-3">
+              <input type="checkbox" /> 
+              <div class="collapse-title text-xs font-bold text-secondary-content/80 flex items-center py-2 min-h-0">
+                🛠️ Developer Controls
+              </div>
+              <div class="collapse-content flex gap-2 pt-2 pb-3">
+                <button 
+                  @click="triggerDebugGacha"
+                  class="btn btn-error btn-outline btn-xs uppercase font-bold text-[9px]"
+                >
+                  Force Gacha
+                </button>
+                <button 
+                  @click="addDebugPoints"
+                  class="btn btn-primary btn-outline btn-xs uppercase font-bold text-[9px]"
+                >
+                  +100 GP
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Gacha drop handled exclusively in the header -->
-
         <!-- Category Lists -->
-        <div>
-          <h3 class="text-xs font-semibold text-wiki-muted uppercase tracking-wider mb-3 text-left">
+        <div class="flex flex-col gap-3">
+          <h3 class="text-xs font-black text-secondary uppercase tracking-widest text-left pl-1">
             Select category to play
           </h3>
-          <div class="flex flex-col gap-2.5">
+          <div class="flex flex-col gap-3">
             <button
               v-for="cat in ['History', 'Science', 'Pop Culture', 'Geography']"
               :key="cat"
               @click="startFakeoutGame(cat as any)"
               :disabled="!!cooldownTimers[cat]"
-              class="w-full bg-white wiki-border p-3.5 flex items-center justify-between text-left rounded-sm transition-all duration-200 select-none"
+              class="btn btn-outline border-base-300 hover:border-primary/50 h-auto py-3.5 px-4 flex justify-between items-center bg-base-100 hover:bg-base-200 active:bg-base-300 w-full rounded shadow-sm text-left"
               :class="[
                 cooldownTimers[cat] 
-                  ? 'opacity-65 cursor-not-allowed bg-gray-50' 
-                  : 'hover:bg-wiki-bg active:bg-[#eaecf0]'
+                  ? 'opacity-60 cursor-not-allowed bg-base-200 hover:bg-base-200 text-base-content/50 border-base-300' 
+                  : 'text-base-content hover:text-base-content'
               ]"
             >
               <div class="flex flex-col">
-                <span class="font-serif font-bold text-sm text-black">{{ cat }}</span>
-                <span v-if="cooldownTimers[cat]" class="text-[10px] text-wiki-red font-sans">
+                <span class="font-serif font-black text-base">{{ cat }}</span>
+                <span v-if="cooldownTimers[cat]" class="text-[10px] text-error font-sans font-semibold mt-1">
                   Cooldown: {{ cooldownTimers[cat] }}s
                 </span>
-                <span v-else class="text-[10px] text-wiki-muted font-sans font-light">
+                <span v-else class="text-[10px] text-secondary font-sans font-light mt-0.5">
                   10 cards • swipe mode
                 </span>
               </div>
               
               <div class="flex items-center gap-2">
                 <span v-if="cooldownTimers[cat]" class="text-xs">🔒</span>
-                <span v-else class="text-wiki-blue font-bold text-lg">→</span>
+                <span v-else class="text-primary font-black text-lg">→</span>
               </div>
             </button>
           </div>
@@ -533,8 +428,8 @@ const handleGachaGlobeTap = () => {
         <!-- Binder Button for logged-in user -->
         <router-link
           v-if="authStore.isLoggedIn"
-          :to="'/@' + authStore.user?.username"
-          class="w-full bg-[#eaecf0] hover:bg-[#d8dade] text-black font-sans font-semibold text-xs py-3 rounded-sm border border-[#a2a9b1] text-center"
+          :to="authStore.user ? '/@' + authStore.user.username : '/'"
+          class="btn btn-secondary btn-outline w-full uppercase font-bold text-xs shadow-sm mt-2 rounded"
         >
           📖 Open My Collection Binder
         </router-link>
@@ -543,16 +438,24 @@ const handleGachaGlobeTap = () => {
       <!-- FAKEOUT GAME SWIPING MECHANIC -->
       <section v-if="gameActive && currentCard" class="flex-grow flex flex-col justify-between py-2">
         <!-- Game Header -->
-        <div class="flex items-center justify-between text-xs px-2 mb-2 font-sans font-semibold text-wiki-muted">
-          <span>Category: <strong class="text-black">{{ selectedCategory }}</strong></span>
-          <span>Round {{ currentRound }}/10</span>
-          <span>Score: {{ gameScore }}</span>
+        <div class="flex flex-col w-full mb-3">
+          <div class="flex items-center justify-between text-xs px-2 mb-2 font-sans font-bold text-secondary">
+            <span>Category: <span class="text-base-content font-black">{{ selectedCategory }}</span></span>
+            <span>Round {{ currentRound }}/10</span>
+            <span>Score: {{ gameScore }}</span>
+          </div>
+          <!-- Game progress bar -->
+          <progress 
+            class="progress progress-primary w-full h-1.5 rounded" 
+            :value="currentRound - 1" 
+            max="10"
+          ></progress>
         </div>
 
         <!-- Swiping Card Area -->
-        <div class="flex-grow flex items-center justify-center my-4 relative min-h-[410px]">
+        <div class="flex-grow flex items-center justify-center my-2 relative min-h-[410px]">
           
-          <!-- Stable centered wrapper container to guarantee 100% stable layout boundaries -->
+          <!-- Centered wrapper container -->
           <div class="relative w-full max-w-[280px] h-[380px]">
             
             <div class="stack select-none w-full h-full">
@@ -595,40 +498,29 @@ const handleGachaGlobeTap = () => {
                   @mouseleave="index === currentRound - 1 ? handleMouseUp() : null"
                 >
                   <!-- Render CardComp with 3D Tilt disabled during swiping -->
-                  <CardComp :card="card" :show-link="false" :disable-hover3d="true" />
-
-                  <!-- Swiping Indicators Overlay -->
-                  <div 
-                    v-if="index === currentRound - 1 && swipeOffset !== 0 && !roundAnswered"
-                    class="absolute inset-0 flex items-center justify-center rounded-sm font-bold text-2xl uppercase pointer-events-none z-40"
-                    :class="[
-                      swipeOffset > 30 ? 'bg-wiki-green bg-opacity-20 text-wiki-green' : '',
-                      swipeOffset < -30 ? 'bg-wiki-red bg-opacity-20 text-wiki-red' : ''
-                    ]"
-                  >
-                    <div v-if="swipeOffset > 30" class="px-4 py-2 border-4 border-wiki-green bg-white rounded-md">
-                      ✓ Real
-                    </div>
-                    <div v-if="swipeOffset < -30" class="px-4 py-2 border-4 border-wiki-red bg-white rounded-md">
-                      ✕ Fake
-                    </div>
-                  </div>
+                  <CardComp 
+                    :card="card" 
+                    :show-link="false" 
+                    :disable-hover3d="true" 
+                    :swipe-offset="index === currentRound - 1 ? swipeOffset : 0"
+                    :round-answered="index === currentRound - 1 ? roundAnswered : false"
+                  />
                 </div>
               </template>
               
             </div>
 
-            <!-- Rubber Stamp Overlay (positioned absolutely inside the relative wrapper, outside the stack!) -->
+            <!-- Rubber Stamp Overlay inside wrapper -->
             <div 
               v-if="roundAnswered" 
               class="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
             >
               <div 
-                class="px-6 py-3 border-8 font-mono font-extrabold text-4xl uppercase tracking-widest bg-white bg-opacity-95 shadow-xl select-none animate-stamp-scale"
+                class="px-6 py-3 border-[6px] font-mono font-black text-3xl uppercase tracking-widest bg-base-100/95 shadow-xl select-none animate-stamp-scale"
                 :class="[
                   roundWasCorrect 
-                    ? 'border-wiki-green text-wiki-green' 
-                    : 'border-wiki-red text-wiki-red'
+                    ? 'border-success text-success' 
+                    : 'border-error text-error'
                 ]"
                 :style="{ transform: `rotate(${stampAngle}deg)` }"
               >
@@ -647,14 +539,14 @@ const handleGachaGlobeTap = () => {
         >
           <button 
             @click="handleSwipeChoice(false)"
-            class="flex-1 bg-white hover:bg-red-50 text-wiki-red font-bold text-xs py-3 border border-wiki-red rounded-sm transition-colors duration-200"
+            class="btn btn-error btn-outline flex-1 uppercase font-bold text-xs"
           >
             ✕ Fake
           </button>
           
           <button 
             @click="handleSwipeChoice(true)"
-            class="flex-1 bg-white hover:bg-green-50 text-wiki-green font-bold text-xs py-3 border border-wiki-green rounded-sm transition-colors duration-200"
+            class="btn btn-success btn-outline flex-1 uppercase font-bold text-xs"
           >
             ✓ Real
           </button>
@@ -664,15 +556,15 @@ const handleGachaGlobeTap = () => {
       <!-- GACHA DROP TICKING GAMEPLAY -->
       <section v-if="gachaActive" class="flex-grow flex flex-col justify-between py-4 text-center">
         <div>
-          <span class="text-xs uppercase text-wiki-muted tracking-widest font-sans font-semibold">
+          <span class="badge badge-warning badge-outline uppercase tracking-widest font-black text-xs px-3 py-2">
             Tapping Frenzy Activated!
           </span>
           <!-- Countdown Clock -->
-          <div class="text-5xl font-mono font-bold text-wiki-red mt-2 animate-pulse">
+          <div class="text-6xl font-mono font-black text-error mt-4 animate-pulse">
             {{ gachaTimer }}s
           </div>
           
-          <p class="text-xs text-wiki-muted mt-2 font-sans font-light">
+          <p class="text-xs text-secondary mt-3 font-sans font-light">
             Continuous tapping on the Wikipedia globe generates random cards!
           </p>
         </div>
@@ -681,27 +573,28 @@ const handleGachaGlobeTap = () => {
         <div class="my-6 flex items-center justify-center">
           <button 
             @click="handleGachaGlobeTap"
-            class="w-48 h-48 rounded-full border-4 border-wiki-blue bg-white flex flex-col items-center justify-center shadow-lg transition-transform duration-75 active:scale-95"
+            class="btn btn-circle btn-primary w-48 h-48 shadow-2xl flex flex-col items-center justify-center border-4 border-primary/25 transition-transform active:scale-95"
             :class="{ 'animate-pulse-shake': isGlobeJiggling }"
           >
-            <span class="text-wiki-blue text-5xl font-bold font-serif select-none">W</span>
-            <span class="text-xs uppercase tracking-widest text-wiki-muted font-bold font-sans mt-2 select-none">TAP HERE!</span>
-            <span class="text-[10px] text-wiki-blue font-sans font-semibold mt-1 select-none">Taps: {{ gachaTapCount }}</span>
+            <span class="text-white text-6xl font-black font-serif select-none">W</span>
+            <span class="text-[10px] uppercase tracking-widest text-white/80 font-black font-sans mt-3 select-none">TAP HERE!</span>
+            <div class="badge badge-secondary badge-sm font-sans font-bold mt-1.5 select-none">Taps: {{ gachaTapCount }}</div>
           </button>
         </div>
 
         <!-- Recent Drops Carousel View -->
-        <div class="h-24 overflow-x-auto whitespace-nowrap py-1 border-t border-b border-[#a2a9b1] flex gap-2 items-center px-1">
-          <div v-if="gachaDroppedCards.length === 0" class="text-xs text-wiki-muted italic mx-auto">
+        <div class="h-28 overflow-x-auto whitespace-nowrap py-2 border-t border-b border-base-300 flex gap-3 items-center px-2 bg-base-200/30 rounded">
+          <div v-if="gachaDroppedCards.length === 0" class="text-xs text-secondary italic mx-auto">
             Start tapping the globe!
           </div>
           <div 
             v-for="(card, i) in gachaDroppedCards.slice(0, 5)" 
             :key="i"
-            class="inline-block px-3 py-1.5 bg-white border border-[#a2a9b1] rounded-sm text-xs text-left w-32 shadow-sm animate-fade-in"
+            class="card card-bordered card-compact bg-base-100 w-32 shadow flex-shrink-0 text-left p-2.5 animate-fade-in border-primary/20"
           >
-            <span class="text-[8px] text-wiki-muted uppercase font-bold tracking-wider">{{ card.rarity }}</span>
-            <div class="font-serif font-bold text-black text-xs truncate">{{ card.title }}</div>
+            <span class="text-[8px] badge badge-outline badge-xs font-bold font-sans uppercase mb-1">{{ card.rarity }}</span>
+            <div class="font-serif font-black text-base-content text-xs truncate">{{ card.title }}</div>
+            <div class="text-[8px] text-secondary font-sans mt-0.5 truncate">{{ card.category }}</div>
           </div>
         </div>
       </section>
@@ -709,47 +602,51 @@ const handleGachaGlobeTap = () => {
       <!-- GACHA DROP SUMMARY SCREEN -->
       <section v-if="showGachaSummary" class="flex-grow flex flex-col justify-between py-4">
         <div class="text-center">
-          <span class="text-3xl">🎉</span>
-          <h2 class="wiki-serif text-xl border-b border-[#a2a9b1] pb-1 text-black font-normal mt-2">
+          <span class="text-4xl">🎉</span>
+          <h2 class="font-serif text-2xl border-b border-base-300 pb-2 text-primary font-bold mt-2">
             Gacha Frenzy Complete!
           </h2>
-          <p class="text-xs text-wiki-muted mt-2 font-sans font-light">
-            You tapped the globe <strong class="text-black font-semibold">{{ gachaTapCount }} times</strong>, collecting <strong class="text-black font-semibold">{{ gachaDroppedCards.length }} new entries</strong> for your binder!
+          <p class="text-xs text-secondary mt-3 font-sans font-light leading-relaxed">
+            You tapped the globe <strong class="text-base-content font-bold">{{ gachaTapCount }} times</strong>, collecting <strong class="text-base-content font-bold">{{ gachaDroppedCards.length }} new entries</strong> for your binder!
           </p>
         </div>
 
         <!-- List of Collected Cards -->
-        <div class="my-6 overflow-y-auto max-h-[300px] border border-[#a2a9b1] rounded-sm bg-white p-2">
-          <div v-if="gachaDroppedCards.length === 0" class="text-xs text-wiki-muted italic text-center py-4">
+        <div class="my-6 overflow-y-auto max-h-[280px] border border-base-300 rounded bg-base-100 shadow-inner">
+          <div v-if="gachaDroppedCards.length === 0" class="text-xs text-secondary italic text-center py-8">
             No cards collected. Tap faster next time!
           </div>
           <div 
             v-else
             v-for="(card, index) in gachaDroppedCards" 
             :key="index"
-            class="flex items-center justify-between p-2 border-b border-[#eaecf0] last:border-b-0 hover:bg-[#f8f9fa]"
+            class="flex items-center justify-between p-3 border-b border-base-200 last:border-b-0 hover:bg-base-200/50"
           >
-            <div class="text-left">
-              <span class="text-[8px] px-1 py-0.5 rounded-sm bg-[#eaecf0] font-sans font-semibold uppercase text-wiki-muted mr-1.5">
+            <div class="text-left flex items-center gap-2">
+              <span class="badge badge-xs uppercase text-[8px] font-sans font-bold py-1.5" :class="[
+                card.rarity === 'Legendary' ? 'badge-warning' :
+                card.rarity === 'Epic' ? 'badge-neutral' :
+                card.rarity === 'Rare' ? 'badge-primary' : 'badge-ghost'
+              ]">
                 {{ card.rarity }}
               </span>
-              <strong class="font-serif text-xs text-black">{{ card.title }}</strong>
+              <strong class="font-serif text-xs text-base-content font-semibold">{{ card.title }}</strong>
             </div>
-            <span class="text-[10px] text-wiki-muted font-sans">{{ card.category }}</span>
+            <span class="text-[9px] text-secondary font-sans uppercase font-bold">{{ card.category }}</span>
           </div>
         </div>
 
         <div class="flex flex-col gap-2">
           <router-link
-            :to="'/@' + authStore.user?.username"
-            class="w-full bg-wiki-blue hover:bg-wiki-blueHover text-white font-sans font-semibold text-xs py-3 rounded-sm border border-wiki-blue text-center"
+            :to="authStore.user ? '/@' + authStore.user.username : '/'"
+            class="btn btn-primary w-full uppercase font-bold text-xs text-white"
           >
             📖 Open Binder & View Cards
           </router-link>
           
           <button 
             @click="showGachaSummary = false"
-            class="w-full bg-white hover:bg-[#eaecf0] text-black font-sans font-semibold text-xs py-3 rounded-sm border border-[#a2a9b1]"
+            class="btn btn-outline border-base-300 w-full uppercase font-bold text-xs"
           >
             Back to Home
           </button>
@@ -758,138 +655,5 @@ const handleGachaGlobeTap = () => {
 
     </main>
 
-    <!-- AUTHENTICATION DIALOG / MODAL overlay (Simulated Supabase OTP Flow) -->
-    <cdx-dialog
-      v-model:open="showAuthModal"
-      title="Sign In to Moonflower"
-      @close="showAuthModal = false; otpSent = false; authEmail = ''; otpCode = '';"
-    >
-      <p class="text-xs text-wiki-muted mb-4 leading-relaxed font-sans font-light">
-        Guests use localStorage. Authenticating with your email merges your local binder items and points across devices, allowing you to access Gacha drops securely.
-      </p>
-
-      <!-- Step 1: Request OTP Email -->
-      <form v-if="!otpSent" @submit.prevent="handleSendOtp" class="flex flex-col gap-4">
-        <div>
-          <label class="block text-xs font-semibold text-wiki-text font-sans uppercase mb-1">
-            Email Address
-          </label>
-          <input 
-            v-model="authEmail"
-            type="email" 
-            placeholder="e.g. scholar@moonflower.org"
-            required
-            class="w-full px-3 py-2 bg-white wiki-border text-sm rounded-sm font-sans focus:outline-none focus:border-wiki-blue"
-          >
-        </div>
-
-        <button 
-          type="submit"
-          :disabled="isVerifying"
-          class="w-full bg-wiki-blue hover:bg-wiki-blueHover text-white font-bold text-xs py-2.5 rounded-sm border border-wiki-blue transition-colors font-sans disabled:opacity-50"
-        >
-          {{ isVerifying ? 'Sending Passcode...' : 'Send One-Time Passcode' }}
-        </button>
-      </form>
-
-      <!-- Step 2: Verify OTP Passcode -->
-      <form v-else @submit.prevent="handleVerifyOtp" class="flex flex-col gap-4">
-        <p class="text-xs text-wiki-text leading-relaxed font-sans font-medium bg-[#f0f4fd] border border-[#a2a9b1] p-2.5 rounded-sm">
-          📬 We've sent a 6-digit one-time passcode to <strong class="text-wiki-blue">{{ authEmail }}</strong>. Enter the passcode below to verify your identity.
-        </p>
-        
-        <div>
-          <label class="block text-xs font-semibold text-wiki-text font-sans uppercase mb-1">
-            One-Time Passcode (OTP)
-          </label>
-          <input 
-            v-model="otpCode"
-            type="text" 
-            placeholder="123456"
-            maxlength="6"
-            required
-            class="w-full px-3 py-2 bg-white wiki-border text-base rounded-sm font-mono font-bold tracking-widest text-center focus:outline-none focus:border-wiki-blue"
-          >
-        </div>
-
-        <div class="flex justify-between text-[10px] font-sans -mt-2">
-          <button 
-            type="button" 
-            @click="otpSent = false; otpCode = '';" 
-            class="text-wiki-blue hover:underline font-semibold"
-          >
-            ← Change email
-          </button>
-          <button 
-            type="button" 
-            @click="handleSendOtp" 
-            class="text-wiki-blue hover:underline font-semibold"
-          >
-            Resend email
-          </button>
-        </div>
-
-        <button 
-          type="submit"
-          class="w-full bg-wiki-blue hover:bg-wiki-blueHover text-white font-bold text-xs py-2.5 rounded-sm border border-wiki-blue transition-colors font-sans"
-        >
-          Verify & Access Binder
-        </button>
-      </form>
-    </cdx-dialog>
-
   </div>
 </template>
-
-<style scoped>
-/* Evaluation animations */
-.animate-fade-in {
-  animation: fadeIn 0.25s ease-out forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-.animate-stamp-scale {
-  animation: stampScale 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes stampScale {
-  0% { transform: scale(3.5); opacity: 0; }
-  100% { opacity: 1; }
-}
-
-/* Excited Activate button pulse */
-@keyframes activeExcitedPulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(51, 102, 204, 0.4);
-    border-color: #36c;
-  }
-  50% {
-    box-shadow: 0 0 8px 3px rgba(68, 127, 245, 0.7);
-    border-color: #447ff5;
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(51, 102, 204, 0.4);
-    border-color: #36c;
-  }
-}
-
-.btn-activate-excited {
-  background: linear-gradient(135deg, #36c 0%, #447ff5 50%, #36c 100%);
-  background-size: 200% auto;
-  color: #ffffff !important;
-  border: 1px solid #36c;
-  font-weight: 800;
-  cursor: pointer;
-  animation: activeExcitedPulse 1.8s infinite ease-in-out, gradientShift 3s infinite linear;
-}
-
-.btn-activate-excited:hover {
-  background: linear-gradient(135deg, #447ff5 0%, #5d92ff 50%, #447ff5 100%);
-  transform: scale(1.03) !important;
-  box-shadow: 0 0 10px 4px rgba(68, 127, 245, 0.85);
-}
-</style>

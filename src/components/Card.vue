@@ -2,57 +2,79 @@
 import { computed } from 'vue';
 import type { Card } from '../stores/useGameStore';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   card: Card;
   showLink?: boolean;
   disableHover3d?: boolean;
-}>();
+  swipeOffset?: number;
+  roundAnswered?: boolean;
+}>(), {
+  showLink: true,
+  disableHover3d: false,
+  swipeOffset: 0,
+  roundAnswered: false
+});
 
-// Rarity color configurations based on Wikipedia's normcore palette + subtle premium cues
+// Rarity color configurations based on DaisyUI theme mappings + Codex values
 const rarityConfig = computed(() => {
   switch (props.card.rarity) {
     case 'Legendary':
       return {
-        borderClass: 'border-2 border-[#d4af37]',
-        badgeBg: 'bg-[#fef6e7] text-[#ac6600] border border-[#f3d999]',
-        badgeText: 'Featured Article ★',
-        bgClass: 'bg-white',
-        textStyle: 'wiki-serif font-bold text-[#b32424]', // Wikipedia red header
-        iconColor: '#d4af37',
-        shadow: 'shadow-[0_0_15px_rgba(212,175,55,0.25)]'
+        borderClass: 'border-2 border-warning/60',
+        badgeBg: 'badge-warning text-warning-content font-bold',
+        badgeText: 'Legendary',
+        bgClass: 'bg-base-100',
+        textStyle: 'wiki-serif font-bold text-error',
+        iconColor: 'text-warning',
+        shadow: 'shadow-lg shadow-warning/10'
       };
     case 'Epic':
       return {
-        borderClass: 'border-2 border-[#72777d]',
-        badgeBg: 'bg-[#f8f9fa] text-[#202122] border border-[#a2a9b1]',
-        badgeText: 'A-Class Article',
-        bgClass: 'bg-white',
-        textStyle: 'wiki-serif font-bold text-[#202122]',
-        iconColor: '#72777d',
-        shadow: 'shadow-[0_0_10px_rgba(114,119,125,0.15)]'
+        borderClass: 'border-2 border-secondary/40',
+        badgeBg: 'badge-neutral text-neutral-content font-bold',
+        badgeText: 'Epic',
+        bgClass: 'bg-base-100',
+        textStyle: 'wiki-serif font-bold text-base-content',
+        iconColor: 'text-secondary',
+        shadow: 'shadow-md shadow-secondary/5'
       };
     case 'Rare':
       return {
-        borderClass: 'border border-[#a2a9b1]',
-        badgeBg: 'bg-[#eaecf0] text-[#54595d] border border-[#c8ccd1]',
-        badgeText: 'Good Article',
-        bgClass: 'bg-white',
-        textStyle: 'wiki-serif font-semibold text-[#202122]',
-        iconColor: '#36c',
-        shadow: 'shadow-sm'
+        borderClass: 'border border-primary/50',
+        badgeBg: 'badge-primary text-primary-content font-bold',
+        badgeText: 'Rare',
+        bgClass: 'bg-base-100',
+        textStyle: 'wiki-serif font-bold text-base-content',
+        iconColor: 'text-primary',
+        shadow: 'shadow-sm shadow-primary/5'
       };
     case 'Common':
     default:
       return {
-        borderClass: 'border border-[#e5e5e5]',
-        badgeBg: 'bg-[#f8f9fa] text-[#72777d]',
-        badgeText: 'Stub',
-        bgClass: 'bg-[#f8f9fa]',
-        textStyle: 'wiki-serif text-[#202122]',
-        iconColor: '#72777d',
+        borderClass: 'border border-base-300',
+        badgeBg: 'badge-ghost text-base-content/70',
+        badgeText: 'Common',
+        bgClass: 'bg-base-200/40',
+        textStyle: 'wiki-serif text-base-content',
+        iconColor: 'text-base-content/60',
         shadow: 'shadow-none'
       };
   }
+});
+
+const imageStyle = computed(() => {
+  const img = props.card.image || '';
+  if (!img) {
+    return 'linear-gradient(135deg, var(--background-color-neutral-subtle), var(--border-color-interactive))';
+  }
+  if (img.startsWith('linear-gradient') || img.startsWith('url(')) {
+    return img;
+  }
+  return `url(${img})`;
+});
+
+const hasImage = computed(() => {
+  return !!props.card.image;
 });
 </script>
 
@@ -61,72 +83,66 @@ const rarityConfig = computed(() => {
   <div 
     :class="[
       disableHover3d ? 'relative' : 'hover-3d relative',
-      'w-full max-w-[280px] h-[380px] rounded-sm transition-all duration-300'
+      'w-full max-w-[280px] h-[380px] rounded transition-all duration-300'
     ]"
   >
     
-    <!-- Real card container -->
+    <!-- Real card container using DaisyUI styles -->
     <div 
-      class="h-full w-full flex flex-col justify-between p-4 bg-white select-none wiki-border text-left relative overflow-hidden transition-shadow"
+      class="card card-bordered h-full w-full flex flex-col justify-between p-4 bg-base-100 select-none text-left relative overflow-hidden transition-shadow duration-300"
       :class="[rarityConfig.borderClass, rarityConfig.bgClass, rarityConfig.shadow]"
     >
       
       <!-- Top Section: Category and Rarity Badge -->
       <div>
-        <div class="flex items-center justify-between text-xs mb-2">
-          <span class="text-wiki-muted uppercase tracking-wider font-semibold font-sans">
+        <div class="flex items-center justify-between text-[10px] mb-2 font-sans">
+          <span class="text-secondary uppercase tracking-widest font-extrabold">
             {{ card.category }}
           </span>
-          <span class="px-2 py-0.5 rounded-sm font-sans font-medium text-[10px]" :class="rarityConfig.badgeBg">
+          <span class="badge badge-xs px-2 py-1.5" :class="rarityConfig.badgeBg">
             {{ rarityConfig.badgeText }}
           </span>
         </div>
         
         <!-- Divider -->
-        <div class="h-[1px] bg-[#a2a9b1] w-full mb-3"></div>
+        <div class="h-[1px] bg-base-300 w-full mb-3"></div>
 
         <!-- Main Card Header -->
-        <h3 class="text-lg leading-tight mb-1" :class="rarityConfig.textStyle">
+        <h3 class="text-base leading-tight mb-1" :class="rarityConfig.textStyle">
           {{ card.title }}
         </h3>
         
         <!-- Wikipedia Style Citation / Sub-title -->
-        <p class="text-[10px] text-wiki-muted font-sans mb-3 italic">
+        <p class="text-[9px] text-secondary font-sans mb-3 italic">
           From Wikipedia, the free encyclopedia gacha
         </p>
 
-        <!-- Generative Visual Representation (Wikipedia Style Diagrams) -->
+        <!-- Generative Visual Representation (Wikipedia Style Diagrams & Images) -->
         <div 
-          class="w-full h-24 mb-3 rounded-sm flex items-center justify-center relative overflow-hidden wiki-border bg-opacity-10"
-          :style="{ background: card.image }"
-        >
-          <!-- Technical Drawing Backdrop (Geometric Mesh) -->
-          <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:16px_16px]"></div>
-          
-          <div class="z-10 text-white font-serif text-3xl font-extrabold select-none filter drop-shadow-md opacity-40">
-            W
-          </div>
-          
-          <!-- Subtle watermark for legendary cards -->
-          <div v-if="card.rarity === 'Legendary'" class="absolute right-2 bottom-1 text-white opacity-45 text-lg">
-            ★
-          </div>
-        </div>
+          v-if="hasImage"
+          class="w-full h-24 mb-3 rounded border border-base-300 flex items-center justify-center relative overflow-hidden"
+          :style="{ 
+            backgroundImage: imageStyle, 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center', 
+            backgroundRepeat: 'no-repeat' 
+          }"
+        ></div>
 
         <!-- Short Codex styled article lead description -->
-        <p class="text-xs text-wiki-text leading-relaxed line-clamp-4 font-sans font-light">
+        <p class="text-xs text-base-content/85 leading-relaxed line-clamp-4 font-sans font-light">
           {{ card.description }}
         </p>
       </div>
 
       <!-- Bottom Actions/Links: Pure Wikipedia Citation style -->
-      <div class="mt-2 text-[10px] flex items-center justify-between text-wiki-muted font-sans">
+      <div class="mt-2 text-[9px] flex items-center justify-between text-secondary font-sans border-t border-base-200/60 pt-2">
         <span>ID: {{ card.id }}</span>
         <a 
           v-if="showLink !== false"
           :href="card.wikipediaLink" 
           target="_blank" 
-          class="text-wiki-blue hover:underline inline-flex items-center gap-0.5"
+          class="link link-primary inline-flex items-center gap-0.5 font-bold no-underline hover:underline"
           @click.stop
         >
           View article
@@ -135,6 +151,23 @@ const rarityConfig = computed(() => {
             <path d="M19 1v7h-2V4.41l-7.29 7.3-1.42-1.42L15.58 3H12V1h7z"/>
           </svg>
         </a>
+      </div>
+
+      <!-- Swiping Indicators Overlay -->
+      <div 
+        v-if="swipeOffset !== 0 && !roundAnswered"
+        class="absolute inset-0 flex items-center justify-center font-bold text-2xl uppercase pointer-events-none z-40 transition-all"
+        :class="[
+          swipeOffset > 30 ? 'bg-success/20 text-success' : '',
+          swipeOffset < -30 ? 'bg-error/20 text-error' : ''
+        ]"
+      >
+        <div v-if="swipeOffset > 30" class="px-4 py-2 border-4 border-success bg-base-100 rounded shadow-md font-sans">
+          ✓ Real
+        </div>
+        <div v-if="swipeOffset < -30" class="px-4 py-2 border-4 border-error bg-base-100 rounded shadow-md font-sans">
+          ✕ Fake
+        </div>
       </div>
       
     </div>

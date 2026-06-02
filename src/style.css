@@ -2,61 +2,86 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-@theme {
-  --font-serif: "Georgia", "Charter", "serif";
-  --font-sans: "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Lato", "Helvetica", "Arial", "sans-serif";
+:root {
+  /* Map DaisyUI Theme variables to Codex Design Tokens */
+  --color-primary: var(--color-progressive); /* Wikipedia blue (#36c) */
+  --color-primary-hover: var(--color-progressive--hover);
+  --color-primary-active: var(--color-progressive--active);
+  --color-primary-content: var(--color-inverted);
   
-  --color-wiki-blue: #36c;
-  --color-wiki-blueHover: #447ff5;
-  --color-wiki-blue-hover: #447ff5;
-  --color-wiki-red: #d33;
-  --color-wiki-green: #00af89;
-  --color-wiki-border: #a2a9b1;
-  --color-wiki-bg: #f8f9fa;
-  --color-wiki-darkBg: #eaecf0;
-  --color-wiki-dark-bg: #eaecf0;
-  --color-wiki-text: #202122;
-  --color-wiki-muted: #72777d;
+  --color-secondary: var(--color-subtle); /* Wikipedia grey (#54595d) */
+  --color-secondary-content: var(--color-inverted);
+  
+  --color-neutral: var(--background-color-neutral); /* Codex light neutral (#eaecf0) */
+  --color-neutral-content: var(--color-base); /* Base text (#202122) */
+  
+  --color-base-100: var(--background-color-base); /* White (#fff) */
+  --color-base-200: var(--background-color-neutral-subtle); /* Off-white (#f8f9fa) */
+  --color-base-300: var(--background-color-neutral); /* Gray-white (#eaecf0) */
+  --color-base-content: var(--color-base); /* Base text (#202122) */
+  
+  --color-info: var(--color-progressive);
+  --color-success: var(--color-success); /* Codex success (#177860) */
+  --color-warning: var(--color-warning); /* Codex warning (#886425) */
+  --color-error: var(--color-error); /* Codex error (#bf3c2c) */
+  
+  /* Font Family Mappings */
+  --font-sans: var(--font-family-system-sans);
+  --font-serif: var(--font-family-serif);
+  
+  /* Border Radius variables mapping to Codex base radius (2px) */
+  --rounded-box: var(--border-radius-base);
+  --rounded-btn: var(--border-radius-base);
+  --rounded-badge: var(--border-radius-base);
 }
 
-/* Custom styling to merge Wikimedia Codex normcore with mobile layout */
+@theme {
+  --font-serif: var(--font-family-serif);
+  --font-sans: var(--font-family-system-sans);
+  
+  --color-wiki-blue: var(--color-progressive);
+  --color-wiki-blue-hover: var(--color-progressive--hover);
+  --color-wiki-red: var(--color-error);
+  --color-wiki-green: var(--color-success);
+  --color-wiki-border: var(--border-color-base);
+  --color-wiki-bg: var(--background-color-neutral-subtle);
+  --color-wiki-dark-bg: var(--background-color-neutral);
+  --color-wiki-text: var(--color-base);
+  --color-wiki-muted: var(--color-subtle);
+}
+
+/* Custom Base resets */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Lato, Helvetica, Arial, sans-serif;
-  color: #202122;
-  background-color: #f8f9fa;
+  font-family: var(--font-family-system-sans);
+  color: var(--color-base);
+  background-color: var(--background-color-neutral-subtle);
   margin: 0;
   padding: 0;
 }
 
 .wiki-serif {
-  font-family: 'Georgia', 'Times New Roman', Times, serif;
+  font-family: var(--font-family-serif);
 }
 
-.wiki-border {
-  border: 1px solid #a2a9b1;
-}
-
-.wiki-border-bottom {
-  border-bottom: 1px solid #a2a9b1;
-}
-
-/* Scrollbar customizations matching wikipedia */
+/* Scrollbar customizations matching Wikipedia UI */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f8f9fa;
+  background: var(--background-color-neutral-subtle);
 }
 ::-webkit-scrollbar-thumb {
-  background: #c8ccd1;
+  background: var(--border-color-subtle);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a2a9b1;
+  background: var(--border-color-base);
 }
 
-/* Custom animation for Gacha Tapping globes */
+/* --- Game Specific Micro-interactions and Keyframe Animations --- */
+
+/* Pulse Shake animation for tapped globe */
 @keyframes pulse-shake {
   0% { transform: scale(1); }
   25% { transform: scale(1.05) rotate(-2deg); }
@@ -69,30 +94,7 @@ body {
   animation: pulse-shake 0.2s ease-in-out;
 }
 
-/* --- Codex Progress Bar & Locked/Unlocked Tease Styles --- */
-
-.cdx-progress-bar {
-  background-color: var(--color-wiki-darkBg, #eaecf0);
-  border-radius: 2px;
-  overflow: hidden;
-  position: relative;
-  display: block;
-}
-
-.cdx-progress-bar--determinate {
-  /* Thick, clean progress bar */
-  height: 14px; 
-}
-
-.cdx-progress-bar__bar {
-  background-color: var(--color-wiki-blue, #36c);
-  height: 100%;
-  width: calc(100% * (var(--cdx-progress-value, 0) / var(--cdx-progress-max, 100)));
-  transition: width 0.1s ease-out;
-  border-radius: 2px;
-}
-
-/* Micro-interaction: Shaking lock icon */
+/* Shake lock icon when player tries to activate Gacha drop but it's locked */
 @keyframes lockShake {
   0%, 100% { transform: translateX(0); }
   20%, 60% { transform: translateX(-2px) rotate(-3deg); }
@@ -103,79 +105,45 @@ body {
   animation: lockShake 0.4s ease-in-out;
 }
 
-/* Normcore Unlock Animation: Subtle scale pop and progressive blue linear gradient pulse */
+/* Pop scaling for unlocked status */
 @keyframes scalePop {
   0% { transform: scale(1); }
   50% { transform: scale(1.04); }
   100% { transform: scale(1); }
 }
 
+.gacha-unlock-pop {
+  animation: scalePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Gradient shifting animations for active drops button */
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
-.gacha-unlock-pop {
-  animation: scalePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-.gacha-unlock-pulse {
-  background: linear-gradient(90deg, #36c, #4c82f7, #36c);
+.gacha-gradient-animation {
+  background: linear-gradient(90deg, var(--color-progressive), #4c82f7, var(--color-progressive));
   background-size: 200% auto;
-  animation: gradientShift 1s ease-out 2; /* Pulse shifts exactly 2 times at unlock, then stays clean/static progressive blue */
-  border-color: #36c !important;
-  color: #fff !important;
+  animation: gradientShift 1.5s ease-out infinite;
 }
 
-/* Utilitarian lock container shadow transition */
-.gacha-tease-container {
-  transition: border-color 0.5s ease, background-color 0.5s ease, box-shadow 0.5s ease;
+/* Correct/Incorrect evaluation stamp */
+.animate-stamp-scale {
+  animation: stampScale 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-.gacha-tease-container--unlocked {
-  border-color: #36c;
-  background-color: #f0f4fd;
-  box-shadow: 0 2px 8px rgba(51, 102, 204, 0.12);
+@keyframes stampScale {
+  0% { transform: scale(3.5); opacity: 0; }
+  100% { opacity: 1; }
 }
 
-/* Fallback styles for standard Codex buttons */
-.cdx-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Lato, Helvetica, Arial, sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  border-radius: 2px;
-  padding: 8px 16px;
-  border: 1px solid #a2a9b1;
-  background-color: #f8f9fa;
-  color: #202122;
-  cursor: pointer;
-  transition: background-color 0.1s, border-color 0.1s, color 0.1s;
-  box-sizing: border-box;
-  text-decoration: none;
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
 }
 
-.cdx-button--action-progressive.cdx-button--weight-primary {
-  background-color: var(--color-wiki-blue, #36c);
-  border-color: var(--color-wiki-blue, #36c);
-  color: #fff;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
-
-.cdx-button--action-progressive.cdx-button--weight-primary:hover {
-  background-color: var(--color-wiki-blueHover, #447ff5);
-  border-color: var(--color-wiki-blueHover, #447ff5);
-}
-
-.cdx-button:disabled,
-.cdx-button[disabled] {
-  background-color: #c8ccd1;
-  border-color: #c8ccd1;
-  color: #72777d;
-  cursor: not-allowed;
-}
-
-

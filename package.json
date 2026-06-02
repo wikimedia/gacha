@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
     "@wikimedia/codex": "^2.5.1",
     "@wikimedia/codex-design-tokens": "^2.5.1",
     "@wikimedia/codex-icons": "^2.5.1",

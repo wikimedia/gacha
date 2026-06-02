@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useGameStore } from './useGameStore';
+import { supabase } from '../supabase';
 
 export interface User {
   id: string;
@@ -21,147 +22,216 @@ export interface User {
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
   const isLoggedIn = ref<boolean>(false);
+  const isAuthInitialized = ref<boolean>(false);
 
-  // Initialize store from localStorage on startup
-  const initAuth = () => {
-    const cachedUser = localStorage.getItem('wiki_user');
-    const cachedIsLoggedIn = localStorage.getItem('wiki_is_logged_in');
-    
-    if (cachedUser && cachedIsLoggedIn === 'true') {
-      user.value = JSON.parse(cachedUser);
-      isLoggedIn.value = true;
-      
-      // Load current user's inventory and points into the game store
-      const gameStore = useGameStore();
-      gameStore.gdPoints = user.value?.gdPoints || 0;
-      gameStore.collectedCards = user.value?.collectedCards || [];
-    } else {
-      // Guest initialization - Game Store will read guest data from its own localStorage logic
-      isLoggedIn.value = false;
-      user.value = null;
+  // Sync game store states directly with the user store
+  const syncStoreToUser = async (points: number, cards: any[]) => {
+    if (user.value && isLoggedIn.value) {
+      user.value.gdPoints = points;
+      user.value.collectedCards = cards;
+
+      // Update locally in session storage cache
+      localStorage.setItem('wiki_user', JSON.stringify(user.value));
+
+      // Persist to Supabase User Metadata
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          gdPoints: points,
+          collectedCards: cards
+        }
+      });
+      if (error) {
+        console.error('Error syncing progress to Supabase:', error.message);
+      }
     }
   };
 
+  // Initialize store and subscribe to Supabase Auth Changes
+  const initAuth = () => {
+    if (isAuthInitialized.value) return;
+    isAuthInitialized.value = true;
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleAuthSession(session);
+    });
+
+    // Subscribe to auth state changes
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(`Supabase Auth Event: ${event}`);
+      handleAuthSession(session);
+    });
+  };
+
+  // Process session data and map it to our User interface
+  const handleAuthSession = async (session: any) => {
+    const gameStore = useGameStore();
+
+    if (session?.user) {
+      const su = session.user;
+      const metadata = su.user_metadata || {};
+      
+      const email = su.email || '';
+      const fallbackUsername = email.split('@')[0] || 'Scholar';
+      
+      const mappedUser: User = {
+        id: su.id,
+        username: metadata.username || fallbackUsername,
+        email: email,
+        profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${metadata.username || fallbackUsername}`,
+        bio: metadata.bio || 'Avid Moonflower scholar and collector.',
+        backgroundColor: metadata.backgroundColor || '#eaecf0',
+        gdPoints: typeof metadata.gdPoints === 'number' ? metadata.gdPoints : 0,
+        collectedCards: Array.isArray(metadata.collectedCards) ? metadata.collectedCards : []
+      };
+
+      user.value = mappedUser;
+      isLoggedIn.value = true;
+
+      // Save session cache for instant startup
+      localStorage.setItem('wiki_user', JSON.stringify(mappedUser));
+      localStorage.setItem('wiki_is_logged_in', 'true');
+
+      // Sync user data to active Game Store
+      gameStore.gdPoints = mappedUser.gdPoints;
+      gameStore.collectedCards = mappedUser.collectedCards;
+    } else {
+      user.value = null;
+      isLoggedIn.value = false;
+      localStorage.removeItem('wiki_user');
+      localStorage.setItem('wiki_is_logged_in', 'false');
+
+      // Reset game store to guest state
+      gameStore.loadGuestState();
+    }
+  };
+
+  // Step 1: Send Passcode (OTP)
+  const sendOtp = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin
+      }
+    });
+    if (error) throw error;
+  };
+
+  // Step 2: Verify Passcode (OTP) and log in
+  const verifyOtp = async (email: string, token: string) => {
+    const { data: { session }, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email'
+    });
+
+    if (error) throw error;
+
+    if (session?.user) {
+      // Merge guest progress upon successful login
+      const gameStore = useGameStore();
+      const guestPoints = gameStore.getGuestPoints();
+      const guestCards = gameStore.getGuestCards();
+
+      const su = session.user;
+      const metadata = su.user_metadata || {};
+      
+      const existingPoints = typeof metadata.gdPoints === 'number' ? metadata.gdPoints : 0;
+      const existingCards = Array.isArray(metadata.collectedCards) ? metadata.collectedCards : [];
+
+      // De-duplicate collected cards by ID when merging
+      const mergedCardsMap = new Map<string, typeof guestCards[0]>();
+      existingCards.forEach((c: any) => mergedCardsMap.set(c.id, c));
+      guestCards.forEach(c => {
+        if (!mergedCardsMap.has(c.id)) {
+          mergedCardsMap.set(c.id, c);
+        }
+      });
+
+      const finalPoints = existingPoints + guestPoints;
+      const finalCards = Array.from(mergedCardsMap.values());
+
+      // Update Supabase with merged properties
+      const username = metadata.username || email.split('@')[0] || 'Scholar';
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          username,
+          profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
+          bio: metadata.bio || 'Avid Moonflower scholar and collector.',
+          backgroundColor: metadata.backgroundColor || '#eaecf0',
+          gdPoints: finalPoints,
+          collectedCards: finalCards
+        }
+      });
+
+      if (updateError) {
+        console.error('Error saving merged user profile:', updateError.message);
+      }
+
+      // Sync active state in game store and clear guest cache
+      gameStore.syncWithUser(finalPoints, finalCards);
+      gameStore.clearGuestCache();
+    }
+  };
+
+  // Simulated login helper for Dev/Testing backwards compatibility
   const login = (emailOrUsername: string) => {
-    // V1 Simulation: Generate/load user
-    // If it looks like an email, extract username from it
     const isEmail = emailOrUsername.includes('@');
     const email = isEmail ? emailOrUsername : undefined;
     const username = isEmail ? emailOrUsername.split('@')[0] : emailOrUsername;
     const mockId = `usr_${username.toLowerCase()}`;
     
-    const existingUsersRaw = localStorage.getItem('wiki_registered_users');
-    const registeredUsers: Record<string, User> = existingUsersRaw ? JSON.parse(existingUsersRaw) : {};
-    
-    let existingUser = registeredUsers[mockId];
-    
-    const gameStore = useGameStore();
-    
-    if (!existingUser) {
-      // If user does not exist, create a new user profile and merge guest data
-      existingUser = {
-        id: mockId,
-        username,
-        email,
-        profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
-        bio: 'Avid Moonflower scholar and collector.',
-        backgroundColor: '#eaecf0', // default wiki grey background
-        gdPoints: 0,
-        collectedCards: []
-      };
-    }
+    const mappedUser: User = {
+      id: mockId,
+      username,
+      email,
+      profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
+      bio: 'Avid Moonflower scholar and collector.',
+      backgroundColor: '#eaecf0',
+      gdPoints: 0,
+      collectedCards: []
+    };
 
-    // Merge Guest Data!
-    const guestPoints = gameStore.getGuestPoints();
-    const guestCards = gameStore.getGuestCards();
-    
-    // De-duplicate collected cards by ID when merging
-    const mergedCardsMap = new Map<string, typeof existingUser.collectedCards[0]>();
-    existingUser.collectedCards.forEach(c => mergedCardsMap.set(c.id, c));
-    guestCards.forEach(c => {
-      if (!mergedCardsMap.has(c.id)) {
-        mergedCardsMap.set(c.id, c);
-      }
-    });
-    
-    existingUser.gdPoints += guestPoints;
-    existingUser.collectedCards = Array.from(mergedCardsMap.values());
-    
-    // Save to registered database
-    registeredUsers[mockId] = existingUser;
-    localStorage.setItem('wiki_registered_users', JSON.stringify(registeredUsers));
-    
-    // Set active session
-    user.value = existingUser;
+    user.value = mappedUser;
     isLoggedIn.value = true;
     
-    localStorage.setItem('wiki_user', JSON.stringify(existingUser));
+    localStorage.setItem('wiki_user', JSON.stringify(mappedUser));
     localStorage.setItem('wiki_is_logged_in', 'true');
     
-    // Sync active state to game store and clear temporary guest cache
-    gameStore.syncWithUser(existingUser.gdPoints, existingUser.collectedCards);
-    gameStore.clearGuestCache();
-  };
-
-  const signup = (username: string) => {
-    // Signup functions similarly to login in V1 mock environment
-    login(username);
-  };
-
-  const logout = () => {
-    // Save current state back to registered database before logging out
-    if (user.value) {
-      const gameStore = useGameStore();
-      user.value.gdPoints = gameStore.gdPoints;
-      user.value.collectedCards = gameStore.collectedCards;
-      
-      const mockId = user.value.id;
-      const existingUsersRaw = localStorage.getItem('wiki_registered_users');
-      const registeredUsers: Record<string, User> = existingUsersRaw ? JSON.parse(existingUsersRaw) : {};
-      registeredUsers[mockId] = user.value;
-      localStorage.setItem('wiki_registered_users', JSON.stringify(registeredUsers));
-    }
-    
-    user.value = null;
-    isLoggedIn.value = false;
-    localStorage.removeItem('wiki_user');
-    localStorage.setItem('wiki_is_logged_in', 'false');
-    
-    // Reset game store to fresh guest state
     const gameStore = useGameStore();
-    gameStore.loadGuestState();
+    gameStore.gdPoints = mappedUser.gdPoints;
+    gameStore.collectedCards = mappedUser.collectedCards;
   };
 
-  const updateProfile = (profileUpdate: Partial<Pick<User, 'profilePic' | 'username' | 'bio' | 'backgroundColor'>>) => {
+  // Log Out
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error logging out from Supabase:', error.message);
+    }
+  };
+
+  // Update Profile Information
+  const updateProfile = async (profileUpdate: Partial<Pick<User, 'profilePic' | 'username' | 'bio' | 'backgroundColor'>>) => {
     if (user.value) {
       user.value = {
         ...user.value,
         ...profileUpdate
       };
-      
-      localStorage.setItem('wiki_user', JSON.stringify(user.value));
-      
-      // Update in global registered users database
-      const mockId = user.value.id;
-      const existingUsersRaw = localStorage.getItem('wiki_registered_users');
-      const registeredUsers: Record<string, User> = existingUsersRaw ? JSON.parse(existingUsersRaw) : {};
-      registeredUsers[mockId] = user.value;
-      localStorage.setItem('wiki_registered_users', JSON.stringify(registeredUsers));
-    }
-  };
 
-  // Sync game store updates (points and cards) back to active user in localStorage
-  const syncStoreToUser = (points: number, cards: any[]) => {
-    if (user.value && isLoggedIn.value) {
-      user.value.gdPoints = points;
-      user.value.collectedCards = cards;
+      // Save local cache
       localStorage.setItem('wiki_user', JSON.stringify(user.value));
-      
-      const mockId = user.value.id;
-      const existingUsersRaw = localStorage.getItem('wiki_registered_users');
-      const registeredUsers: Record<string, User> = existingUsersRaw ? JSON.parse(existingUsersRaw) : {};
-      registeredUsers[mockId] = user.value;
-      localStorage.setItem('wiki_registered_users', JSON.stringify(registeredUsers));
+
+      // Persist metadata update to Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          ...profileUpdate
+        }
+      });
+
+      if (error) {
+        console.error('Error updating user profile metadata:', error.message);
+      }
     }
   };
 
@@ -169,8 +239,9 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     isLoggedIn,
     initAuth,
+    sendOtp,
+    verifyOtp,
     login,
-    signup,
     logout,
     updateProfile,
     syncStoreToUser
