@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore, MOCK_CARDS } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
-import AppHeader from '../components/AppHeader.vue';
+import PageLayout from '../components/PageLayout.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -94,10 +94,18 @@ onMounted(async () => {
   loadProfile();
 });
 
-// Watch route changes to load different users correctly
-watch(() => route.params.id, () => {
-  loadProfile();
+// Watch auth status and route changes reactively
+watch(() => authStore.isLoggedIn, (isLoggedIn) => {
+  if (!isLoggedIn) {
+    router.push('/');
+  } else {
+    loadProfile();
+  }
 });
+
+watch([() => authStore.user, () => route.params.id], () => {
+  loadProfile();
+}, { deep: true });
 
 // Form updates
 const handleSaveProfile = () => {
@@ -137,7 +145,7 @@ const profilePictureStyle = computed(() => {
     if (img.startsWith('linear-gradient') || img.startsWith('url(')) {
       return img;
     }
-    return `url(${img})`;
+    return `url("${img}")`;
   }
   
   // Fallback to default user profilePic if exists
@@ -146,7 +154,7 @@ const profilePictureStyle = computed(() => {
     if (fallback.startsWith('linear-gradient') || fallback.startsWith('url(')) {
       return fallback;
     }
-    return `url(${fallback})`;
+    return `url("${fallback}")`;
   }
   return '';
 });
@@ -173,37 +181,11 @@ const toggleCardShowcase = (cardId: string) => {
   gameStore.toggleShowcase(cardId);
   loadProfile();
 };
-
-// Header action handlers
-const handleAuthSuccess = () => {
-  loadProfile();
-};
-
-const handleLogout = () => {
-  authStore.logout();
-  router.push('/');
-};
-
-const handleActivate = () => {
-  router.push('/');
-};
 </script>
 
 <template>
-  <div 
-    class="min-h-screen flex flex-col font-sans transition-colors duration-300"
-    :style="{ backgroundColor: profileUser?.backgroundColor || '#eaecf0' }"
-  >
-    
-    <!-- UNIFIED HEADER COMPONENT -->
-    <AppHeader 
-      @activate="handleActivate" 
-      @login-success="handleAuthSuccess" 
-      @logout="handleLogout" 
-    />
-
-    <!-- CORE PROFILE WRAPPER -->
-    <main class="flex-grow p-4 max-w-lg mx-auto w-full flex flex-col gap-6">
+  <PageLayout :background-color="profileUser?.backgroundColor || undefined">
+    <div class="flex flex-col gap-6 w-full">
 
       <!-- PROFILE INFO BOX -->
       <section v-if="profileUser" class="card card-bordered bg-base-100 p-5 shadow shadow-sm relative text-left">
@@ -216,7 +198,7 @@ const handleActivate = () => {
             ✏️ Edit Profile
           </button>
           <button 
-            @click="handleLogout"
+            @click="authStore.logout()"
             class="btn btn-error btn-outline btn-xs uppercase font-bold"
           >
             🚪 Log Out
@@ -325,7 +307,7 @@ const handleActivate = () => {
         </div>
       </section>
 
-    </main>
+    </div>
 
     <!-- PRIVATE EDIT PROFILE DIALOG (DaisyUI Dialog Modal) -->
     <dialog class="modal modal-bottom sm:modal-middle" :class="{ 'modal-open': showEditProfileModal }">
@@ -398,7 +380,7 @@ const handleActivate = () => {
       </form>
     </dialog>
 
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>

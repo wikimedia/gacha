@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
-import AppHeader from '../components/AppHeader.vue';
+import PageLayout from '../components/PageLayout.vue';
+
+const route = useRoute();
+const router = useRouter();
 
 const authStore = useAuthStore();
 const gameStore = useGameStore();
@@ -95,15 +99,25 @@ const animateProgressBar = (start: number, end: number) => {
   requestAnimationFrame(update);
 };
 
-const handleAuthSuccess = () => {
-  updateCooldowns();
-  displayedPoints.value = gameStore.gdPoints;
+// Reactively sync displayed points when not in-game
+watch(() => gameStore.gdPoints, (newPoints) => {
+  if (!gameActive.value) {
+    displayedPoints.value = newPoints;
+  }
+});
+
+const checkTriggerGacha = () => {
+  if (route.query.triggerGacha === 'true') {
+    if (authStore.isLoggedIn && gameStore.gdPoints >= 100) {
+      router.replace({ query: {} });
+      startGachaDrop();
+    }
+  }
 };
 
-const handleLogout = () => {
-  updateCooldowns();
-  displayedPoints.value = gameStore.gdPoints;
-};
+watch([() => authStore.isLoggedIn, () => gameStore.gdPoints], () => {
+  checkTriggerGacha();
+});
 
 // DEV / DEBUG BUILD HELPERS
 const isDev = import.meta.env.DEV;
@@ -146,6 +160,8 @@ onMounted(async () => {
   setInterval(() => {
     updateCooldowns();
   }, 1000);
+
+  checkTriggerGacha();
 });
 
 // Category selection & game initialization
@@ -337,23 +353,60 @@ const handleGachaGlobeTap = () => {
   // Insert at front of display deck
   gachaDroppedCards.value.unshift(randomCard);
 };
+
+const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geography') => {
+  switch (cat) {
+    case 'History':
+      return {
+        emoji: '🏛️',
+        bgClass: 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-900/30',
+        borderClass: 'border-amber-200 hover:border-amber-400 dark:border-amber-900/40 dark:hover:border-amber-700/60',
+        textClass: 'text-amber-900 dark:text-amber-100',
+        iconBg: 'bg-amber-100/80 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',
+        arrowColorClass: 'text-amber-200 group-hover:text-amber-400 dark:text-amber-900/40 dark:group-hover:text-amber-700/60',
+        titleColorClass: 'text-amber-600 group-hover:text-amber-700 dark:text-amber-400 dark:group-hover:text-amber-300'
+      };
+    case 'Science':
+      return {
+        emoji: '🧪',
+        bgClass: 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30',
+        borderClass: 'border-emerald-200 hover:border-emerald-400 dark:border-emerald-900/40 dark:hover:border-emerald-700/60',
+        textClass: 'text-emerald-900 dark:text-emerald-100',
+        iconBg: 'bg-emerald-100/80 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200',
+        arrowColorClass: 'text-emerald-200 group-hover:text-emerald-400 dark:text-emerald-900/40 dark:group-hover:text-emerald-700/60',
+        titleColorClass: 'text-emerald-600 group-hover:text-emerald-700 dark:text-emerald-400 dark:group-hover:text-emerald-300'
+      };
+    case 'Pop Culture':
+      return {
+        emoji: '🍿',
+        bgClass: 'bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/20 dark:hover:bg-purple-900/30',
+        borderClass: 'border-purple-200 hover:border-purple-400 dark:border-purple-900/40 dark:hover:border-purple-700/60',
+        textClass: 'text-purple-900 dark:text-purple-100',
+        iconBg: 'bg-purple-100/80 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200',
+        arrowColorClass: 'text-purple-200 group-hover:text-purple-400 dark:text-purple-900/40 dark:group-hover:text-purple-700/60',
+        titleColorClass: 'text-purple-600 group-hover:text-purple-700 dark:text-purple-400 dark:group-hover:text-purple-300'
+      };
+    case 'Geography':
+      return {
+        emoji: '🌍',
+        bgClass: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/20 dark:hover:bg-blue-900/30',
+        borderClass: 'border-blue-200 hover:border-blue-400 dark:border-blue-900/40 dark:hover:border-blue-700/60',
+        textClass: 'text-blue-900 dark:text-blue-100',
+        iconBg: 'bg-blue-100/80 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
+        arrowColorClass: 'text-blue-200 group-hover:text-blue-400 dark:text-blue-900/40 dark:group-hover:text-blue-700/60',
+        titleColorClass: 'text-blue-600 group-hover:text-blue-700 dark:text-blue-400 dark:group-hover:text-blue-300'
+      };
+  }
+};
 </script>
 
 <template>
-  <div class="min-h-screen bg-base-200/40 flex flex-col font-sans text-base-content">
-    
-    <!-- UNIFIED HEADER COMPONENT -->
-    <AppHeader 
-      ref="headerRef"
-      :displayed-points="displayedPoints" 
-      :gacha-active="gachaActive || showGachaSummary" 
-      @activate="startGachaDrop" 
-      @login-success="handleAuthSuccess" 
-      @logout="handleLogout" 
-    />
-
-    <!-- MAIN APP WRAPPER -->
-    <main class="flex-grow p-4 max-w-md mx-auto w-full flex flex-col justify-between relative">
+  <PageLayout
+    ref="headerRef"
+    :displayed-points="displayedPoints" 
+    :gacha-active="gachaActive || showGachaSummary" 
+    @activate="startGachaDrop" 
+  >
 
       <!-- FAKEOUT GAME CATEGORY SELECTION -->
       <section v-if="!gameActive && !gachaActive && !showGachaSummary" class="flex-grow flex flex-col gap-6 justify-center py-6">
@@ -397,32 +450,56 @@ const handleGachaGlobeTap = () => {
           <h3 class="text-xs font-black text-secondary uppercase tracking-widest text-left pl-1">
             Select category to play
           </h3>
-          <div class="flex flex-col gap-3">
+          <div class="grid grid-cols-2 gap-4">
             <button
-              v-for="cat in ['History', 'Science', 'Pop Culture', 'Geography']"
+              v-for="cat in (['History', 'Science', 'Pop Culture', 'Geography'] as const)"
               :key="cat"
-              @click="startFakeoutGame(cat as any)"
+              @click="startFakeoutGame(cat)"
               :disabled="!!cooldownTimers[cat]"
-              class="btn btn-outline border-base-300 hover:border-primary/50 h-auto py-3.5 px-4 flex justify-between items-center bg-base-100 hover:bg-base-200 active:bg-base-300 w-full rounded shadow-sm text-left"
+              class="relative flex flex-col justify-between items-start p-4 h-36 rounded-xl border text-left transition-all duration-300 hover:scale-[1.03] active:scale-95 shadow-sm cursor-pointer group"
               :class="[
-                cooldownTimers[cat] 
-                  ? 'opacity-60 cursor-not-allowed bg-base-200 hover:bg-base-200 text-base-content/50 border-base-300' 
-                  : 'text-base-content hover:text-base-content'
+                cooldownTimers[cat]
+                  ? 'bg-base-200 border-base-300 text-base-content/40 opacity-70 cursor-not-allowed'
+                  : `${getCategoryDetails(cat).bgClass} ${getCategoryDetails(cat).borderClass} ${getCategoryDetails(cat).textClass}`
               ]"
             >
-              <div class="flex flex-col">
-                <span class="font-serif font-black text-base">{{ cat }}</span>
-                <span v-if="cooldownTimers[cat]" class="text-[10px] text-error font-sans font-semibold mt-1">
-                  Cooldown: {{ cooldownTimers[cat] }}s
+              <!-- Top Row: Emoji and Cooldown/Arrow -->
+              <div class="flex justify-between items-center w-full">
+                <!-- Emoji badge with smooth hover spin or lift -->
+                <span 
+                  class="text-2xl p-2.5 rounded-lg transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 flex items-center justify-center"
+                  :class="cooldownTimers[cat] ? 'bg-base-300 grayscale' : getCategoryDetails(cat).iconBg"
+                >
+                  {{ getCategoryDetails(cat).emoji }}
                 </span>
-                <span v-else class="text-[10px] text-secondary font-sans font-light mt-0.5">
-                  10 cards • swipe mode
-                </span>
+                
+                <!-- Action / Cooldown icon -->
+                <div class="flex items-center">
+                  <span v-if="cooldownTimers[cat]" class="text-xs">
+                    🔒
+                  </span>
+                  <span 
+                    v-else 
+                    class="text-lg opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
+                    :class="getCategoryDetails(cat).arrowColorClass"
+                  >
+                    →
+                  </span>
+                </div>
               </div>
               
-              <div class="flex items-center gap-2">
-                <span v-if="cooldownTimers[cat]" class="text-xs">🔒</span>
-                <span v-else class="text-primary font-black text-lg">→</span>
+              <!-- Bottom Row: Title and details -->
+              <div class="w-full mt-auto">
+                <h4 
+                  class="font-serif font-black text-base leading-tight text-base-content"
+                  :class="{ 'opacity-40': cooldownTimers[cat] }"
+                >
+                  {{ cat }}
+                </h4>
+                <!-- Cooldown text if locked -->
+                <div v-if="cooldownTimers[cat]" class="text-[9px] text-error font-sans font-bold mt-1.5 animate-pulse">
+                  Locked ({{ cooldownTimers[cat] }}s)
+                </div>
               </div>
             </button>
           </div>
@@ -456,10 +533,10 @@ const handleGachaGlobeTap = () => {
         </div>
 
         <!-- Swiping Card Area -->
-        <div class="flex-grow flex items-center justify-center my-2 relative min-h-[410px]">
+        <div class="flex-grow flex items-center justify-center my-2 relative min-h-[430px]">
           
           <!-- Centered wrapper container -->
-          <div class="relative w-full max-w-[280px] h-[380px]">
+          <div class="relative w-full max-w-[280px] h-[400px]">
             
             <div class="stack select-none w-full h-full">
               
@@ -655,7 +732,5 @@ const handleGachaGlobeTap = () => {
         </div>
       </section>
 
-    </main>
-
-  </div>
+  </PageLayout>
 </template>

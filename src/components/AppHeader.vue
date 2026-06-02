@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 
@@ -18,6 +19,21 @@ const emit = defineEmits<{
 
 const authStore = useAuthStore();
 const gameStore = useGameStore();
+const router = useRouter();
+const route = useRoute();
+
+const handleActivateClick = () => {
+  if (route.path !== '/') {
+    router.push({ path: '/', query: { triggerGacha: 'true' } });
+  } else {
+    emit('activate');
+  }
+};
+
+const handleLogout = async () => {
+  await authStore.logout();
+  emit('logout');
+};
 
 // Points display fallback to store
 const points = computed(() => props.displayedPoints !== undefined ? props.displayedPoints : gameStore.gdPoints);
@@ -121,11 +137,11 @@ defineExpose({
       <!-- Right: Action Button & Login/Profile Group -->
       <div class="flex items-center gap-2 flex-shrink-0">
         <!-- Gacha Action Button -->
-        <div class="w-[85px]">
+        <div class="w-[85px]" @click="points < 100 ? triggerLockShake() : null">
           <!-- Active progressive primary button styled like Log In but excited -->
           <button 
             v-if="points >= 100"
-            @click="emit('activate')"
+            @click.stop="handleActivateClick"
             class="btn btn-primary btn-xs w-full text-[9px] font-black uppercase text-white gacha-gradient-animation select-none shadow hover:scale-105 active:scale-95 transition-transform"
           >
             ⚡ Activate
@@ -134,8 +150,8 @@ defineExpose({
           <!-- Disabled locked state button -->
           <button 
             v-else
-            @click="triggerLockShake"
-            class="btn btn-neutral btn-outline btn-xs w-full text-[9px] flex items-center justify-center gap-1 select-none opacity-60 cursor-not-allowed"
+            disabled
+            class="btn btn-xs w-full text-[9px] flex items-center justify-center gap-1 select-none"
           >
             <span 
               class="inline-block transition-transform duration-200"
@@ -174,7 +190,7 @@ defineExpose({
                 </router-link>
               </li>
               <li>
-                <button @click="emit('logout')" class="text-error hover:bg-error/10 font-bold py-2 px-4 rounded">
+                <button @click="handleLogout" class="text-error hover:bg-error/10 font-bold py-2 px-4 rounded">
                   🚪 Log Out
                 </button>
               </li>

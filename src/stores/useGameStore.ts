@@ -533,6 +533,106 @@ export const useGameStore = defineStore('game', () => {
     localStorage.removeItem(CARDS_GUEST_KEY);
   };
 
+  // Helper to filter out explicit, sexually suggestive, or inappropriate Wikipedia entries
+  const isAppropriateArticle = (row: any): boolean => {
+    const name = (row.name || '').toLowerCase();
+    const desc = (row.description || row.abstract || '').toLowerCase();
+    const categories = (row.categories || '').toLowerCase();
+    const combinedText = `${name} | ${desc} | ${categories}`;
+
+    // List of explicit/inappropriate terms (case-insensitive substrings)
+    const explicitSubstrings = [
+      'bukkake',
+      'hentai',
+      'pornograph', // covers porn, pornography, pornographic, porn star, etc.
+      'creampie',
+      'pegging',
+      'fellatio',
+      'cunnilingus',
+      'anilingus',
+      'masturbat', // covers masturbate, masturbation
+      'bestiality',
+      'ejaculat', // covers ejaculate, ejaculation, pre-ejaculate
+      'futanari',
+      'xvideos',
+      'chaturbate',
+      'stripchat',
+      'redgifs',
+      'rule 34',
+      '2 girls 1 cup',
+      'facesitting',
+      'handjob',
+      'blowjob',
+      'gangbang',
+      'gang bang',
+      'double penetration',
+      'threesome',
+      'orgy',
+      'orgies',
+      'doggy style',
+      'erotica',
+      'sadomasochis',
+      'bdsm',
+      'clop (erotic',
+      'vulva',
+      'clitoris',
+      'penile-vaginal',
+      'penile–vaginal',
+      'sexual penetration',
+      'sexual stimulation',
+      'sexual fetish',
+      'erotic lactation',
+      'erotic humiliation',
+      'rape pornography',
+      'hardcore pornography',
+      'unsimulated sex',
+      'celebrity sex tape',
+      'child sexual abuse'
+    ];
+
+    for (const term of explicitSubstrings) {
+      if (combinedText.includes(term)) {
+        return false;
+      }
+    }
+
+    // Standalone word 'sex' check, ignoring 'same-sex' and 'opposite-sex'
+    const sexRegex = /(?<!\b(same|opposite)-)\bsex\b/i;
+    if (sexRegex.test(name) || sexRegex.test(desc) || sexRegex.test(categories)) {
+      return false;
+    }
+
+    // Standalone 'sexual' check, ignoring 'sexual dimorphism', 'sexual reproduction', 'sexual selection', 'sexual orientation', 'sexual identity'
+    const sexualRegex = /\bsexual\b/i;
+    if (sexualRegex.test(name) || sexualRegex.test(desc) || sexualRegex.test(categories)) {
+      const textWithoutBio = combinedText
+        .replace(/sexual dimorphism/g, '')
+        .replace(/sexual reproduction/g, '')
+        .replace(/sexual selection/g, '')
+        .replace(/sexual orientation/g, '')
+        .replace(/sexual identity/g, '');
+      if (sexualRegex.test(textWithoutBio)) {
+        return false;
+      }
+    }
+
+    // Standalone 'penis', 'vagina', 'semen', 'orgasm'
+    const otherExplicitWords = /\b(penis|vagina|semen|orgasm)\b/i;
+    if (otherExplicitWords.test(name) || otherExplicitWords.test(desc) || otherExplicitWords.test(categories)) {
+      return false;
+    }
+
+    // Standalone 'sperm' but not 'sperm whale'
+    if (/\bsperm\b/i.test(combinedText)) {
+      const textWithoutWhale = combinedText.replace(/sperm whale/g, '');
+      if (/\bsperm\b/i.test(textWithoutWhale)) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   // Fetch articles from Supabase and map them to Cards dynamically
   const loadCardsFromDatabase = async () => {
     try {
@@ -544,6 +644,8 @@ export const useGameStore = defineStore('game', () => {
       }
 
       if (data && data.length > 0) {
+        // Prepare filtered data for fake card generation source
+        const filteredData = data.filter((row: any) => isAppropriateArticle(row));
         const mapped: Card[] = [];
         
         data.forEach((row: any) => {
@@ -598,7 +700,7 @@ export const useGameStore = defineStore('game', () => {
           // 3. Format visual background image (only show if image_url is non-null on Supabase)
           let image = '';
           if (row.image_url) {
-            image = row.image_url.startsWith('linear-gradient') ? row.image_url : `url(${row.image_url})`;
+            image = row.image_url;
           }
 
           // 4. Construct descriptions & dynamic sentence-swapped alterations
@@ -609,7 +711,7 @@ export const useGameStore = defineStore('game', () => {
           const combinedSentences = [s1, s2, s3, s4].filter(Boolean).join(' ');
           const realDescription = row.description || row.abstract || combinedSentences || 'No description available.';
 
-          // 4a. Add Real Card
+          // 4a. Add Real Card (Always added, unfiltered)
           mapped.push({
             id: row.qid,
             title: row.name || 'Untitled Article',
@@ -623,25 +725,36 @@ export const useGameStore = defineStore('game', () => {
           });
 
           // 4b. Find another article to swap the 4th sentence for the Fake Card
-          const otherRowsWithS4 = data.filter((r: any) => r.qid !== row.qid && r.sentence_4);
-          const randomOtherRow = otherRowsWithS4[Math.floor(Math.random() * otherRowsWithS4.length)];
-          const replacementSentence4 = randomOtherRow ? randomOtherRow.sentence_4 : 'This was later proven to be a elaborate hoax invented by student editors.';
-          const replacementName = randomOtherRow ? randomOtherRow.name : 'an altered entry';
-          
-          const fakeDescription = [s1, s2, s3, replacementSentence4].filter(Boolean).join(' ');
+          // We only generate a fake card if the base card itself is appropriate, to avoid inappropriate fake cards
+          if (isAppropriateArticle(row)) {
+            const otherRowsWithS4 = filteredData.filter((r: any) => r.qid !== row.qid && r.sentence_4);
+            const randomOtherRow = otherRowsWithS4[Math.floor(Math.random() * otherRowsWithS4.length)];
+            const replacementSentence4 = randomOtherRow ? randomOtherRow.sentence_4 : 'This was later proven to be a elaborate hoax invented by student editors.';
+            const replacementName = randomOtherRow ? randomOtherRow.name : 'an altered entry';
+            
+            const fakeDescription = [s1, s2, s3, replacementSentence4].filter(Boolean).join(' ');
 
-          // Add Altered (Fake) Card
-          mapped.push({
-            id: `${row.qid}_fake`,
-            title: row.name || 'Untitled Article',
-            wikipediaLink: row.url || `https://en.wikipedia.org/wiki/${encodeURIComponent(row.name || '')}`,
-            category,
-            rarity,
-            description: fakeDescription,
-            image,
-            isReal: false,
-            explanation: `Fake! The entry was altered. The final sentence ("${replacementSentence4.slice(0, 60)}...") actually belongs to the Wikipedia article for "${replacementName}".`
-          });
+            // Use the replacement article's image (which is a wikimedia commons url) for the fake card
+            let fakeImage = '';
+            if (randomOtherRow && randomOtherRow.image_url) {
+              fakeImage = randomOtherRow.image_url;
+            } else {
+              fakeImage = image;
+            }
+
+            // Add Altered (Fake) Card
+            mapped.push({
+              id: `${row.qid}_fake`,
+              title: row.name || 'Untitled Article',
+              wikipediaLink: row.url || `https://en.wikipedia.org/wiki/${encodeURIComponent(row.name || '')}`,
+              category,
+              rarity,
+              description: fakeDescription,
+              image: fakeImage,
+              isReal: false,
+              explanation: `Fake! The entry was altered. The final sentence ("${replacementSentence4.slice(0, 60)}...") actually belongs to the Wikipedia article for "${replacementName}".`
+            });
+          }
         });
 
         gameCards.value = mapped;
@@ -656,6 +769,7 @@ export const useGameStore = defineStore('game', () => {
       gameCards.value = MOCK_CARDS;
     }
   };
+
 
   // Add GD Points
   const addPoints = (points: number) => {
