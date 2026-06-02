@@ -159,6 +159,15 @@ const profilePictureStyle = computed(() => {
   return '';
 });
 
+const avatarSrc = computed(() => {
+  return pinnedCard.value?.image || profileUser.value?.profilePic || '';
+});
+
+const isAvatarCSSImage = computed(() => {
+  const val = avatarSrc.value;
+  return val.startsWith('linear-gradient') || val.startsWith('url(');
+});
+
 const sortedBinderCards = computed(() => {
   return profileCards.value.map(c => {
     const cardData = gameStore.gameCards.find(mc => mc.id === c.id) || MOCK_CARDS.find(mc => mc.id === c.id);
@@ -184,128 +193,122 @@ const toggleCardShowcase = (cardId: string) => {
 </script>
 
 <template>
-  <PageLayout :background-color="profileUser?.backgroundColor || undefined">
+  <PageLayout is-wide :background-color="profileUser?.backgroundColor || undefined" @edit-profile="showEditProfileModal = true">
     <div class="flex flex-col gap-6 w-full">
 
       <!-- PROFILE INFO BOX -->
-      <section v-if="profileUser" class="card card-bordered bg-base-100 p-5 shadow shadow-sm relative text-left">
-        <!-- Private Edit & Log Out Buttons -->
-        <div v-if="isPrivateMode" class="absolute top-4 right-4 flex gap-2">
-          <button 
-            @click="showEditProfileModal = true"
-            class="btn btn-neutral btn-outline btn-xs uppercase font-bold"
-          >
-            ✏️ Edit Profile
-          </button>
-          <button 
-            @click="authStore.logout()"
-            class="btn btn-error btn-outline btn-xs uppercase font-bold"
-          >
-            🚪 Log Out
-          </button>
-        </div>
-
-        <div class="flex gap-4 items-center mb-4">
+      <header v-if="profileUser" class="relative text-left pb-6 border-b border-base-300">
+        <div class="flex flex-col md:flex-row gap-6 items-start md:items-center">
           <!-- Pinned Card Image as User Profile Image -->
           <div class="avatar">
-            <div class="w-16 h-16 rounded-full border border-base-300 overflow-hidden bg-base-300 flex items-center justify-center shadow-inner relative">
-              <div 
-                v-if="profilePictureStyle"
-                class="w-full h-full animate-fade-in"
-                :key="profilePictureStyle"
-                :style="{ 
-                  backgroundImage: profilePictureStyle,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat'
-                }"
-              ></div>
-              <span v-else class="text-secondary text-2xl">👤</span>
+            <div class="w-20 h-20 rounded-full border-2 border-base-300 overflow-hidden bg-base-300 flex items-center justify-center shadow-inner relative">
+              <template v-if="avatarSrc">
+                <div 
+                  v-if="isAvatarCSSImage"
+                  class="w-full h-full animate-fade-in"
+                  :key="profilePictureStyle"
+                  :style="{ 
+                    backgroundImage: profilePictureStyle,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                  }"
+                ></div>
+                <img 
+                  v-else
+                  :src="avatarSrc"
+                  referrerpolicy="no-referrer"
+                  class="w-full h-full object-cover animate-fade-in"
+                  alt="Profile Avatar"
+                />
+              </template>
+              <span v-else class="text-secondary text-3xl">👤</span>
             </div>
           </div>
 
-          <div class="flex flex-col text-left">
-            <h2 class="font-serif text-2xl text-base-content font-black m-0 leading-tight">
-              {{ profileUser.username }}
-            </h2>
-            <span class="badge badge-primary badge-xs font-bold uppercase tracking-wider mt-1 px-2 py-1.5">
-              {{ isPrivateMode ? 'Private Binder Access' : 'Public Binder View' }}
-            </span>
+          <div class="flex flex-col text-left max-w-xl flex-1">
+            <div class="flex flex-wrap items-center gap-3">
+              <h2 class="font-serif text-3xl text-base-content font-black m-0 leading-none">
+                {{ profileUser.username }}
+              </h2>
+            </div>
+            <p class="text-xs text-base-content/85 leading-relaxed font-light mt-3">
+              {{ profileUser.bio }}
+            </p>
+          </div>
+
+          <!-- Stats Display integrated without a card style -->
+          <div class="flex gap-6 md:ml-auto md:border-l md:border-base-300 md:pl-8 mt-2 md:mt-0">
+            <div>
+              <div class="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">GD Points</div>
+              <div class="text-3xl font-serif font-black text-primary leading-none">{{ profileUser.gdPoints }}</div>
+            </div>
+            <div class="border-l border-base-300 pl-6">
+              <div class="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">Cards</div>
+              <div class="text-3xl font-serif font-black text-secondary leading-none">{{ profileCards.length }}</div>
+            </div>
           </div>
         </div>
-
-        <p class="text-xs text-base-content/85 leading-relaxed font-light mt-2">
-          {{ profileUser.bio }}
-        </p>
-
-        <!-- Stats Display using DaisyUI Stats widget -->
-        <div class="stats stats-horizontal shadow-sm border border-base-200 w-full mt-4 bg-base-200/40">
-          <div class="stat p-3">
-            <div class="stat-title text-[10px] font-bold uppercase tracking-widest text-secondary">GD Points</div>
-            <div class="stat-value text-primary font-mono text-xl">{{ profileUser.gdPoints }}</div>
-          </div>
-          <div class="stat p-3 border-l border-base-200">
-            <div class="stat-title text-[10px] font-bold uppercase tracking-widest text-secondary">Collected Entries</div>
-            <div class="stat-value text-secondary font-mono text-xl">{{ profileCards.length }}</div>
-          </div>
-        </div>
-
-      </section>
+      </header>
 
       <!-- BINDER CARD DIRECTORY & COLLECTIONS -->
-      <section class="card card-bordered bg-base-100 p-5 shadow shadow-sm text-left">
+      <div class="flex flex-col gap-6 text-left py-4">
         
-        <div class="flex items-center justify-between border-b border-base-300 pb-2 mb-4">
-          <h3 class="font-serif text-lg text-base-content font-black m-0">
-            Collected Encyclopedia Binder
-          </h3>
-          <span class="badge badge-neutral font-sans font-bold">
-            Count: {{ profileCards.length }} items
-          </span>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-base-300 pb-3">
+          <div>
+            <h3 class="font-serif text-xl text-base-content font-black m-0">
+              Collected Encyclopedia Binder
+            </h3>
+            <p class="text-xs text-secondary mt-1 font-light">
+              Browse and manage your unlocked encyclopedia entries.
+            </p>
+          </div>
         </div>
 
         <!-- Search Panel -->
-        <div class="mb-4 font-sans text-xs">
+        <div class="w-full font-sans text-xs">
           <input 
             v-model="searchFilter"
             type="text" 
             placeholder="Search cards by name..."
-            class="input input-bordered w-full input-sm"
+            class="input input-bordered w-full max-w-md input-sm bg-white"
           >
         </div>
 
         <!-- Grid of Cards -->
-        <div v-if="sortedBinderCards.length === 0" class="text-xs text-secondary italic text-center py-12 bg-base-200/20 border border-base-300 rounded">
+        <div v-if="sortedBinderCards.length === 0" class="text-xs text-secondary italic text-center py-16 bg-white/10 border border-base-300/40 rounded-lg">
           No matching cards discovered in this binder.
         </div>
         
-        <div v-else class="grid grid-cols-2 gap-4 justify-items-center">
+        <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 justify-items-center">
           <div 
             v-for="card in sortedBinderCards" 
             :key="card.id" 
-            class="w-full max-w-[200px] flex flex-col items-center relative animate-fade-in"
+            class="w-full max-w-[280px] flex flex-col items-center relative animate-fade-in"
           >
-            <!-- Card itself -->
-            <CardComp :card="card" :show-link="true" class="scale-[0.9] origin-top" />
-            
-            <!-- Actions bar (only for Private owner) -->
-            <div v-if="isPrivateMode" class="w-full max-w-[180px] flex flex-col gap-1 -mt-4 mb-2 z-10">
-              <!-- Pinned Card Toggle Button -->
+            <!-- Card Wrapper to support absolute overlay -->
+            <div class="relative w-full">
+              <!-- Card itself (no downscaling) -->
+              <CardComp :card="card" :show-link="true" />
+              
+              <!-- Pin Toggle Button overlay at top-right of the card (only for Private owner) -->
               <button 
+                v-if="isPrivateMode"
                 @click="toggleCardShowcase(card.id)"
-                class="btn btn-xs w-full font-bold shadow-sm"
+                class="absolute top-2.5 right-2.5 z-20 btn btn-circle btn-xs shadow-md border"
                 :class="[
                   card.isShowcase 
-                    ? 'btn-warning text-warning-content' 
-                    : 'btn-neutral btn-outline'
+                    ? 'btn-warning text-warning-content border-warning' 
+                    : 'bg-white/90 hover:bg-white text-base-content/75 border-base-300'
                 ]"
+                :title="card.isShowcase ? 'Unpin from Profile' : 'Pin to Profile'"
               >
-                {{ card.isShowcase ? '📌 Pinned to Profile' : '☆ Pin to Profile' }}
+                {{ card.isShowcase ? '📌' : '☆' }}
               </button>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
     </div>
 
@@ -384,8 +387,5 @@ const toggleCardShowcase = (cardId: string) => {
 </template>
 
 <style scoped>
-/* Scaling fixes for card nested cards in grids */
-.scale-\[0\.9\] {
-  transform: scale(0.9);
-}
+/* Scoped styles for the profile view */
 </style>

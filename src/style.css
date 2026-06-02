@@ -171,3 +171,42 @@ body {
   position: relative;
 }
 
+.app-page-main-wide {
+  max-width: 80rem !important;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* Custom GP Progress Bar animations */
+@keyframes gp-ready-pulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(54, 108, 204, 0.4), inset 0 0 4px rgba(54, 108, 204, 0.2);
+    border-color: rgba(54, 108, 204, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(54, 108, 204, 0.8), inset 0 0 8px rgba(54, 108, 204, 0.4);
+    border-color: rgba(54, 108, 204, 1);
+  }
+}
+
+.gp-ready-glow {
+  animation: gp-ready-pulse 2s infinite ease-in-out;
+}
+
+@keyframes progress-shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+
+.progress-shimmer-fill {
+  background: linear-gradient(
+    90deg,
+    var(--color-primary) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    var(--color-primary) 100%
+  );
+  background-size: 200px 100%;
+  animation: progress-shimmer 1.5s infinite linear;
+}
+
+

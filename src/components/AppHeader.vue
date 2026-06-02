@@ -15,6 +15,7 @@ const emit = defineEmits<{
   (e: 'activate'): void;
   (e: 'login-success'): void;
   (e: 'logout'): void;
+  (e: 'edit-profile'): void;
 }>();
 
 const authStore = useAuthStore();
@@ -37,6 +38,16 @@ const handleLogout = async () => {
 
 // Points display fallback to store
 const points = computed(() => props.displayedPoints !== undefined ? props.displayedPoints : gameStore.gdPoints);
+
+// Check if viewing own profile
+const isOwnProfile = computed(() => {
+  if (route.name !== 'profile') return false;
+  if (!authStore.isLoggedIn || !authStore.user) return false;
+  const profileId = (route.params.id as string) || '';
+  if (!profileId) return false;
+  return authStore.user.username.toLowerCase() === profileId.toLowerCase() ||
+         authStore.user.id.toLowerCase() === profileId.toLowerCase();
+});
 
 // Auth modal state
 const showAuthModal = ref(false);
@@ -125,14 +136,48 @@ defineExpose({
         </div>
       </router-link>
 
-      <!-- Middle: Segmented/Continuous Goal Tracker (DaisyUI Progress) -->
-      <div class="flex-grow flex justify-center max-w-[140px] min-w-[50px]" role="img" aria-label="Gacha Drop progress">
-        <progress 
-          class="progress progress-primary w-full h-3 border border-base-300 rounded" 
-          :value="points" 
-          max="100"
-        ></progress>
+      <!-- Middle: Segmented/Continuous Goal Tracker (Custom GP Gauge) -->
+      <div 
+        class="tooltip tooltip-bottom flex-grow flex flex-col justify-center max-w-[140px] min-w-[80px] select-none cursor-help"
+        data-tip="Earn 100 Gacha Points (GP) to activate a Gacha Drop!"
+        role="img" 
+        aria-label="Gacha Drop progress"
+      >
+        <div class="flex justify-between items-center w-full text-[8px] font-sans font-extrabold uppercase tracking-wider mb-0.5">
+          <span class="text-secondary">GP Charge</span>
+          <span :class="points >= 100 ? 'text-primary font-black animate-pulse' : 'text-base-content/70'">{{ points }}/100</span>
+        </div>
+        <div 
+          class="relative w-full h-3.5 bg-base-200 border border-base-300 rounded-full shadow-inner flex items-center transition-all duration-300"
+          :class="{ 'gp-ready-glow border-primary bg-primary/5': points >= 100 }"
+        >
+          <!-- Faint tick marks for visual interest / game gauge look -->
+          <div class="absolute left-1/4 top-0 bottom-0 w-[1px] bg-base-content/10 z-10"></div>
+          <div class="absolute left-1/2 top-0 bottom-0 w-[1px] bg-base-content/10 z-10"></div>
+          <div class="absolute left-3/4 top-0 bottom-0 w-[1px] bg-base-content/10 z-10"></div>
+          
+          <!-- Progress Fill -->
+          <div 
+            class="h-full rounded-full transition-all duration-300 ease-out z-0"
+            :class="[
+              points >= 100 
+                ? 'gacha-gradient-animation' 
+                : 'progress-shimmer-fill'
+            ]"
+            :style="{ width: `${Math.min(points, 100)}%` }"
+          ></div>
+          
+          <!-- Interactive Sliding Handle Emoji -->
+          <span 
+            class="absolute text-[12px] transition-all duration-300 ease-out -translate-x-1/2 select-none pointer-events-none z-20"
+            :class="{ 'animate-bounce': points >= 100 }"
+            :style="{ left: `${Math.min(points, 100)}%` }"
+          >
+            {{ points >= 100 ? '⭐' : '🔮' }}
+          </span>
+        </div>
       </div>
+
 
       <!-- Right: Action Button & Login/Profile Group -->
       <div class="flex items-center gap-2 flex-shrink-0">
@@ -180,21 +225,26 @@ defineExpose({
             <label tabindex="0" class="btn btn-ghost btn-xs gap-1 font-bold text-primary truncate max-w-[110px] px-1">
               👤 {{ authStore.user?.username }}
             </label>
-            <ul tabindex="0" class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box border border-base-300 w-52 mt-2 gap-1 text-sm">
-              <li class="menu-title text-xs font-semibold px-4 py-2 border-b border-base-200 text-secondary mb-1">
-                Binder Dashboard
-              </li>
-              <li>
-                <router-link :to="authStore.user ? '/@' + authStore.user.username : '/'" class="font-medium text-base-content py-2 px-4 hover:bg-base-200 rounded">
-                  📖 View Collection
-                </router-link>
-              </li>
-              <li>
-                <button @click="handleLogout" class="text-error hover:bg-error/10 font-bold py-2 px-4 rounded">
-                  🚪 Log Out
-                </button>
-              </li>
-            </ul>
+             <ul tabindex="0" class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box border border-base-300 w-52 mt-2 gap-1 text-sm">
+               <li class="menu-title text-xs font-semibold px-4 py-2 border-b border-base-200 text-secondary mb-1">
+                 Binder Dashboard
+               </li>
+               <li>
+                 <router-link :to="authStore.user ? '/@' + authStore.user.username : '/'" class="font-medium text-base-content py-2 px-4 hover:bg-base-200 rounded">
+                   📖 View Collection
+                 </router-link>
+               </li>
+               <li v-if="isOwnProfile">
+                 <button @click="emit('edit-profile')" class="font-medium text-base-content py-2 px-4 hover:bg-base-200 rounded">
+                   ✏️ Edit Profile
+                 </button>
+               </li>
+               <li>
+                 <button @click="handleLogout" class="text-error hover:bg-error/10 font-bold py-2 px-4 rounded border-t border-base-200 pt-2 mt-1">
+                   🚪 Log Out
+                 </button>
+               </li>
+             </ul>
           </div>
         </div>
       </div>
