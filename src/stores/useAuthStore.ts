@@ -74,6 +74,49 @@ export const useAuthStore = defineStore('auth', () => {
       const email = su.email || '';
       const fallbackUsername = email.split('@')[0] || 'Scholar';
       
+      // Check if we have guest progress to merge
+      const guestPoints = gameStore.getGuestPoints();
+      const guestCards = gameStore.getGuestCards();
+
+      let finalPoints = typeof metadata.gdPoints === 'number' ? metadata.gdPoints : 0;
+      let finalCards = Array.isArray(metadata.collectedCards) ? metadata.collectedCards : [];
+
+      if (guestPoints > 0 || guestCards.length > 0) {
+        // Merge guest cards with existing user cards
+        const mergedCardsMap = new Map<string, any>();
+        // Add existing cards first
+        finalCards.forEach((c: any) => mergedCardsMap.set(c.id, c));
+        // Add guest cards if they aren't already in the list
+        guestCards.forEach((c: any) => {
+          if (!mergedCardsMap.has(c.id)) {
+            mergedCardsMap.set(c.id, c);
+          }
+        });
+
+        finalPoints += guestPoints;
+        finalCards = Array.from(mergedCardsMap.values());
+
+        // Update user metadata in Supabase
+        const username = metadata.username || fallbackUsername;
+        const { error: updateError } = await supabase.auth.updateUser({
+          data: {
+            username,
+            profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
+            bio: metadata.bio || 'Avid Moonflower scholar and collector.',
+            backgroundColor: metadata.backgroundColor || '#eaecf0',
+            gdPoints: finalPoints,
+            collectedCards: finalCards
+          }
+        });
+
+        if (updateError) {
+          console.error('Error saving merged user profile:', updateError.message);
+        } else {
+          // Clear guest cache only on successful merge
+          gameStore.clearGuestCache();
+        }
+      }
+
       const mappedUser: User = {
         id: su.id,
         username: metadata.username || fallbackUsername,
@@ -81,8 +124,8 @@ export const useAuthStore = defineStore('auth', () => {
         profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${metadata.username || fallbackUsername}`,
         bio: metadata.bio || 'Avid Moonflower scholar and collector.',
         backgroundColor: metadata.backgroundColor || '#eaecf0',
-        gdPoints: typeof metadata.gdPoints === 'number' ? metadata.gdPoints : 0,
-        collectedCards: Array.isArray(metadata.collectedCards) ? metadata.collectedCards : []
+        gdPoints: finalPoints,
+        collectedCards: finalCards
       };
 
       user.value = mappedUser;

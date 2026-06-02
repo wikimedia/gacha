@@ -420,27 +420,26 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
               Welcome to Moonflower
             </h2>
             <p class="text-xs text-secondary leading-relaxed font-sans font-light mt-1">
-              Test your knowledge of the absurd and collect real items for your personal Wikipedia Binder. Identify the altered entries to secure items and acquire **GD Points**.
+              Test your knowledge of the absurd and collect real items for your personal Wikipedia Binder. Identify the altered entries to secure items and acquire **Points**.
             </p>
             
-            <!-- Debug tools panel inside collapse -->
-            <div v-if="isDev" class="collapse collapse-arrow border border-base-200 bg-base-200/30 rounded mt-3">
-              <input type="checkbox" /> 
-              <div class="collapse-title text-xs font-bold text-secondary-content/80 flex items-center py-2 min-h-0">
+            <!-- Developer Controls Panel (Always Visible in Dev Mode) -->
+            <div v-if="isDev" class="mt-4 p-3 bg-base-200/60 border border-base-300 rounded-lg flex flex-col gap-2">
+              <div class="text-xs font-bold text-secondary flex items-center gap-1.5">
                 🛠️ Developer Controls
               </div>
-              <div class="collapse-content flex gap-2 pt-2 pb-3">
+              <div class="flex gap-2">
                 <button 
                   @click="triggerDebugGacha"
-                  class="btn btn-error btn-outline btn-xs uppercase font-bold text-[9px]"
+                  class="btn btn-error btn-outline btn-xs flex-1 uppercase font-bold text-[10px]"
                 >
                   Force Gacha
                 </button>
                 <button 
                   @click="addDebugPoints"
-                  class="btn btn-primary btn-outline btn-xs uppercase font-bold text-[9px]"
+                  class="btn btn-primary btn-outline btn-xs flex-1 uppercase font-bold text-[10px]"
                 >
-                  +100 GP
+                  +100 Points
                 </button>
               </div>
             </div>

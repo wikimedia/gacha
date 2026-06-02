@@ -637,7 +637,10 @@ export const useGameStore = defineStore('game', () => {
   const loadCardsFromDatabase = async () => {
     try {
       console.log('Fetching articles from Supabase public.articles table...');
-      const { data, error } = await supabase.from('articles').select('*');
+      const { data, error } = await supabase
+        .from('articles')
+        .select('*')
+        .is('banned_category', null);
       
       if (error) {
         throw error;
@@ -766,7 +769,7 @@ export const useGameStore = defineStore('game', () => {
   };
 
 
-  // Add GD Points
+  // Add Points
   const addPoints = (points: number) => {
     gdPoints.value += points;
     
@@ -779,7 +782,7 @@ export const useGameStore = defineStore('game', () => {
     }
   };
 
-  // Deduct GD Points
+  // Deduct Points
   const spendPoints = (points: number): boolean => {
     if (gdPoints.value >= points) {
       gdPoints.value -= points;

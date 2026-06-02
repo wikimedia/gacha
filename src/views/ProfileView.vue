@@ -136,6 +136,10 @@ const pinnedCard = computed(() => {
   return showcaseCards.value[0] || null;
 });
 
+const hasPinnedCardWithImage = computed(() => {
+  return !!(pinnedCard.value && pinnedCard.value.image);
+});
+
 const profilePictureStyle = computed(() => {
   const img = pinnedCard.value?.image;
   if (img) {
@@ -144,20 +148,11 @@ const profilePictureStyle = computed(() => {
     }
     return `url("${img}")`;
   }
-  
-  // Fallback to default user profilePic if exists
-  const fallback = profileUser.value?.profilePic;
-  if (fallback) {
-    if (fallback.startsWith('linear-gradient') || fallback.startsWith('url(')) {
-      return fallback;
-    }
-    return `url("${fallback}")`;
-  }
   return '';
 });
 
 const avatarSrc = computed(() => {
-  return pinnedCard.value?.image || profileUser.value?.profilePic || '';
+  return pinnedCard.value?.image || '';
 });
 
 const isAvatarCSSImage = computed(() => {
@@ -184,7 +179,14 @@ const sortedBinderCards = computed(() => {
   .filter(c => c !== null);
   console.log(`sortedBinderCards computed result: mapped ${result.length} cards successfully.`);
   return result
-  .sort((a, b) => new Date(b.collectedAt).getTime() - new Date(a.collectedAt).getTime())
+  .sort((a, b) => {
+    const aShow = a.isShowcase ? 1 : 0;
+    const bShow = b.isShowcase ? 1 : 0;
+    if (aShow !== bShow) {
+      return bShow - aShow;
+    }
+    return new Date(b.collectedAt).getTime() - new Date(a.collectedAt).getTime();
+  })
   .filter(c => {
     const card = c!;
     // Filter by search title
@@ -210,7 +212,7 @@ const toggleCardShowcase = (cardId: string) => {
       <header v-if="profileUser" class="relative text-left pb-6 border-b border-base-300">
         <div class="flex flex-col md:flex-row gap-6 items-start md:items-center">
           <!-- Pinned Card Image as User Profile Image -->
-          <div class="avatar">
+          <div v-if="hasPinnedCardWithImage" class="avatar">
             <div class="w-20 h-20 rounded-full border-2 border-base-300 overflow-hidden bg-base-300 flex items-center justify-center shadow-inner relative">
               <template v-if="avatarSrc">
                 <div 
@@ -250,7 +252,7 @@ const toggleCardShowcase = (cardId: string) => {
           <!-- Stats Display integrated without a card style -->
           <div class="flex gap-6 md:ml-auto md:border-l md:border-base-300 md:pl-8 mt-2 md:mt-0">
             <div>
-              <div class="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">GD Points</div>
+              <div class="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">Points</div>
               <div class="text-3xl font-serif font-black text-primary leading-none">{{ profileUser.gdPoints }}</div>
             </div>
             <div class="border-l border-base-300 pl-6">
@@ -311,7 +313,19 @@ const toggleCardShowcase = (cardId: string) => {
               ]"
               :title="card.isShowcase ? 'Unpin from Profile' : 'Pin to Profile'"
             >
-              {{ card.isShowcase ? '📌' : '☆' }}
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                :fill="card.isShowcase ? 'currentColor' : 'none'" 
+                stroke="currentColor" 
+                stroke-width="2" 
+                stroke-linecap="round" 
+                stroke-linejoin="round" 
+                class="w-3.5 h-3.5"
+              >
+                <line x1="12" y1="17" x2="12" y2="22"></line>
+                <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.71A2 2 0 0 1 15 9.05V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v5.05a2 2 0 0 1-.78 1.56l-2.78 3.74a2 2 0 0 0-.44 1.25Z"></path>
+              </svg>
             </button>
           </div>
         </div>

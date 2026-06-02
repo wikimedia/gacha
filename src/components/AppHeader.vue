@@ -52,7 +52,6 @@ const isOwnProfile = computed(() => {
 // Auth modal state
 const showAuthModal = ref(false);
 const authEmail = ref('');
-const otpCode = ref('');
 const otpSent = ref(false);
 const isVerifying = ref(false);
 const authError = ref('');
@@ -72,7 +71,6 @@ const closeModal = () => {
   showAuthModal.value = false;
   otpSent.value = false;
   authEmail.value = '';
-  otpCode.value = '';
   authError.value = '';
 };
 
@@ -86,23 +84,7 @@ const handleSendOtp = async () => {
     await authStore.sendOtp(authEmail.value.trim());
     otpSent.value = true;
   } catch (err: any) {
-    authError.value = err.message || 'Failed to send verification passcode.';
-  } finally {
-    isVerifying.value = false;
-  }
-};
-
-const handleVerifyOtp = async () => {
-  if (!otpCode.value.trim() || otpCode.value.trim().length < 6) return;
-  
-  isVerifying.value = true;
-  authError.value = '';
-  try {
-    await authStore.verifyOtp(authEmail.value.trim(), otpCode.value.trim());
-    closeModal();
-    emit('login-success');
-  } catch (err: any) {
-    authError.value = err.message || 'Invalid passcode or authentication failure.';
+    authError.value = err.message || 'Failed to send verification link.';
   } finally {
     isVerifying.value = false;
   }
@@ -136,20 +118,20 @@ defineExpose({
         </div>
       </router-link>
 
-      <!-- Middle: Segmented/Continuous Goal Tracker (Custom GP Gauge) -->
+      <!-- Middle: Segmented/Continuous Goal Tracker (Custom Points Gauge) -->
       <div 
         class="tooltip tooltip-bottom flex-grow flex flex-col justify-center max-w-[140px] min-w-[80px] select-none cursor-help"
-        data-tip="Earn 100 Gacha Points (GP) to activate a Gacha Drop!"
+        data-tip="Earn 100 points to activate a Gacha Drop!"
         role="img" 
         aria-label="Gacha Drop progress"
       >
         <div class="flex justify-between items-center w-full text-[8px] font-sans font-extrabold uppercase tracking-wider mb-0.5">
-          <span class="text-secondary">GP Charge</span>
+          <span class="text-secondary">Points</span>
           <span :class="points >= 100 ? 'text-primary font-black animate-pulse' : 'text-base-content/70'">{{ points }}/100</span>
         </div>
         <div 
           class="relative w-full h-3.5 bg-base-200 border border-base-300 rounded-full shadow-inner flex items-center transition-all duration-300"
-          :class="{ 'gp-ready-glow border-primary bg-primary/5': points >= 100 }"
+          :class="{ 'points-ready-glow border-primary bg-primary/5': points >= 100 }"
         >
           <!-- Faint tick marks for visual interest / game gauge look -->
           <div class="absolute left-1/4 top-0 bottom-0 w-[1px] bg-base-content/10 z-10"></div>
@@ -293,7 +275,7 @@ defineExpose({
           <span>⚠️ {{ authError }}</span>
         </div>
 
-        <!-- Step 1: Request OTP Email -->
+        <!-- Step 1: Request Sign-In Link -->
         <form v-if="!otpSent" @submit.prevent="handleSendOtp" class="flex flex-col gap-4 mt-2">
           <div class="form-control w-full">
             <label class="label py-1">
@@ -314,34 +296,22 @@ defineExpose({
             class="btn btn-primary btn-sm w-full font-bold uppercase mt-2 text-white"
           >
             <span v-if="isVerifying" class="loading loading-spinner loading-xs"></span>
-            {{ isVerifying ? 'Sending Passcode...' : 'Send One-Time Passcode' }}
+            {{ isVerifying ? 'Sending Link...' : 'Send Sign-In Link' }}
           </button>
         </form>
 
-        <!-- Step 2: Verify OTP Passcode -->
-        <form v-else @submit.prevent="handleVerifyOtp" class="flex flex-col gap-4 mt-2">
-          <div class="bg-base-200 border border-base-300 p-3 rounded text-xs text-base-content font-medium">
-            📬 We've sent a 6-digit one-time passcode to <strong class="text-primary">{{ authEmail }}</strong>. Enter the passcode below to verify.
+        <!-- Step 2: Link Sent Status -->
+        <div v-else class="flex flex-col gap-4 mt-2 font-sans">
+          <div class="bg-base-200 border border-base-300 p-4 rounded text-xs text-base-content leading-relaxed">
+            <p class="mb-2">📬 We've sent a magic sign-in link to <strong class="text-primary">{{ authEmail }}</strong>.</p>
+            <p class="mb-2">Please check your inbox (and spam folder) and click the link to log in.</p>
+            <p class="text-secondary">Once you click the link, you will be automatically logged in here, and this window will update.</p>
           </div>
           
-          <div class="form-control w-full">
-            <label class="label py-1">
-              <span class="label-text font-bold text-xs uppercase text-neutral-content/80">One-Time Passcode (OTP)</span>
-            </label>
-            <input 
-              v-model="otpCode"
-              type="text" 
-              placeholder="123456"
-              maxlength="6"
-              required
-              class="input input-bordered w-full input-sm font-mono font-bold tracking-widest text-center text-sm"
-            >
-          </div>
-
-          <div class="flex justify-between text-[10px] font-sans -mt-2 px-1">
+          <div class="flex justify-between text-[10px] px-1">
             <button 
               type="button" 
-              @click="otpSent = false; otpCode = '';" 
+              @click="otpSent = false" 
               class="link link-primary font-semibold no-underline hover:underline"
             >
               ← Change email
@@ -356,14 +326,13 @@ defineExpose({
           </div>
 
           <button 
-            type="submit"
-            :disabled="isVerifying"
-            class="btn btn-primary btn-sm w-full font-bold uppercase text-white"
+            type="button"
+            @click="closeModal"
+            class="btn btn-outline btn-sm w-full font-bold uppercase mt-2"
           >
-            <span v-if="isVerifying" class="loading loading-spinner loading-xs"></span>
-            Verify & Access Binder
+            Close Window
           </button>
-        </form>
+        </div>
       </div>
 
       <form method="dialog" class="modal-backdrop" @click="closeModal">
