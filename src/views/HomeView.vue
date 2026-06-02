@@ -671,7 +671,7 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
             :key="i"
             class="card card-bordered card-compact bg-white w-32 shadow flex-shrink-0 text-left p-2.5 animate-fade-in border-primary/20"
           >
-            <span class="text-[8px] badge badge-outline badge-xs font-bold font-sans uppercase mb-1">{{ card.rarity }}</span>
+            <span v-if="card.rarity !== 'Common'" class="text-[8px] badge badge-outline badge-xs font-bold font-sans uppercase mb-1">{{ card.rarity }}</span>
             <div class="font-serif font-black text-base-content text-xs truncate">{{ card.title }}</div>
             <div class="text-[8px] text-secondary font-sans mt-0.5 truncate">{{ card.category }}</div>
           </div>
@@ -702,7 +702,7 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
             class="flex items-center justify-between p-3 border-b border-base-200 last:border-b-0 hover:bg-base-200/50"
           >
             <div class="text-left flex items-center gap-2">
-              <span class="badge badge-xs uppercase text-[8px] font-sans font-bold py-1.5" :class="[
+              <span v-if="card.rarity !== 'Common'" class="badge badge-xs uppercase text-[8px] font-sans font-bold py-1.5" :class="[
                 card.rarity === 'Legendary' ? 'badge-warning' :
                 card.rarity === 'Epic' ? 'badge-neutral' :
                 card.rarity === 'Rare' ? 'badge-primary' : 'badge-ghost'

@@ -28,15 +28,6 @@ const isPrivateMode = computed(() => {
 const showEditProfileModal = ref(false);
 const editDisplayName = ref('');
 const editBio = ref('');
-const editBgColor = ref('#eaecf0');
-
-const bgOptions = [
-  { name: 'Standard Grey', hex: '#eaecf0' },
-  { name: 'Soft Blue', hex: '#e8f0fa' },
-  { name: 'Pale Gold', hex: '#fef6e7' },
-  { name: 'Mint Green', hex: '#eef8f2' },
-  { name: 'Pure White', hex: '#ffffff' }
-];
 
 // Binder filtering & organization
 const searchFilter = ref('');
@@ -64,7 +55,6 @@ const loadProfile = () => {
     // Set edit form values
     editDisplayName.value = authStore.user.username;
     editBio.value = authStore.user.bio;
-    editBgColor.value = authStore.user.backgroundColor;
   } else {
     // If it's public mode, look up in the simulated users database
     const loaded = gameStore.loadRegisteredProfile(profileId.value);
@@ -111,8 +101,7 @@ watch([() => authStore.user, () => route.params.id], () => {
 const handleSaveProfile = () => {
   authStore.updateProfile({
     username: editDisplayName.value.trim(),
-    bio: editBio.value.trim(),
-    backgroundColor: editBgColor.value
+    bio: editBio.value.trim()
   });
   
   showEditProfileModal.value = false;
@@ -193,7 +182,7 @@ const toggleCardShowcase = (cardId: string) => {
 </script>
 
 <template>
-  <PageLayout is-wide :background-color="profileUser?.backgroundColor || undefined" @edit-profile="showEditProfileModal = true">
+  <PageLayout is-wide @edit-profile="showEditProfileModal = true">
     <div class="flex flex-col gap-6 w-full">
 
       <!-- PROFILE INFO BOX -->
@@ -352,22 +341,7 @@ const toggleCardShowcase = (cardId: string) => {
             ></textarea>
           </div>
 
-          <!-- Color selection -->
-          <div>
-            <label class="block text-xs font-bold uppercase text-neutral-content/85 mb-1">Binder Background Theme</label>
-            <div class="flex gap-2.5 mt-2">
-              <button 
-                v-for="bg in bgOptions"
-                :key="bg.hex"
-                type="button"
-                @click="editBgColor = bg.hex"
-                class="w-7 h-7 rounded border border-base-300 transition-all duration-150"
-                :style="{ backgroundColor: bg.hex }"
-                :class="[editBgColor === bg.hex ? 'ring-2 ring-primary border-primary' : '']"
-                :title="bg.name"
-              ></button>
-            </div>
-          </div>
+
 
           <button 
             type="submit"
