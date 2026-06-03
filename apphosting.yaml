@@ -1,0 +1,13 @@
+# Firebase App Hosting configuration
+# See https://firebase.google.com/docs/app-hosting/configure for details.
+
+# Environment variables
+env:
+  - variable: VITE_SUPABASE_URL
+    value: "https://icfkacmdwzvdctmncecp.supabase.co"
+    availability:
+      - BUILD
+  - variable: VITE_SUPABASE_ANON_KEY
+    value: "sb_publishable_wc9enqDFTP-3Zn0u4y2RTg_IVbHlvmm"
+    availability:
+      - BUILD
