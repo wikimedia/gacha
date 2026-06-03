@@ -33,14 +33,14 @@ const editBio = ref('');
 const searchFilter = ref('');
 
 // Fetch/sync profile details based on route
-const loadProfile = () => {
+const loadProfile = async () => {
   console.log(`loadProfile triggered: profileId="${profileId.value}", isLoggedIn=${authStore.isLoggedIn}, isPrivateMode=${isPrivateMode.value}`);
   // Clear lists
   profileUser.value = null;
   profileCards.value = [];
   
   if (isPrivateMode.value && authStore.user) {
-    // If it's private mode, load straight from auth store & game store
+    // If it's private mode, load profile info from auth store
     profileUser.value = {
       id: authStore.user.id,
       username: authStore.user.username,
@@ -50,30 +50,52 @@ const loadProfile = () => {
       gdPoints: authStore.user.gdPoints
     };
     
-    // Cards loaded are from current inventory
-    profileCards.value = gameStore.collectedCards;
+    // Fetch owned articles from DB via profile_id join
+    const dbProfile = await gameStore.loadProfileFromDB(authStore.user.id);
+    if (dbProfile && dbProfile.cards.length > 0) {
+      // Merge DB-fetched cards with local collected cards (local cards take priority for showcase/section state)
+      const localCardMap = new Map(gameStore.collectedCards.map(c => [c.id, c]));
+      const mergedCards = [...gameStore.collectedCards];
+      for (const dbCard of dbProfile.cards) {
+        if (!localCardMap.has(dbCard.id)) {
+          mergedCards.push(dbCard);
+        }
+      }
+      profileCards.value = mergedCards;
+    } else {
+      // Fall back to local collected cards
+      profileCards.value = gameStore.collectedCards;
+    }
     
     // Set edit form values
     editDisplayName.value = authStore.user.username;
     editBio.value = authStore.user.bio;
   } else {
-    // If it's public mode, look up in the simulated users database
-    const loaded = gameStore.loadRegisteredProfile(profileId.value);
+    // Public mode: try Supabase profile table first
+    const dbProfile = await gameStore.loadProfileFromDB(profileId.value);
     
-    if (loaded) {
-      profileUser.value = loaded.userProfile;
-      profileCards.value = loaded.cards;
+    if (dbProfile) {
+      profileUser.value = dbProfile.userProfile;
+      profileCards.value = dbProfile.cards;
     } else {
-      // Mock profile fallback so page doesn't crash if they visit a random path
-      profileUser.value = {
-        id: `usr_${profileId.value.toLowerCase()}`,
-        username: profileId.value,
-        profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileId.value}`,
-        bio: 'This scholar is yet to publish their official Moonflower profile bio.',
-        backgroundColor: '#eaecf0',
-        gdPoints: 0
-      };
-      profileCards.value = [];
+      // Fall back to localStorage registered profiles
+      const loaded = gameStore.loadRegisteredProfile(profileId.value);
+      
+      if (loaded) {
+        profileUser.value = loaded.userProfile;
+        profileCards.value = loaded.cards;
+      } else {
+        // Mock profile fallback so page doesn't crash if they visit a random path
+        profileUser.value = {
+          id: `usr_${profileId.value.toLowerCase()}`,
+          username: profileId.value,
+          profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileId.value}`,
+          bio: 'This scholar is yet to publish their official Moonflower profile bio.',
+          backgroundColor: '#eaecf0',
+          gdPoints: 0
+        };
+        profileCards.value = [];
+      }
     }
   }
   console.log('loadProfile completed. profileUser:', profileUser.value, 'profileCards count:', profileCards.value.length);
@@ -83,7 +105,7 @@ onMounted(async () => {
   authStore.initAuth();
   gameStore.loadGuestState();
   await gameStore.loadCardsFromDatabase();
-  loadProfile();
+  await loadProfile();
 });
 
 // Watch auth status and route changes reactively

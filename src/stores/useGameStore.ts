@@ -904,7 +904,72 @@ export const useGameStore = defineStore('game', () => {
     return getCooldownTimeRemaining(category) > 0;
   };
 
-  // Load a public user profile from localStorage for read-only view
+  // Load a public user profile from the Supabase "profile" table by username or user id
+  const loadProfileFromDB = async (usernameOrId: string): Promise<{ userProfile: any, cards: CollectedCard[] } | null> => {
+    try {
+      // Try matching by username first (case-insensitive)
+      let { data: profileData, error } = await supabase
+        .from('profile')
+        .select('*')
+        .ilike('username', usernameOrId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching profile by username:', error.message);
+      }
+
+      // If no match by username, try matching by id
+      if (!profileData) {
+        const { data: profileById, error: idError } = await supabase
+          .from('profile')
+          .select('*')
+          .eq('id', usernameOrId)
+          .maybeSingle();
+
+        if (idError) {
+          console.error('Error fetching profile by id:', idError.message);
+        }
+        profileData = profileById;
+      }
+
+      if (!profileData) return null;
+
+      // Fetch articles owned by this profile via profile_id join
+      const { data: articlesData, error: articlesError } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('profile_id', profileData.id);
+
+      if (articlesError) {
+        console.error('Error fetching profile articles:', articlesError.message);
+      }
+
+      // Map articles to CollectedCard format
+      const cards: CollectedCard[] = (articlesData || []).map((article: any) => ({
+        id: article.qid,
+        collectedAt: article.claimed_at || new Date().toISOString(),
+        isShowcase: false,
+        customSection: null
+      }));
+
+      return {
+        userProfile: {
+          id: profileData.id,
+          username: profileData.username,
+          profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileData.username}`,
+          bio: 'Avid Moonflower scholar and collector.',
+          backgroundColor: '#eaecf0',
+          gdPoints: 0
+        },
+        cards
+      };
+    } catch (err: any) {
+      console.error('Failed to load profile from DB:', err.message);
+      return null;
+    }
+  };
+
+  // Legacy localStorage fallback for offline/dev mode
   const loadRegisteredProfile = (userId: string): { userProfile: any, cards: any[] } | null => {
     const existingUsersRaw = localStorage.getItem('wiki_registered_users');
     const registeredUsers = existingUsersRaw ? JSON.parse(existingUsersRaw) : {};
@@ -956,6 +1021,33 @@ export const useGameStore = defineStore('game', () => {
     return null;
   };
 
+  // Claim articles for a profile by setting profile_id on collected article rows
+  const claimArticlesForProfile = async (articleQids: string[]) => {
+    const authStore = useAuthStore();
+    if (!authStore.isLoggedIn || !authStore.user) return;
+
+    const profileId = authStore.user.id;
+    if (!profileId || articleQids.length === 0) return;
+
+    try {
+      // Update articles table, setting profile_id for each collected article's qid
+      // Only claim articles that are currently unclaimed (profile_id IS NULL)
+      const { error } = await supabase
+        .from('articles')
+        .update({ profile_id: profileId, claimed_at: new Date().toISOString() })
+        .in('qid', articleQids)
+        .is('profile_id', null);
+
+      if (error) {
+        console.error('Error claiming articles for profile:', error.message);
+      } else {
+        console.log(`Successfully claimed ${articleQids.length} articles for profile ${profileId}`);
+      }
+    } catch (err: any) {
+      console.error('Failed to claim articles:', err.message);
+    }
+  };
+
   return {
     gdPoints,
     collectedCards,
@@ -978,6 +1070,8 @@ export const useGameStore = defineStore('game', () => {
     setCooldown,
     getCooldownTimeRemaining,
     isCooldownActive,
-    loadRegisteredProfile
+    loadProfileFromDB,
+    loadRegisteredProfile,
+    claimArticlesForProfile
   };
 });

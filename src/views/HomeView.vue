@@ -242,6 +242,13 @@ const endFakeoutGame = () => {
   if (selectedCategory.value) {
     gameStore.setCooldown(selectedCategory.value);
   }
+  
+  // Claim collected articles for this user's profile in Supabase
+  if (collectedThisGame.value.length > 0) {
+    const collectedQids = collectedThisGame.value.map(c => c.id);
+    gameStore.claimArticlesForProfile(collectedQids);
+  }
+  
   selectedCategory.value = null;
   updateCooldowns();
   
@@ -330,6 +337,12 @@ const startGachaDrop = () => {
         clearInterval(interval);
         gachaActive.value = false;
         showGachaSummary.value = true;
+        
+        // Claim all dropped articles for this user's profile in Supabase
+        const droppedQids = gachaDroppedCards.value.map(c => c.id);
+        if (droppedQids.length > 0) {
+          gameStore.claimArticlesForProfile(droppedQids);
+        }
       }
     }, 1000);
   }
