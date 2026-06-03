@@ -7,6 +7,7 @@ defineProps<{
   gachaActive?: boolean;
   backgroundColor?: string;
   isWide?: boolean;
+  isAnimating?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -32,6 +33,7 @@ defineExpose({
       ref="headerRef"
       :displayed-points="displayedPoints" 
       :gacha-active="gachaActive" 
+      :is-animating="isAnimating"
       @activate="emit('activate')"
       @edit-profile="emit('edit-profile')"
     />

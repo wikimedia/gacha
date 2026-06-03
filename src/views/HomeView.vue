@@ -48,20 +48,31 @@ const gachaDroppedCards = ref<Card[]>([]);
 const showGachaSummary = ref(false);
 const isGlobeJiggling = ref(false);
 
+interface FloatingText {
+  id: number;
+  x: number;
+  y: number;
+}
+const floatingTexts = ref<FloatingText[]>([]);
+let nextFloatingTextId = 0;
+
 // Post-Game Flow & Gacha Tease States
 const pointsBeforeGame = ref(gameStore.gdPoints);
 const displayedPoints = ref(gameStore.gdPoints);
 const isUnlockedJustNow = ref(false);
 const headerRef = ref<any>(null);
+const isAnimatingPoints = ref(false);
 
 const animateProgressBar = (start: number, end: number) => {
   if (start >= end) {
     displayedPoints.value = end;
+    isAnimatingPoints.value = false;
     return;
   }
   
   isUnlockedJustNow.value = false;
   displayedPoints.value = start;
+  isAnimatingPoints.value = true;
   
   const duration = 1500;
   const startTime = performance.now();
@@ -87,6 +98,7 @@ const animateProgressBar = (start: number, end: number) => {
       requestAnimationFrame(update);
     } else {
       displayedPoints.value = end;
+      isAnimatingPoints.value = false;
       if (end >= 100 && !isUnlockedJustNow.value && start < 100) {
         isUnlockedJustNow.value = true;
         setTimeout(() => {
@@ -348,7 +360,7 @@ const startGachaDrop = () => {
   }
 };
 
-const handleGachaGlobeTap = () => {
+const handleGachaGlobeTap = (event?: MouseEvent) => {
   if (!gachaActive.value) return;
   
   gachaTapCount.value += 1;
@@ -356,6 +368,25 @@ const handleGachaGlobeTap = () => {
   setTimeout(() => {
     isGlobeJiggling.value = false;
   }, 150);
+  
+  // Calculate relative click coordinates
+  let x = 96;
+  let y = 96;
+  if (event && event.currentTarget) {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    x = event.clientX - rect.left;
+    y = event.clientY - rect.top;
+  } else {
+    x = 80 + Math.random() * 32;
+    y = 80 + Math.random() * 32;
+  }
+  
+  const id = nextFloatingTextId++;
+  floatingTexts.value.push({ id, x, y });
+  
+  setTimeout(() => {
+    floatingTexts.value = floatingTexts.value.filter(t => t.id !== id);
+  }, 800);
   
   // Select a card at random from the database-backed deck, filtering only for real cards
   const realCards = gameStore.gameCards.filter(c => c.isReal);
@@ -420,6 +451,7 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
     ref="headerRef"
     :displayed-points="displayedPoints" 
     :gacha-active="gachaActive || showGachaSummary" 
+    :is-animating="isAnimatingPoints"
     @activate="startGachaDrop" 
   >
 
@@ -657,13 +689,23 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
         <!-- Large Tap-to-Gacha Globe -->
         <div class="my-6 flex items-center justify-center">
           <button 
-            @click="handleGachaGlobeTap"
-            class="btn btn-circle btn-primary w-48 h-48 shadow-2xl flex flex-col items-center justify-center border-4 border-primary/25 transition-transform active:scale-95"
+            @click="handleGachaGlobeTap($event)"
+            class="btn btn-circle btn-primary w-48 h-48 shadow-2xl flex flex-col items-center justify-center border-4 border-primary/25 transition-transform active:scale-95 relative overflow-visible"
             :class="{ 'animate-pulse-shake': isGlobeJiggling }"
           >
             <span class="text-white text-6xl font-black font-serif select-none">W</span>
             <span class="text-[10px] uppercase tracking-widest text-white/80 font-black font-sans mt-3 select-none">TAP HERE!</span>
             <span class="text-xs text-white font-sans font-bold mt-1.5 select-none">Taps: {{ gachaTapCount }}</span>
+            
+            <!-- Floating +1s -->
+            <span 
+              v-for="item in floatingTexts" 
+              :key="item.id" 
+              class="absolute pointer-events-none text-2xl font-black text-warning animate-float-up z-50 select-none"
+              :style="{ left: `${item.x}px`, top: `${item.y}px` }"
+            >
+              +1
+            </span>
           </button>
         </div>
 

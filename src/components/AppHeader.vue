@@ -8,8 +8,10 @@ import { supabase } from '../supabase';
 const props = withDefaults(defineProps<{
   displayedPoints?: number;
   gachaActive?: boolean;
+  isAnimating?: boolean;
 }>(), {
-  gachaActive: false
+  gachaActive: false,
+  isAnimating: false
 });
 
 const emit = defineEmits<{
@@ -170,7 +172,7 @@ defineExpose({
             :class="[
               points >= 100 
                 ? 'gacha-gradient-animation' 
-                : 'progress-shimmer-fill'
+                : (isAnimating ? 'progress-shimmer-fill' : 'progress-static-fill')
             ]"
             :style="{ width: `${Math.min(points, 100)}%` }"
           ></div>
