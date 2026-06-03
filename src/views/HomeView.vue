@@ -135,7 +135,7 @@ watch([() => authStore.isLoggedIn, () => gameStore.gdPoints], () => {
 });
 
 // DEV / DEBUG BUILD HELPERS
-const isDev = import.meta.env.DEV;
+const isDev = true;
 
 const triggerDebugGacha = () => {
   if (!authStore.isLoggedIn) {
