@@ -114,6 +114,16 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       let finalPoints = typeof metadata.gdPoints === 'number' ? metadata.gdPoints : 0;
+      
+      // Load points from localStorage to bypass stale Supabase JWT metadata
+      const localUserPoints = localStorage.getItem(`moonflower_user_${su.id}_gdPoints`);
+      if (localUserPoints !== null) {
+        const parsedLocal = parseInt(localUserPoints, 10);
+        if (!isNaN(parsedLocal) && parsedLocal > finalPoints) {
+          finalPoints = parsedLocal;
+        }
+      }
+
       let finalCards = dbCards;
 
       const mappedUser: User = {
@@ -133,6 +143,9 @@ export const useAuthStore = defineStore('auth', () => {
       // Sync user data to active Game Store
       gameStore.gdPoints = mappedUser.gdPoints;
       gameStore.collectedCards = mappedUser.collectedCards;
+
+      // Load user-specific localStorage state (sections & cooldowns)
+      gameStore.loadUserState(su.id);
     } else {
       user.value = null;
       isLoggedIn.value = false;

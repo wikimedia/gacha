@@ -533,6 +533,39 @@ export const useGameStore = defineStore('game', () => {
     }
   };
 
+  // Load logged-in user custom sections and cooldowns from localStorage
+  const loadUserState = (userId: string) => {
+    console.log('[loadUserState] Loading localStorage state for user:', userId);
+    
+    // Load custom sections
+    const savedSections = localStorage.getItem(`moonflower_user_${userId}_customSections`);
+    if (savedSections) {
+      try {
+        customSections.value = JSON.parse(savedSections);
+        console.log('[loadUserState] Loaded customSections from localStorage:', customSections.value);
+      } catch (err) {
+        console.error('[loadUserState] Failed to parse customSections:', err);
+        customSections.value = ['Showcase', 'Real Rarities', 'Historical Gems'];
+      }
+    } else {
+      customSections.value = ['Showcase', 'Real Rarities', 'Historical Gems'];
+    }
+
+    // Load category cooldowns
+    const savedCooldowns = localStorage.getItem(`moonflower_user_${userId}_categoryCooldowns`);
+    if (savedCooldowns) {
+      try {
+        categoryCooldowns.value = JSON.parse(savedCooldowns);
+        console.log('[loadUserState] Loaded categoryCooldowns from localStorage:', categoryCooldowns.value);
+      } catch (err) {
+        console.error('[loadUserState] Failed to parse categoryCooldowns:', err);
+        categoryCooldowns.value = {};
+      }
+    } else {
+      categoryCooldowns.value = {};
+    }
+  };
+
   // Sync game store states directly with the user store
   const syncWithUser = (points: number, cards: CollectedCard[]) => {
     gdPoints.value = points;
@@ -854,9 +887,13 @@ export const useGameStore = defineStore('game', () => {
 
   const persistState = () => {
     const authStore = useAuthStore();
-    if (authStore.isLoggedIn) {
+    if (authStore.isLoggedIn && authStore.user?.id) {
       authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
-    } else {
+      localStorage.setItem(`moonflower_user_${authStore.user.id}_gdPoints`, String(gdPoints.value));
+      localStorage.setItem(`moonflower_user_${authStore.user.id}_collectedCards`, JSON.stringify(collectedCards.value));
+      localStorage.setItem(`moonflower_user_${authStore.user.id}_categoryCooldowns`, JSON.stringify(categoryCooldowns.value));
+      localStorage.setItem(`moonflower_user_${authStore.user.id}_customSections`, JSON.stringify(customSections.value));
+    } else if (!authStore.isLoggedIn) {
       localStorage.setItem('moonflower_guest_gdPoints', String(gdPoints.value));
       localStorage.setItem('moonflower_guest_collectedCards', JSON.stringify(collectedCards.value));
       localStorage.setItem('moonflower_guest_categoryCooldowns', JSON.stringify(categoryCooldowns.value));
@@ -1136,40 +1173,50 @@ export const useGameStore = defineStore('game', () => {
     }
   };
 
-  // Watchers to automatically save to localStorage when guest changes state
+  // Watchers to automatically save to localStorage when state changes
   watch(gdPoints, (newVal) => {
     const authStore = useAuthStore();
     console.log('[watch gdPoints] triggered. newVal =', newVal, ', authStore.isLoggedIn =', authStore.isLoggedIn);
-    if (!authStore.isLoggedIn) {
+    if (authStore.isLoggedIn && authStore.user?.id) {
+      localStorage.setItem(`moonflower_user_${authStore.user.id}_gdPoints`, String(newVal));
+      console.log(`[watch gdPoints] Saved user progress to localStorage for ${authStore.user.id}:`, newVal);
+    } else if (!authStore.isLoggedIn) {
       localStorage.setItem('moonflower_guest_gdPoints', String(newVal));
-      console.log('[watch gdPoints] Saved to localStorage:', newVal);
+      console.log('[watch gdPoints] Saved guest progress to localStorage:', newVal);
     }
   });
 
   watch(collectedCards, (newVal) => {
     const authStore = useAuthStore();
     console.log('[watch collectedCards] triggered. count =', newVal?.length, ', authStore.isLoggedIn =', authStore.isLoggedIn);
-    if (!authStore.isLoggedIn) {
+    if (authStore.isLoggedIn && authStore.user?.id) {
+      localStorage.setItem(`moonflower_user_${authStore.user.id}_collectedCards`, JSON.stringify(newVal));
+      console.log(`[watch collectedCards] Saved user cards to localStorage for ${authStore.user.id}`);
+    } else if (!authStore.isLoggedIn) {
       localStorage.setItem('moonflower_guest_collectedCards', JSON.stringify(newVal));
-      console.log('[watch collectedCards] Saved to localStorage:', newVal);
+      console.log('[watch collectedCards] Saved guest progress to localStorage:', newVal);
     }
   }, { deep: true });
 
   watch(categoryCooldowns, (newVal) => {
     const authStore = useAuthStore();
     console.log('[watch categoryCooldowns] triggered. authStore.isLoggedIn =', authStore.isLoggedIn);
-    if (!authStore.isLoggedIn) {
+    if (authStore.isLoggedIn && authStore.user?.id) {
+      localStorage.setItem(`moonflower_user_${authStore.user.id}_categoryCooldowns`, JSON.stringify(newVal));
+    } else if (!authStore.isLoggedIn) {
       localStorage.setItem('moonflower_guest_categoryCooldowns', JSON.stringify(newVal));
-      console.log('[watch categoryCooldowns] Saved to localStorage:', newVal);
+      console.log('[watch categoryCooldowns] Saved guest progress to localStorage:', newVal);
     }
   }, { deep: true });
 
   watch(customSections, (newVal) => {
     const authStore = useAuthStore();
     console.log('[watch customSections] triggered. count =', newVal?.length, ', authStore.isLoggedIn =', authStore.isLoggedIn);
-    if (!authStore.isLoggedIn) {
+    if (authStore.isLoggedIn && authStore.user?.id) {
+      localStorage.setItem(`moonflower_user_${authStore.user.id}_customSections`, JSON.stringify(newVal));
+    } else if (!authStore.isLoggedIn) {
       localStorage.setItem('moonflower_guest_customSections', JSON.stringify(newVal));
-      console.log('[watch customSections] Saved to localStorage:', newVal);
+      console.log('[watch customSections] Saved guest progress to localStorage:', newVal);
     }
   }, { deep: true });
 
@@ -1180,6 +1227,7 @@ export const useGameStore = defineStore('game', () => {
     customSections,
     gameCards,
     loadGuestState,
+    loadUserState,
     syncWithUser,
     loadCardsFromDatabase,
     addPoints,
