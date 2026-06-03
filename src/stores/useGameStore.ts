@@ -478,29 +478,23 @@ export const useGameStore = defineStore('game', () => {
   const categoryCooldowns = ref<Record<string, number>>({});
   const customSections = ref<string[]>(['Showcase', 'Real Rarities', 'Historical Gems']);
   const gameCards = ref<Card[]>(MOCK_CARDS);
+  const registeredUsersInMemory = ref<Record<string, any>>({});
 
   // Local storage keys
-  const POINTS_GUEST_KEY = 'wiki_guest_points';
   const CARDS_GUEST_KEY = 'wiki_guest_cards';
-  const COOLDOWNS_KEY = 'wiki_category_cooldowns';
-  const SECTIONS_KEY = 'wiki_custom_sections';
 
   // Read guest cache
-  const getGuestPoints = (): number => {
-    const raw = localStorage.getItem(POINTS_GUEST_KEY);
-    return raw ? parseInt(raw) : 0;
-  };
-
   const getGuestCards = (): CollectedCard[] => {
     const raw = localStorage.getItem(CARDS_GUEST_KEY);
     return raw ? JSON.parse(raw) : [];
   };
 
+  const getGuestPoints = (): number => 0;
+
   // Sync active states to guest localStorage (only when guest)
   const saveGuestStateToLocalStorage = () => {
     const authStore = useAuthStore();
     if (!authStore.isLoggedIn) {
-      localStorage.setItem(POINTS_GUEST_KEY, gdPoints.value.toString());
       localStorage.setItem(CARDS_GUEST_KEY, JSON.stringify(collectedCards.value));
     }
   };
@@ -510,18 +504,12 @@ export const useGameStore = defineStore('game', () => {
     const authStore = useAuthStore();
     if (authStore.isLoggedIn) return;
 
-    gdPoints.value = getGuestPoints();
+    gdPoints.value = 0;
     collectedCards.value = getGuestCards();
 
-    // Load category cooldowns
-    const cooldownsRaw = localStorage.getItem(COOLDOWNS_KEY);
-    categoryCooldowns.value = cooldownsRaw ? JSON.parse(cooldownsRaw) : {};
-
-    // Load custom sections
-    const sectionsRaw = localStorage.getItem(SECTIONS_KEY);
-    if (sectionsRaw) {
-      customSections.value = JSON.parse(sectionsRaw);
-    }
+    // Reset temporary session categories
+    categoryCooldowns.value = {};
+    customSections.value = ['Showcase', 'Real Rarities', 'Historical Gems'];
   };
 
   // Sync game store states directly with the user store
@@ -532,7 +520,6 @@ export const useGameStore = defineStore('game', () => {
 
   // Clean guest cached data
   const clearGuestCache = () => {
-    localStorage.removeItem(POINTS_GUEST_KEY);
     localStorage.removeItem(CARDS_GUEST_KEY);
   };
 
@@ -866,14 +853,12 @@ export const useGameStore = defineStore('game', () => {
   const addCustomSection = (sectionName: string) => {
     if (sectionName && !customSections.value.includes(sectionName)) {
       customSections.value.push(sectionName);
-      localStorage.setItem(SECTIONS_KEY, JSON.stringify(customSections.value));
     }
   };
 
   // Remove binder custom section
   const removeCustomSection = (sectionName: string) => {
     customSections.value = customSections.value.filter(s => s !== sectionName);
-    localStorage.setItem(SECTIONS_KEY, JSON.stringify(customSections.value));
 
     // Reset cards inside this section
     collectedCards.value.forEach(c => {
@@ -894,7 +879,6 @@ export const useGameStore = defineStore('game', () => {
   const setCooldown = (category: string) => {
     const expiry = Date.now() + 60 * 1000; // 60 seconds cooldown
     categoryCooldowns.value[category] = expiry;
-    localStorage.setItem(COOLDOWNS_KEY, JSON.stringify(categoryCooldowns.value));
   };
 
   const getCooldownTimeRemaining = (category: string): number => {
@@ -972,15 +956,12 @@ export const useGameStore = defineStore('game', () => {
     }
   };
 
-  // Legacy localStorage fallback for offline/dev mode
+  // Fallback registered profiles in memory for offline/dev mode
   const loadRegisteredProfile = (userId: string): { userProfile: any, cards: any[] } | null => {
-    const existingUsersRaw = localStorage.getItem('wiki_registered_users');
-    const registeredUsers = existingUsersRaw ? JSON.parse(existingUsersRaw) : {};
-
     const formattedId = userId.startsWith('usr_') ? userId : `usr_${userId.toLowerCase()}`;
 
     // Check if we need to pre-populate DevTester to showcase the UI beautifully!
-    if (formattedId === 'usr_devtester' && !registeredUsers[formattedId]) {
+    if (formattedId === 'usr_devtester' && !registeredUsersInMemory.value[formattedId]) {
       // Pick 9 random real cards to seed DevTester's binder!
       const realCards = gameCards.value.filter(c => c.isReal);
       const shuffled = [...realCards].sort(() => 0.5 - Math.random()).slice(0, 9);
@@ -995,7 +976,7 @@ export const useGameStore = defineStore('game', () => {
           : (idx === 5 || idx === 6 ? 'Historical Gems' : null)
       }));
 
-      registeredUsers[formattedId] = {
+      registeredUsersInMemory.value[formattedId] = {
         id: formattedId,
         username: 'DevTester',
         profilePic: 'https://api.dicebear.com/7.x/bottts/svg?seed=DevTester',
@@ -1004,10 +985,9 @@ export const useGameStore = defineStore('game', () => {
         gdPoints: 340,
         collectedCards: collected
       };
-      localStorage.setItem('wiki_registered_users', JSON.stringify(registeredUsers));
     }
 
-    const publicUser = registeredUsers[formattedId];
+    const publicUser = registeredUsersInMemory.value[formattedId];
     if (publicUser) {
       return {
         userProfile: {

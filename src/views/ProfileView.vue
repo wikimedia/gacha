@@ -14,6 +14,7 @@ const authStore = useAuthStore();
 const gameStore = useGameStore();
 
 const isLoadingProfile = ref(true);
+const isLoadingCards = ref(false);
 
 // Routing parameters
 const profileId = computed(() => (route.params.id as string) || '');
@@ -57,11 +58,12 @@ const loadProfile = async (forceDbFetch = false) => {
       isLoadingProfile.value = false;
 
       if (forceDbFetch) {
+        isLoadingCards.value = true;
         try {
           const dbProfile = await gameStore.loadProfileFromDB(authStore.user.id);
           if (dbProfile) {
             // Merge database cards into local collected cards if not present
-            const localCardMap = new Map(gameStore.collectedCards.map(c => [c.id, c]));
+            const localCardMap = new Map(gameStore.collectedCards.map((c: any) => [c.id, c]));
             const mergedCards = [...gameStore.collectedCards];
             let updatedAny = false;
             
@@ -79,10 +81,13 @@ const loadProfile = async (forceDbFetch = false) => {
           }
         } catch (err) {
           console.error('Error fetching/syncing profile from database:', err);
+        } finally {
+          isLoadingCards.value = false;
         }
       }
     } else {
       isLoadingProfile.value = true;
+      isLoadingCards.value = true;
       profileUser.value = null;
       profileCards.value = [];
       
@@ -93,7 +98,7 @@ const loadProfile = async (forceDbFetch = false) => {
         profileUser.value = dbProfile.userProfile;
         profileCards.value = dbProfile.cards;
       } else {
-        // Fall back to localStorage registered profiles
+        // Fall back to registered profiles
         const loaded = gameStore.loadRegisteredProfile(profileId.value);
         
         if (loaded) {
@@ -116,6 +121,7 @@ const loadProfile = async (forceDbFetch = false) => {
   } finally {
     if (!isPrivateMode.value) {
       isLoadingProfile.value = false;
+      isLoadingCards.value = false;
     }
   }
   console.log('loadProfile completed. profileUser:', profileUser.value, 'profileCards count:', profileCards.value.length);
@@ -168,7 +174,7 @@ const showcaseCards = computed(() => {
   // Map collected cards IDs to dynamic or mock card data
   const showcaseCollects = profileCards.value.filter(c => c.isShowcase);
   return showcaseCollects.map(sc => {
-    const cardData = gameStore.gameCards.find(mc => mc.id === sc.id) || MOCK_CARDS.find(mc => mc.id === sc.id);
+    const cardData = gameStore.gameCards.find((mc: any) => mc.id === sc.id) || MOCK_CARDS.find((mc: any) => mc.id === sc.id);
     if (!cardData) return null;
     return {
       ...cardData,
@@ -210,7 +216,7 @@ const isAvatarCSSImage = computed(() => {
 const sortedBinderCards = computed(() => {
   console.log(`sortedBinderCards re-evaluating: profileCards count = ${profileCards.value.length}, gameCards count = ${gameStore.gameCards.length}`);
   const result = profileCards.value.map(c => {
-    const cardData = gameStore.gameCards.find(mc => mc.id === c.id) || MOCK_CARDS.find(mc => mc.id === c.id);
+    const cardData = gameStore.gameCards.find((mc: any) => mc.id === c.id) || MOCK_CARDS.find((mc: any) => mc.id === c.id);
     if (!cardData) {
       console.warn(`Card data not found for collected card ID: "${c.id}"`);
       return null;
@@ -253,11 +259,12 @@ const toggleCardShowcase = (cardId: string) => {
 
 <template>
   <PageLayout is-wide @edit-profile="showEditProfileModal = true">
-    <div class="flex flex-col gap-6 w-full">
+    <Loader v-if="isLoadingProfile" />
+
+    <div v-else-if="profileUser" class="flex flex-col gap-6 w-full animate-fade-in">
 
       <!-- PROFILE INFO BOX -->
-      <Loader v-if="isLoadingProfile" type="skeleton" skeletonType="profile" />
-      <header v-else-if="profileUser" class="relative text-left pb-6 border-b border-base-300">
+      <header class="relative text-left pb-6 border-b border-base-300">
         <div class="flex flex-col md:flex-row gap-6 items-start md:items-center">
           <!-- Pinned Card Image as User Profile Image -->
           <div v-if="hasPinnedCardWithImage" class="avatar">
@@ -335,8 +342,8 @@ const toggleCardShowcase = (cardId: string) => {
           >
         </div>
 
-        <!-- Grid of Cards -->
-        <Loader v-if="isLoadingProfile" type="skeleton" skeletonType="card" :skeletonCount="6" />
+        <!-- Grid of Cards or Loader -->
+        <Loader v-if="isLoadingCards" />
         
         <template v-else>
           <div v-if="sortedBinderCards.length === 0" class="text-xs text-secondary italic text-center py-16 bg-white/10 border border-base-300/40 rounded-lg">

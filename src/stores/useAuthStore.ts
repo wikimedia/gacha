@@ -30,8 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value.gdPoints = points;
       user.value.collectedCards = cards;
 
-      // Update locally in session storage cache
-      localStorage.setItem('wiki_user', JSON.stringify(user.value));
+      // Sync store state to user object
 
       // Persist to Supabase User Metadata
       const { error } = await supabase.auth.updateUser({
@@ -151,18 +150,12 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = mappedUser;
       isLoggedIn.value = true;
 
-      // Save session cache for instant startup
-      localStorage.setItem('wiki_user', JSON.stringify(mappedUser));
-      localStorage.setItem('wiki_is_logged_in', 'true');
-
       // Sync user data to active Game Store
       gameStore.gdPoints = mappedUser.gdPoints;
       gameStore.collectedCards = mappedUser.collectedCards;
     } else {
       user.value = null;
       isLoggedIn.value = false;
-      localStorage.removeItem('wiki_user');
-      localStorage.setItem('wiki_is_logged_in', 'false');
 
       // Reset game store to guest state
       gameStore.loadGuestState();
@@ -224,7 +217,7 @@ export const useAuthStore = defineStore('auth', () => {
       // De-duplicate collected cards by ID when merging
       const mergedCardsMap = new Map<string, typeof guestCards[0]>();
       existingCards.forEach((c: any) => mergedCardsMap.set(c.id, c));
-      guestCards.forEach(c => {
+      guestCards.forEach((c: any) => {
         if (!mergedCardsMap.has(c.id)) {
           mergedCardsMap.set(c.id, c);
         }
@@ -278,9 +271,6 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = mappedUser;
     isLoggedIn.value = true;
     
-    localStorage.setItem('wiki_user', JSON.stringify(mappedUser));
-    localStorage.setItem('wiki_is_logged_in', 'true');
-    
     const gameStore = useGameStore();
     gameStore.gdPoints = mappedUser.gdPoints;
     gameStore.collectedCards = mappedUser.collectedCards;
@@ -301,9 +291,6 @@ export const useAuthStore = defineStore('auth', () => {
         ...user.value,
         ...profileUpdate
       };
-
-      // Save local cache
-      localStorage.setItem('wiki_user', JSON.stringify(user.value));
 
       // Persist username and bio to the Supabase profiles table
       const profilesUpdate: Record<string, string> = {};

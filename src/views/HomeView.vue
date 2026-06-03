@@ -197,7 +197,7 @@ const startFakeoutGame = (category: 'Science' | 'History' | 'Pop Culture' | 'Geo
   playerChoiceReal.value = null;
   
   // Prepare game deck: 10 random cards from this category
-  const catCards = gameStore.gameCards.filter(c => c.category === category);
+  const catCards = gameStore.gameCards.filter((c: any) => c.category === category);
   // Shuffle cards
   const shuffled = [...catCards].sort(() => Math.random() - 0.5);
   // Take up to 10
@@ -396,7 +396,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
   }, 800);
   
   // Select a card at random from the database-backed deck, filtering only for real cards
-  const realCards = gameStore.gameCards.filter(c => c.isReal);
+  const realCards = gameStore.gameCards.filter((c: any) => c.isReal);
   if (realCards.length === 0) return;
   const randomCard = realCards[Math.floor(Math.random() * realCards.length)];
   
@@ -461,7 +461,7 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
     :is-animating="isAnimatingPoints"
     @activate="startGachaDrop" 
   >
-    <Loader v-if="isLoading" type="page" />
+    <Loader v-if="isLoading" />
 
     <template v-else>
       <!-- FAKEOUT GAME CATEGORY SELECTION -->
