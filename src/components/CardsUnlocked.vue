@@ -165,19 +165,7 @@ const handleDismiss = () => {
         {{ lost ? 'Game Over!' : (gameType === 'fakeout' ? 'Game Summary!' : 'Gacha Complete!') }}
       </h2>
       
-      <!-- Stats Display Row -->
-      <div class="flex justify-center gap-4 mt-3">
-        <div v-if="gameType === 'fakeout'" class="badge font-sans font-bold py-3 px-4 shadow-sm border" :class="lost ? 'badge-error text-white' : 'badge-primary'">
-          Score: {{ gameStats.score }}/{{ gameStats.totalRounds || 10 }}
-        </div>
-        <div v-else class="badge badge-secondary font-sans font-bold py-3 px-4 shadow-sm border">
-          Globe Taps: {{ gameStats.taps }}
-        </div>
-        
-        <div class="badge badge-neutral font-sans font-bold py-3 px-4 shadow-sm border">
-          {{ lost ? 'Points Earned' : 'Cards Earned' }}: {{ lost ? `+${gameStats.score}` : unlockedCards.length }}
-        </div>
-      </div>
+
     </header>
 
     <!-- LIST OF UNLOCKED REAL CARDS -->

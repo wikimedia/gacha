@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useAuthStore } from './useAuthStore';
 import { supabase } from '../supabase';
 
@@ -485,12 +485,48 @@ export const useGameStore = defineStore('game', () => {
     const authStore = useAuthStore();
     if (authStore.isLoggedIn) return;
 
-    gdPoints.value = 0;
-    collectedCards.value = [];
+    // Load points
+    const savedPoints = localStorage.getItem('moonflower_guest_gdPoints');
+    gdPoints.value = savedPoints !== null ? parseInt(savedPoints, 10) : 0;
 
-    // Reset temporary session categories
-    categoryCooldowns.value = {};
-    customSections.value = ['Showcase', 'Real Rarities', 'Historical Gems'];
+    // Load collected cards
+    const savedCards = localStorage.getItem('moonflower_guest_collectedCards');
+    if (savedCards) {
+      try {
+        collectedCards.value = JSON.parse(savedCards);
+      } catch (err) {
+        console.error('Failed to parse collectedCards from localStorage:', err);
+        collectedCards.value = [];
+      }
+    } else {
+      collectedCards.value = [];
+    }
+
+    // Load category cooldowns
+    const savedCooldowns = localStorage.getItem('moonflower_guest_categoryCooldowns');
+    if (savedCooldowns) {
+      try {
+        categoryCooldowns.value = JSON.parse(savedCooldowns);
+      } catch (err) {
+        console.error('Failed to parse categoryCooldowns from localStorage:', err);
+        categoryCooldowns.value = {};
+      }
+    } else {
+      categoryCooldowns.value = {};
+    }
+
+    // Load custom sections
+    const savedSections = localStorage.getItem('moonflower_guest_customSections');
+    if (savedSections) {
+      try {
+        customSections.value = JSON.parse(savedSections);
+      } catch (err) {
+        console.error('Failed to parse customSections from localStorage:', err);
+        customSections.value = ['Showcase', 'Real Rarities', 'Historical Gems'];
+      }
+    } else {
+      customSections.value = ['Showcase', 'Real Rarities', 'Historical Gems'];
+    }
   };
 
   // Sync game store states directly with the user store
@@ -816,6 +852,11 @@ export const useGameStore = defineStore('game', () => {
     const authStore = useAuthStore();
     if (authStore.isLoggedIn) {
       authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
+    } else {
+      localStorage.setItem('moonflower_guest_gdPoints', String(gdPoints.value));
+      localStorage.setItem('moonflower_guest_collectedCards', JSON.stringify(collectedCards.value));
+      localStorage.setItem('moonflower_guest_categoryCooldowns', JSON.stringify(categoryCooldowns.value));
+      localStorage.setItem('moonflower_guest_customSections', JSON.stringify(customSections.value));
     }
   };
 
@@ -1090,6 +1131,35 @@ export const useGameStore = defineStore('game', () => {
       console.error('Failed to claim articles:', err.message);
     }
   };
+
+  // Watchers to automatically save to localStorage when guest changes state
+  watch(gdPoints, (newVal) => {
+    const authStore = useAuthStore();
+    if (!authStore.isLoggedIn) {
+      localStorage.setItem('moonflower_guest_gdPoints', String(newVal));
+    }
+  });
+
+  watch(collectedCards, (newVal) => {
+    const authStore = useAuthStore();
+    if (!authStore.isLoggedIn) {
+      localStorage.setItem('moonflower_guest_collectedCards', JSON.stringify(newVal));
+    }
+  }, { deep: true });
+
+  watch(categoryCooldowns, (newVal) => {
+    const authStore = useAuthStore();
+    if (!authStore.isLoggedIn) {
+      localStorage.setItem('moonflower_guest_categoryCooldowns', JSON.stringify(newVal));
+    }
+  }, { deep: true });
+
+  watch(customSections, (newVal) => {
+    const authStore = useAuthStore();
+    if (!authStore.isLoggedIn) {
+      localStorage.setItem('moonflower_guest_customSections', JSON.stringify(newVal));
+    }
+  }, { deep: true });
 
   return {
     gdPoints,
