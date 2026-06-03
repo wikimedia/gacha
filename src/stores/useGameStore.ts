@@ -909,7 +909,7 @@ export const useGameStore = defineStore('game', () => {
     try {
       // Try matching by username first (case-insensitive)
       let { data: profileData, error } = await supabase
-        .from('profile')
+        .from('profiles')
         .select('*')
         .ilike('username', usernameOrId)
         .maybeSingle();
@@ -921,7 +921,7 @@ export const useGameStore = defineStore('game', () => {
       // If no match by username, try matching by id
       if (!profileData) {
         const { data: profileById, error: idError } = await supabase
-          .from('profile')
+          .from('profiles')
           .select('*')
           .eq('id', usernameOrId)
           .maybeSingle();

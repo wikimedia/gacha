@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
+import { supabase } from '../supabase';
 
 const props = withDefaults(defineProps<{
   displayedPoints?: number;
@@ -48,6 +49,39 @@ const isOwnProfile = computed(() => {
   return authStore.user.username.toLowerCase() === profileId.toLowerCase() ||
          authStore.user.id.toLowerCase() === profileId.toLowerCase();
 });
+
+// Fetch display username from Supabase profile table
+const dbUsername = ref<string | null>(null);
+
+const fetchProfileUsername = async () => {
+  if (!authStore.isLoggedIn || !authStore.user) {
+    dbUsername.value = null;
+    return;
+  }
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', authStore.user.id)
+      .maybeSingle();
+    if (!error && data) {
+      dbUsername.value = data.username;
+    }
+  } catch (err) {
+    console.error('Failed to fetch profile username:', err);
+  }
+};
+
+// Re-fetch when auth state changes
+watch(() => authStore.isLoggedIn, (loggedIn) => {
+  if (loggedIn) {
+    fetchProfileUsername();
+  } else {
+    dbUsername.value = null;
+  }
+}, { immediate: true });
+
+const displayUsername = computed(() => dbUsername.value || authStore.user?.username || '');
 
 // Auth modal state
 const showAuthModal = ref(false);
@@ -205,14 +239,11 @@ defineExpose({
           
           <div v-else class="dropdown dropdown-end z-50">
             <label tabindex="0" class="btn btn-ghost btn-xs gap-1 font-bold text-primary truncate max-w-[110px] px-1">
-              👤 {{ authStore.user?.username }}
+              👤 {{ displayUsername }}
             </label>
              <ul tabindex="0" class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box border border-base-300 w-52 mt-2 gap-1 text-sm">
-               <li class="menu-title text-xs font-semibold px-4 py-2 border-b border-base-200 text-secondary mb-1">
-                 Binder Dashboard
-               </li>
                <li>
-                 <router-link :to="authStore.user ? '/@' + authStore.user.username : '/'" class="font-medium text-base-content py-2 px-4 hover:bg-base-200 rounded">
+                 <router-link :to="authStore.user ? '/@' + (dbUsername || authStore.user.username) : '/'" class="font-medium text-base-content py-2 px-4 hover:bg-base-200 rounded">
                    📖 View Collection
                  </router-link>
                </li>

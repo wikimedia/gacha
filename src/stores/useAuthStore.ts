@@ -72,7 +72,23 @@ export const useAuthStore = defineStore('auth', () => {
       const metadata = su.user_metadata || {};
       
       const email = su.email || '';
-      const fallbackUsername = email.split('@')[0] || 'Scholar';
+      // Fetch the real username from the Supabase profile table
+      let profileUsername: string | null = null;
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', su.id)
+          .maybeSingle();
+        if (profileData?.username) {
+          profileUsername = profileData.username;
+        }
+      } catch (err) {
+        console.error('Error fetching profile username:', err);
+      }
+      
+      // Priority: profile table > auth metadata > fallback
+      const username = profileUsername || metadata.username || 'Scholar';
       
       // Check if we have guest progress to merge
       const guestPoints = gameStore.getGuestPoints();
@@ -97,7 +113,6 @@ export const useAuthStore = defineStore('auth', () => {
         finalCards = Array.from(mergedCardsMap.values());
 
         // Update user metadata in Supabase
-        const username = metadata.username || fallbackUsername;
         const { error: updateError } = await supabase.auth.updateUser({
           data: {
             username,
@@ -119,9 +134,9 @@ export const useAuthStore = defineStore('auth', () => {
 
       const mappedUser: User = {
         id: su.id,
-        username: metadata.username || fallbackUsername,
+        username,
         email: email,
-        profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${metadata.username || fallbackUsername}`,
+        profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
         bio: metadata.bio || 'Avid Moonflower scholar and collector.',
         backgroundColor: metadata.backgroundColor || '#eaecf0',
         gdPoints: finalPoints,
@@ -179,6 +194,21 @@ export const useAuthStore = defineStore('auth', () => {
       const su = session.user;
       const metadata = su.user_metadata || {};
       
+      // Fetch the real username from the Supabase profile table
+      let profileUsername: string | null = null;
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', su.id)
+          .maybeSingle();
+        if (profileData?.username) {
+          profileUsername = profileData.username;
+        }
+      } catch (err) {
+        console.error('Error fetching profile username during OTP verify:', err);
+      }
+      
       const existingPoints = typeof metadata.gdPoints === 'number' ? metadata.gdPoints : 0;
       const existingCards = Array.isArray(metadata.collectedCards) ? metadata.collectedCards : [];
 
@@ -195,7 +225,7 @@ export const useAuthStore = defineStore('auth', () => {
       const finalCards = Array.from(mergedCardsMap.values());
 
       // Update Supabase with merged properties
-      const username = metadata.username || email.split('@')[0] || 'Scholar';
+      const username = profileUsername || metadata.username || 'Scholar';
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
           username,
