@@ -268,9 +268,6 @@ defineExpose({
         </div>
         <span class="text-sm font-black font-serif text-primary leading-none">Moonflower</span>
       </router-link>
-      <span class="badge badge-error badge-outline font-sans uppercase font-extrabold text-[9px] tracking-wider animate-pulse">
-        Gacha drop mode
-      </span>
     </div>
 
     <!-- AUTHENTICATION DIALOG / MODAL (DaisyUI Dialog Modal) -->

@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
+import CardsUnlocked from '../components/CardsUnlocked.vue';
 import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 
@@ -49,6 +50,10 @@ const gachaTimer = ref(10);
 const gachaTapCount = ref(0);
 const gachaDroppedCards = ref<Card[]>([]);
 const showGachaSummary = ref(false);
+const showCardsUnlocked = ref(false);
+const cardsUnlockedGameType = ref<'fakeout' | 'gacha'>('fakeout');
+const identifiedFakesThisGame = ref<Card[]>([]);
+const gameLost = ref(false);
 const isGlobeJiggling = ref(false);
 
 interface FloatingText {
@@ -123,7 +128,7 @@ watch(() => gameStore.gdPoints, (newPoints) => {
 
 const checkTriggerGacha = () => {
   if (route.query.triggerGacha === 'true') {
-    if (authStore.isLoggedIn && gameStore.gdPoints >= 100) {
+    if (gameStore.gdPoints >= 100) {
       router.replace({ query: {} });
       startGachaDrop();
     }
@@ -138,9 +143,6 @@ watch([() => authStore.isLoggedIn, () => gameStore.gdPoints], () => {
 const isDev = true;
 
 const triggerDebugGacha = () => {
-  if (!authStore.isLoggedIn) {
-    authStore.login('DevTester');
-  }
   if (gameStore.gdPoints < 100) {
     gameStore.addPoints(100 - gameStore.gdPoints);
   }
@@ -193,6 +195,9 @@ const startFakeoutGame = (category: 'Science' | 'History' | 'Pop Culture' | 'Geo
   currentRound.value = 1;
   gameScore.value = 0;
   collectedThisGame.value = [];
+  identifiedFakesThisGame.value = [];
+  gameLost.value = false;
+  showCardsUnlocked.value = false;
   roundAnswered.value = false;
   playerChoiceReal.value = null;
   
@@ -238,16 +243,23 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
     // Earn point in game store
     gameStore.addPoints(1);
     
-    // If it's a real card, collect it!
+    // Track cards guessed correctly
     if (card.isReal) {
-      gameStore.collectCard(card.id);
       collectedThisGame.value.push(card);
+    } else {
+      identifiedFakesThisGame.value.push(card);
     }
+  } else {
+    gameLost.value = true;
   }
 
-  // Tighten up loop: automatically advance to the next card after 1 second!
+  // Tighten up loop: automatically advance to the next card or end game after 1 second!
   setTimeout(() => {
-    nextRound();
+    if (!isCorrect) {
+      endFakeoutGame();
+    } else {
+      nextRound();
+    }
   }, 1000);
 };
 
@@ -262,16 +274,24 @@ const endFakeoutGame = () => {
     gameStore.setCooldown(selectedCategory.value);
   }
   
-  // Claim collected articles for this user's profile in Supabase
-  if (collectedThisGame.value.length > 0) {
-    const collectedQids = collectedThisGame.value.map(c => c.id);
-    gameStore.claimArticlesForProfile(collectedQids);
-  }
-  
-  selectedCategory.value = null;
   updateCooldowns();
   
-  animateProgressBar(pointsBeforeGame.value, gameStore.gdPoints);
+  // Transition to unified CardsUnlocked UI
+  cardsUnlockedGameType.value = 'fakeout';
+  showCardsUnlocked.value = true;
+};
+
+const handleClaimSuccess = (claimedCards: Card[]) => {
+  console.log('Cards claimed successfully:', claimedCards);
+};
+
+const handleCardsUnlockedDismiss = () => {
+  showCardsUnlocked.value = false;
+  selectedCategory.value = null;
+  // If Fake Out, run the progress bar animation returning to Home
+  if (cardsUnlockedGameType.value === 'fakeout') {
+    animateProgressBar(pointsBeforeGame.value, gameStore.gdPoints);
+  }
 };
 
 // Touch/Swipe Gesture Handlers for Mobile Swiping Feel
@@ -332,12 +352,6 @@ const evaluateSwipe = () => {
 const startGachaDrop = () => {
   if (gameStore.gdPoints < 100) return;
   
-  // If guest, block and request sign-up/login
-  if (!authStore.isLoggedIn) {
-    headerRef.value?.openAuthModal();
-    return;
-  }
-  
   // Spend points
   if (gameStore.spendPoints(100)) {
     gachaActive.value = true;
@@ -345,6 +359,7 @@ const startGachaDrop = () => {
     gachaTapCount.value = 0;
     gachaDroppedCards.value = [];
     showGachaSummary.value = false;
+    showCardsUnlocked.value = false;
     
     displayedPoints.value = gameStore.gdPoints;
     isUnlockedJustNow.value = false;
@@ -355,13 +370,10 @@ const startGachaDrop = () => {
       if (gachaTimer.value <= 0) {
         clearInterval(interval);
         gachaActive.value = false;
-        showGachaSummary.value = true;
         
-        // Claim all dropped articles for this user's profile in Supabase
-        const droppedQids = gachaDroppedCards.value.map(c => c.id);
-        if (droppedQids.length > 0) {
-          gameStore.claimArticlesForProfile(droppedQids);
-        }
+        // Transition to unified CardsUnlocked UI
+        cardsUnlockedGameType.value = 'gacha';
+        showCardsUnlocked.value = true;
       }
     }, 1000);
   }
@@ -400,10 +412,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
   if (realCards.length === 0) return;
   const randomCard = realCards[Math.floor(Math.random() * realCards.length)];
   
-  // Collect the card in inventory
-  gameStore.collectCard(randomCard.id);
-  
-  // Insert at front of display deck
+  // Insert at front of display deck (do not collect immediately in store)
   gachaDroppedCards.value.unshift(randomCard);
 };
 
@@ -457,7 +466,7 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
   <PageLayout
     ref="headerRef"
     :displayed-points="displayedPoints" 
-    :gacha-active="gachaActive || showGachaSummary" 
+    :gacha-active="gachaActive || showCardsUnlocked" 
     :is-animating="isAnimatingPoints"
     @activate="startGachaDrop" 
   >
@@ -465,7 +474,7 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
 
     <template v-else>
       <!-- FAKEOUT GAME CATEGORY SELECTION -->
-      <section v-if="!gameActive && !gachaActive && !showGachaSummary" class="flex-grow flex flex-col gap-6 justify-center py-6">
+      <section v-if="!gameActive && !gachaActive && !showCardsUnlocked" class="flex-grow flex flex-col gap-6 justify-center py-6">
         
         <!-- Welcome DaisyUI Card -->
         <div class="card card-bordered bg-base-100 shadow-md">
@@ -735,59 +744,23 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
         </div>
       </section>
 
-      <!-- GACHA DROP SUMMARY SCREEN -->
-      <section v-if="showGachaSummary" class="flex-grow flex flex-col justify-between py-4">
-        <div class="text-center">
-          <span class="text-4xl">🎉</span>
-          <h2 class="font-serif text-2xl border-b border-base-300 pb-2 text-primary font-bold mt-2">
-            Gacha Frenzy Complete!
-          </h2>
-          <p class="text-xs text-secondary mt-3 font-sans font-light leading-relaxed">
-            You tapped the globe <strong class="text-base-content font-bold">{{ gachaTapCount }} times</strong>, collecting <strong class="text-base-content font-bold">{{ gachaDroppedCards.length }} new entries</strong> for your binder!
-          </p>
-        </div>
-
-        <!-- List of Collected Cards -->
-        <div class="my-6 overflow-y-auto max-h-[280px] border border-base-300 rounded bg-base-100 shadow-inner">
-          <div v-if="gachaDroppedCards.length === 0" class="text-xs text-secondary italic text-center py-8">
-            No cards collected. Tap faster next time!
-          </div>
-          <div 
-            v-else
-            v-for="(card, index) in gachaDroppedCards" 
-            :key="index"
-            class="flex items-center justify-between p-3 border-b border-base-200 last:border-b-0 hover:bg-base-200/50"
-          >
-            <div class="text-left flex items-center gap-2">
-              <span v-if="card.rarity !== 'Common'" class="badge badge-xs uppercase text-[8px] font-sans font-bold py-1.5" :class="[
-                card.rarity === 'Legendary' ? 'badge-warning' :
-                card.rarity === 'Epic' ? 'badge-neutral' :
-                card.rarity === 'Rare' ? 'badge-primary' : 'badge-ghost'
-              ]">
-                {{ card.rarity }}
-              </span>
-              <strong class="font-serif text-xs text-base-content font-semibold">{{ card.title }}</strong>
-            </div>
-            <span class="text-[9px] text-secondary font-sans uppercase font-bold">{{ card.category }}</span>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <router-link
-            :to="authStore.user ? '/@' + authStore.user.username : '/'"
-            class="btn btn-primary w-full uppercase font-bold text-xs text-white"
-          >
-            📖 Open Binder & View Cards
-          </router-link>
-          
-          <button 
-            @click="showGachaSummary = false"
-            class="btn btn-outline border-base-300 w-full uppercase font-bold text-xs"
-          >
-            Back to Home
-          </button>
-        </div>
-      </section>
+      <!-- UNIFIED CARDS UNLOCKED UI -->
+      <CardsUnlocked
+        v-slot:default
+        v-if="showCardsUnlocked"
+        :unlocked-cards="cardsUnlockedGameType === 'fakeout' ? collectedThisGame : gachaDroppedCards"
+        :identified-fakes="cardsUnlockedGameType === 'fakeout' ? identifiedFakesThisGame : []"
+        :game-type="cardsUnlockedGameType"
+        :game-stats="{
+          score: gameScore,
+          totalRounds: gameDeck.length,
+          taps: gachaDroppedCards.length
+        }"
+        :lost="gameLost"
+        @claim="handleClaimSuccess"
+        @dismiss="handleCardsUnlockedDismiss"
+        @open-auth="headerRef?.openAuthModal()"
+      />
     </template>
 
   </PageLayout>

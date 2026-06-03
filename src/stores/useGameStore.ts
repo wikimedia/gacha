@@ -482,6 +482,7 @@ export const useGameStore = defineStore('game', () => {
 
   // Local storage keys
   const CARDS_GUEST_KEY = 'wiki_guest_cards';
+  const POINTS_GUEST_KEY = 'wiki_guest_points';
 
   // Read guest cache
   const getGuestCards = (): CollectedCard[] => {
@@ -489,13 +490,17 @@ export const useGameStore = defineStore('game', () => {
     return raw ? JSON.parse(raw) : [];
   };
 
-  const getGuestPoints = (): number => 0;
+  const getGuestPoints = (): number => {
+    const raw = localStorage.getItem(POINTS_GUEST_KEY);
+    return raw ? parseInt(raw, 10) : 0;
+  };
 
   // Sync active states to guest localStorage (only when guest)
   const saveGuestStateToLocalStorage = () => {
     const authStore = useAuthStore();
     if (!authStore.isLoggedIn) {
       localStorage.setItem(CARDS_GUEST_KEY, JSON.stringify(collectedCards.value));
+      localStorage.setItem(POINTS_GUEST_KEY, String(gdPoints.value));
     }
   };
 
@@ -504,7 +509,7 @@ export const useGameStore = defineStore('game', () => {
     const authStore = useAuthStore();
     if (authStore.isLoggedIn) return;
 
-    gdPoints.value = 0;
+    gdPoints.value = getGuestPoints();
     collectedCards.value = getGuestCards();
 
     // Reset temporary session categories
@@ -521,6 +526,7 @@ export const useGameStore = defineStore('game', () => {
   // Clean guest cached data
   const clearGuestCache = () => {
     localStorage.removeItem(CARDS_GUEST_KEY);
+    localStorage.removeItem(POINTS_GUEST_KEY);
   };
 
   // Helper to filter out explicit, sexually suggestive, or inappropriate Wikipedia entries
