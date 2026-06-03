@@ -119,11 +119,9 @@ const animateProgressBar = (start: number, end: number) => {
   requestAnimationFrame(update);
 };
 
-// Reactively sync displayed points when not in-game
+// Reactively sync displayed points in real time
 watch(() => gameStore.gdPoints, (newPoints) => {
-  if (!gameActive.value) {
-    displayedPoints.value = newPoints;
-  }
+  displayedPoints.value = newPoints;
 });
 
 const checkTriggerGacha = () => {
@@ -240,8 +238,9 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
   
   if (isCorrect) {
     gameScore.value += 1;
-    // Earn point in game store
-    gameStore.addPoints(1);
+    // Earn point in game store locally without DB write to prevent race conditions during fast play
+    gameStore.addPoints(1, false);
+    displayedPoints.value = gameStore.gdPoints;
     
     // Track cards guessed correctly
     if (card.isReal) {
@@ -275,6 +274,9 @@ const endFakeoutGame = () => {
   }
   
   updateCooldowns();
+  
+  // Persist points and game state to backend/localStorage when game ends
+  gameStore.persistState();
   
   // Transition to unified CardsUnlocked UI
   cardsUnlockedGameType.value = 'fakeout';
@@ -468,6 +470,7 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
     :displayed-points="displayedPoints" 
     :gacha-active="gachaActive || showCardsUnlocked" 
     :is-animating="isAnimatingPoints"
+    :hide-header="showCardsUnlocked && gameLost"
     @activate="startGachaDrop" 
   >
     <Loader v-if="isLoading" />

@@ -8,6 +8,7 @@ defineProps<{
   backgroundColor?: string;
   isWide?: boolean;
   isAnimating?: boolean;
+  hideHeader?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -30,6 +31,7 @@ defineExpose({
     :style="{ backgroundColor: backgroundColor || undefined }"
   >
     <AppHeader 
+      v-if="!hideHeader"
       ref="headerRef"
       :displayed-points="displayedPoints" 
       :gacha-active="gachaActive" 

@@ -175,7 +175,7 @@ const handleDismiss = () => {
         </div>
         
         <div class="badge badge-neutral font-sans font-bold py-3 px-4 shadow-sm border">
-          {{ lost ? 'Cards Lost' : 'Cards Earned' }}: {{ unlockedCards.length }}
+          {{ lost ? 'Points Earned' : 'Cards Earned' }}: {{ lost ? `+${gameStats.score}` : unlockedCards.length }}
         </div>
       </div>
     </header>

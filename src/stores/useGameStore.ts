@@ -20,6 +20,7 @@ export interface CollectedCard {
   collectedAt: string;
   isShowcase: boolean;
   customSection: string | null;
+  cardDetails?: Card;
 }
 
 export const MOCK_CARDS: Card[] = [
@@ -478,39 +479,14 @@ export const useGameStore = defineStore('game', () => {
   const categoryCooldowns = ref<Record<string, number>>({});
   const customSections = ref<string[]>(['Showcase', 'Real Rarities', 'Historical Gems']);
   const gameCards = ref<Card[]>(MOCK_CARDS);
-  const registeredUsersInMemory = ref<Record<string, any>>({});
-
-  // Local storage keys
-  const CARDS_GUEST_KEY = 'wiki_guest_cards';
-  const POINTS_GUEST_KEY = 'wiki_guest_points';
-
-  // Read guest cache
-  const getGuestCards = (): CollectedCard[] => {
-    const raw = localStorage.getItem(CARDS_GUEST_KEY);
-    return raw ? JSON.parse(raw) : [];
-  };
-
-  const getGuestPoints = (): number => {
-    const raw = localStorage.getItem(POINTS_GUEST_KEY);
-    return raw ? parseInt(raw, 10) : 0;
-  };
-
-  // Sync active states to guest localStorage (only when guest)
-  const saveGuestStateToLocalStorage = () => {
-    const authStore = useAuthStore();
-    if (!authStore.isLoggedIn) {
-      localStorage.setItem(CARDS_GUEST_KEY, JSON.stringify(collectedCards.value));
-      localStorage.setItem(POINTS_GUEST_KEY, String(gdPoints.value));
-    }
-  };
 
   // Load guest data
   const loadGuestState = () => {
     const authStore = useAuthStore();
     if (authStore.isLoggedIn) return;
 
-    gdPoints.value = getGuestPoints();
-    collectedCards.value = getGuestCards();
+    gdPoints.value = 0;
+    collectedCards.value = [];
 
     // Reset temporary session categories
     categoryCooldowns.value = {};
@@ -521,12 +497,6 @@ export const useGameStore = defineStore('game', () => {
   const syncWithUser = (points: number, cards: CollectedCard[]) => {
     gdPoints.value = points;
     collectedCards.value = cards;
-  };
-
-  // Clean guest cached data
-  const clearGuestCache = () => {
-    localStorage.removeItem(CARDS_GUEST_KEY);
-    localStorage.removeItem(POINTS_GUEST_KEY);
   };
 
   // Helper to filter out explicit, sexually suggestive, or inappropriate Wikipedia entries
@@ -627,6 +597,82 @@ export const useGameStore = defineStore('game', () => {
     }
 
     return true;
+  };
+
+  // Helper to map database article row to Card format
+  const mapArticleRowToCard = (row: any): Card => {
+    // 1. Normalize Category
+    let category: 'Science' | 'History' | 'Pop Culture' | 'Geography' = 'History';
+    const topic = (row.topic || '').toLowerCase();
+
+    if (topic.includes('sci') || topic.includes('nature') || topic.includes('biology')) {
+      category = 'Science';
+    } else if (topic.includes('hist') || topic.includes('war') || topic.includes('ancient')) {
+      category = 'History';
+    } else if (topic.includes('pop') || topic.includes('music') || topic.includes('movie') || topic.includes('culture') || topic.includes('art')) {
+      category = 'Pop Culture';
+    } else if (topic.includes('geo') || topic.includes('place') || topic.includes('land') || topic.includes('map')) {
+      category = 'Geography';
+    } else {
+      // Assign deterministic category based on qid length or char code
+      const cats = ['Science', 'History', 'Pop Culture', 'Geography'] as const;
+      const code = (row.qid || '').split('').reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
+      category = cats[code % cats.length];
+    }
+
+    // 2. Normalize Rarity based on Supabase db column
+    let rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' = 'Common';
+    const dbRarity = row.rarity !== undefined ? row.rarity : row.rarity_level;
+    if (dbRarity !== undefined && dbRarity !== null) {
+      const strRarity = String(dbRarity).trim().toLowerCase();
+      if (strRarity === 'legendary' || strRarity === '3') {
+        rarity = 'Legendary';
+      } else if (strRarity === 'epic' || strRarity === '2') {
+        rarity = 'Epic';
+      } else if (strRarity === 'rare' || strRarity === '1') {
+        rarity = 'Rare';
+      } else if (strRarity === 'common' || strRarity === '0') {
+        rarity = 'Common';
+      }
+    } else {
+      const pct = row.percentile;
+      if (typeof pct === 'number') {
+        if (pct >= 0.90) rarity = 'Legendary';
+        else if (pct >= 0.70) rarity = 'Epic';
+        else if (pct >= 0.40) rarity = 'Rare';
+      } else if (typeof row.view_count === 'number') {
+        const vc = row.view_count;
+        if (vc > 1000000) rarity = 'Legendary';
+        else if (vc > 100000) rarity = 'Epic';
+        else if (vc > 10000) rarity = 'Rare';
+      }
+    }
+
+    // 3. Format visual background image
+    let image = '';
+    if (row.image_url) {
+      image = row.image_url;
+    }
+
+    // 4. Construct descriptions & dynamic sentence-swapped alterations
+    const s1 = row.sentence_1 || '';
+    const s2 = row.sentence_2 || '';
+    const s3 = row.sentence_3 || '';
+    const s4 = row.sentence_4 || '';
+    const combinedSentences = [s1, s2, s3, s4].filter(Boolean).join(' ');
+    const realDescription = row.description || row.abstract || combinedSentences || 'No description available.';
+
+    return {
+      id: row.qid,
+      title: row.name || 'Untitled Article',
+      wikipediaLink: row.url || `https://en.wikipedia.org/wiki/${encodeURIComponent(row.name || '')}`,
+      category,
+      rarity,
+      description: realDescription,
+      image,
+      isReal: true,
+      explanation: `Real! This is a verified Wikipedia entry: ${realDescription.slice(0, 100)}...`
+    };
   };
 
   // Fetch articles from Supabase and map them to Cards dynamically
@@ -766,16 +812,19 @@ export const useGameStore = defineStore('game', () => {
   };
 
 
-  // Add Points
-  const addPoints = (points: number) => {
-    gdPoints.value += points;
-
-    // Sync back
+  const persistState = () => {
     const authStore = useAuthStore();
     if (authStore.isLoggedIn) {
       authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
-    } else {
-      saveGuestStateToLocalStorage();
+    }
+  };
+
+  // Add Points
+  const addPoints = (points: number, shouldPersist = true) => {
+    gdPoints.value += points;
+
+    if (shouldPersist) {
+      persistState();
     }
   };
 
@@ -786,8 +835,6 @@ export const useGameStore = defineStore('game', () => {
       const authStore = useAuthStore();
       if (authStore.isLoggedIn) {
         authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
-      } else {
-        saveGuestStateToLocalStorage();
       }
       return true;
     }
@@ -813,15 +860,14 @@ export const useGameStore = defineStore('game', () => {
     const authStore = useAuthStore();
     if (authStore.isLoggedIn) {
       authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
-    } else {
-      saveGuestStateToLocalStorage();
     }
 
     return existsIndex === -1;
   };
 
   // Toggle Showcase status (only ONE pinned card allowed at a time)
-  const toggleShowcase = (cardId: string) => {
+  // Toggle Showcase status (only ONE pinned card allowed at a time)
+  const toggleShowcase = async (cardId: string) => {
     const card = collectedCards.value.find(c => c.id === cardId);
     if (card) {
       const targetState = !card.isShowcase;
@@ -833,9 +879,50 @@ export const useGameStore = defineStore('game', () => {
 
       const authStore = useAuthStore();
       if (authStore.isLoggedIn) {
+        // Sync points (collectedCards is no longer stored in metadata)
         authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
-      } else {
-        saveGuestStateToLocalStorage();
+
+        // Update database table 'articles' for pinning
+        const profileId = authStore.user?.id;
+        if (profileId && !profileId.startsWith('usr_')) {
+          try {
+            if (targetState) {
+              // 1. Unpin all other articles belonging to this user
+              const { error: unpinError } = await supabase
+                .from('articles')
+                .update({ pinned: false })
+                .eq('profile_id', profileId);
+              
+              if (unpinError) {
+                console.error('Error resetting pins in DB:', unpinError.message);
+              }
+
+              // 2. Pin this specific article
+              const { error: pinError } = await supabase
+                .from('articles')
+                .update({ pinned: true })
+                .eq('profile_id', profileId)
+                .eq('qid', cardId);
+              
+              if (pinError) {
+                console.error('Error pinning article in DB:', pinError.message);
+              }
+            } else {
+              // Unpin this specific article
+              const { error: unpinError } = await supabase
+                .from('articles')
+                .update({ pinned: false })
+                .eq('profile_id', profileId)
+                .eq('qid', cardId);
+              
+              if (unpinError) {
+                console.error('Error unpinning article in DB:', unpinError.message);
+              }
+            }
+          } catch (err) {
+            console.error('Failed to update pinned state in database:', err);
+          }
+        }
       }
     }
   };
@@ -849,8 +936,6 @@ export const useGameStore = defineStore('game', () => {
       const authStore = useAuthStore();
       if (authStore.isLoggedIn) {
         authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
-      } else {
-        saveGuestStateToLocalStorage();
       }
     }
   };
@@ -876,8 +961,6 @@ export const useGameStore = defineStore('game', () => {
     const authStore = useAuthStore();
     if (authStore.isLoggedIn) {
       authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
-    } else {
-      saveGuestStateToLocalStorage();
     }
   };
 
@@ -941,8 +1024,9 @@ export const useGameStore = defineStore('game', () => {
       const cards: CollectedCard[] = (articlesData || []).map((article: any) => ({
         id: article.qid,
         collectedAt: article.claimed_at || new Date().toISOString(),
-        isShowcase: false,
-        customSection: null
+        isShowcase: !!article.pinned,
+        customSection: null,
+        cardDetails: mapArticleRowToCard(article)
       }));
 
       return {
@@ -962,61 +1046,13 @@ export const useGameStore = defineStore('game', () => {
     }
   };
 
-  // Fallback registered profiles in memory for offline/dev mode
-  const loadRegisteredProfile = (userId: string): { userProfile: any, cards: any[] } | null => {
-    const formattedId = userId.startsWith('usr_') ? userId : `usr_${userId.toLowerCase()}`;
-
-    // Check if we need to pre-populate DevTester to showcase the UI beautifully!
-    if (formattedId === 'usr_devtester' && !registeredUsersInMemory.value[formattedId]) {
-      // Pick 9 random real cards to seed DevTester's binder!
-      const realCards = gameCards.value.filter(c => c.isReal);
-      const shuffled = [...realCards].sort(() => 0.5 - Math.random()).slice(0, 9);
-      const collected = shuffled.map((card, idx) => ({
-        id: card.id,
-        collectedAt: new Date(Date.now() - idx * 24 * 60 * 60 * 1000).toISOString(),
-        // Make the first card the pinned showcase card!
-        isShowcase: idx === 0,
-        // Distribute some into custom sections
-        customSection: idx === 3 || idx === 4
-          ? 'Real Rarities'
-          : (idx === 5 || idx === 6 ? 'Historical Gems' : null)
-      }));
-
-      registeredUsersInMemory.value[formattedId] = {
-        id: formattedId,
-        username: 'DevTester',
-        profilePic: 'https://api.dicebear.com/7.x/bottts/svg?seed=DevTester',
-        bio: 'Official Moonflower Developer & Tester Account. Curating the most absurd historical truths and biological oddities.',
-        backgroundColor: '#fef6e7', // Premium Pale Gold theme
-        gdPoints: 340,
-        collectedCards: collected
-      };
-    }
-
-    const publicUser = registeredUsersInMemory.value[formattedId];
-    if (publicUser) {
-      return {
-        userProfile: {
-          id: publicUser.id,
-          username: publicUser.username,
-          profilePic: publicUser.profilePic,
-          bio: publicUser.bio,
-          backgroundColor: publicUser.backgroundColor,
-          gdPoints: publicUser.gdPoints
-        },
-        cards: publicUser.collectedCards || []
-      };
-    }
-    return null;
-  };
-
   // Claim articles for a profile by setting profile_id on collected article rows
   const claimArticlesForProfile = async (articleQids: string[]) => {
     const authStore = useAuthStore();
     if (!authStore.isLoggedIn || !authStore.user) return;
 
     const profileId = authStore.user.id;
-    if (!profileId || articleQids.length === 0) return;
+    if (!profileId || profileId.startsWith('usr_') || articleQids.length === 0) return;
 
     try {
       // Update articles table, setting profile_id for each collected article's qid
@@ -1061,13 +1097,11 @@ export const useGameStore = defineStore('game', () => {
     categoryCooldowns,
     customSections,
     gameCards,
-    getGuestPoints,
-    getGuestCards,
     loadGuestState,
     syncWithUser,
-    clearGuestCache,
     loadCardsFromDatabase,
     addPoints,
+    persistState,
     spendPoints,
     collectCard,
     toggleShowcase,
@@ -1078,7 +1112,7 @@ export const useGameStore = defineStore('game', () => {
     getCooldownTimeRemaining,
     isCooldownActive,
     loadProfileFromDB,
-    loadRegisteredProfile,
-    claimArticlesForProfile
+    claimArticlesForProfile,
+    mapArticleRowToCard
   };
 });

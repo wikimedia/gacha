@@ -286,7 +286,7 @@ defineExpose({
         </h3>
         
         <p class="text-xs text-secondary mt-3 mb-4 leading-relaxed font-sans font-light">
-          Guests use localStorage. Authenticating with your email merges your local binder items and points across devices, allowing you to access Gacha drops securely.
+          Authenticating with your email allows you to claim and save your binder items and points securely in the cloud across all devices.
         </p>
 
         <!-- Error Notice Block -->

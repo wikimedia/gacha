@@ -37,92 +37,39 @@ const editBio = ref('');
 const searchFilter = ref('');
 
 // Fetch/sync profile details based on route
-const loadProfile = async (forceDbFetch = false) => {
-  console.log(`loadProfile triggered: profileId="${profileId.value}", isLoggedIn=${authStore.isLoggedIn}, isPrivateMode=${isPrivateMode.value}, forceDbFetch=${forceDbFetch}`);
+const loadProfile = async () => {
+  console.log(`loadProfile triggered: profileId="${profileId.value}"`);
+  isLoadingProfile.value = true;
+  isLoadingCards.value = true;
   
   try {
-    if (isPrivateMode.value && authStore.user) {
-      // Set edit form values and profile state from local store immediately
-      editDisplayName.value = authStore.user.username;
-      editBio.value = authStore.user.bio;
+    const dbProfile = await gameStore.loadProfileFromDB(profileId.value);
+    if (dbProfile) {
+      profileUser.value = dbProfile.userProfile;
+      profileCards.value = dbProfile.cards;
       
-      profileUser.value = {
-        id: authStore.user.id,
-        username: authStore.user.username,
-        profilePic: authStore.user.profilePic,
-        bio: authStore.user.bio,
-        backgroundColor: authStore.user.backgroundColor,
-        gdPoints: authStore.user.gdPoints
-      };
-      profileCards.value = [...gameStore.collectedCards];
-      isLoadingProfile.value = false;
-
-      if (forceDbFetch) {
-        isLoadingCards.value = true;
-        try {
-          const dbProfile = await gameStore.loadProfileFromDB(authStore.user.id);
-          if (dbProfile) {
-            // Merge database cards into local collected cards if not present
-            const localCardMap = new Map(gameStore.collectedCards.map((c: any) => [c.id, c]));
-            const mergedCards = [...gameStore.collectedCards];
-            let updatedAny = false;
-            
-            for (const dbCard of dbProfile.cards) {
-              if (!localCardMap.has(dbCard.id)) {
-                gameStore.collectedCards.push(dbCard);
-                mergedCards.push(dbCard);
-                updatedAny = true;
-              }
-            }
-            if (updatedAny) {
-              authStore.syncStoreToUser(gameStore.gdPoints, gameStore.collectedCards);
-            }
-            profileCards.value = mergedCards;
-          }
-        } catch (err) {
-          console.error('Error fetching/syncing profile from database:', err);
-        } finally {
-          isLoadingCards.value = false;
-        }
+      if (isPrivateMode.value) {
+        editDisplayName.value = dbProfile.userProfile.username;
+        editBio.value = dbProfile.userProfile.bio;
+        gameStore.collectedCards = dbProfile.cards;
       }
     } else {
-      isLoadingProfile.value = true;
-      isLoadingCards.value = true;
-      profileUser.value = null;
+      // Mock profile fallback so page doesn't crash if they visit a random path
+      profileUser.value = {
+        id: `usr_${profileId.value.toLowerCase()}`,
+        username: profileId.value,
+        profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileId.value}`,
+        bio: 'This scholar is yet to publish their official Moonflower profile bio.',
+        backgroundColor: '#eaecf0',
+        gdPoints: 0
+      };
       profileCards.value = [];
-      
-      // Public mode: try Supabase profile table first
-      const dbProfile = await gameStore.loadProfileFromDB(profileId.value);
-      
-      if (dbProfile) {
-        profileUser.value = dbProfile.userProfile;
-        profileCards.value = dbProfile.cards;
-      } else {
-        // Fall back to registered profiles
-        const loaded = gameStore.loadRegisteredProfile(profileId.value);
-        
-        if (loaded) {
-          profileUser.value = loaded.userProfile;
-          profileCards.value = loaded.cards;
-        } else {
-          // Mock profile fallback so page doesn't crash if they visit a random path
-          profileUser.value = {
-            id: `usr_${profileId.value.toLowerCase()}`,
-            username: profileId.value,
-            profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileId.value}`,
-            bio: 'This scholar is yet to publish their official Moonflower profile bio.',
-            backgroundColor: '#eaecf0',
-            gdPoints: 0
-          };
-          profileCards.value = [];
-        }
-      }
     }
+  } catch (err) {
+    console.error('Error fetching profile from database:', err);
   } finally {
-    if (!isPrivateMode.value) {
-      isLoadingProfile.value = false;
-      isLoadingCards.value = false;
-    }
+    isLoadingProfile.value = false;
+    isLoadingCards.value = false;
   }
   console.log('loadProfile completed. profileUser:', profileUser.value, 'profileCards count:', profileCards.value.length);
 };
@@ -133,19 +80,15 @@ onMounted(async () => {
   isLoadingProfile.value = true;
   try {
     await gameStore.loadCardsFromDatabase();
-    await loadProfile(true);
+    await loadProfile();
   } finally {
     isLoadingProfile.value = false;
   }
 });
 
 // Watch auth status and route changes reactively
-watch(() => authStore.isLoggedIn, (isLoggedIn) => {
-  if (!isLoggedIn) {
-    router.push('/');
-  } else {
-    loadProfile(true);
-  }
+watch(() => authStore.isLoggedIn, () => {
+  loadProfile();
 });
 
 watch([() => authStore.user, () => route.params.id], () => {
@@ -174,7 +117,7 @@ const showcaseCards = computed(() => {
   // Map collected cards IDs to dynamic or mock card data
   const showcaseCollects = profileCards.value.filter(c => c.isShowcase);
   return showcaseCollects.map(sc => {
-    const cardData = gameStore.gameCards.find((mc: any) => mc.id === sc.id) || MOCK_CARDS.find((mc: any) => mc.id === sc.id);
+    const cardData = sc.cardDetails || gameStore.gameCards.find((mc: any) => mc.id === sc.id) || MOCK_CARDS.find((mc: any) => mc.id === sc.id);
     if (!cardData) return null;
     return {
       ...cardData,
@@ -216,7 +159,7 @@ const isAvatarCSSImage = computed(() => {
 const sortedBinderCards = computed(() => {
   console.log(`sortedBinderCards re-evaluating: profileCards count = ${profileCards.value.length}, gameCards count = ${gameStore.gameCards.length}`);
   const result = profileCards.value.map(c => {
-    const cardData = gameStore.gameCards.find((mc: any) => mc.id === c.id) || MOCK_CARDS.find((mc: any) => mc.id === c.id);
+    const cardData = c.cardDetails || gameStore.gameCards.find((mc: any) => mc.id === c.id) || MOCK_CARDS.find((mc: any) => mc.id === c.id);
     if (!cardData) {
       console.warn(`Card data not found for collected card ID: "${c.id}"`);
       return null;
@@ -251,8 +194,8 @@ const sortedBinderCards = computed(() => {
 });
 
 // Card management actions
-const toggleCardShowcase = (cardId: string) => {
-  gameStore.toggleShowcase(cardId);
+const toggleCardShowcase = async (cardId: string) => {
+  await gameStore.toggleShowcase(cardId);
   profileCards.value = [...gameStore.collectedCards];
 };
 </script>

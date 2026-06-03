@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { useGameStore } from './useGameStore';
+import { useGameStore, type CollectedCard } from './useGameStore';
 import { supabase } from '../supabase';
 
 export interface User {
@@ -11,12 +11,7 @@ export interface User {
   bio: string;
   backgroundColor: string;
   gdPoints: number;
-  collectedCards: Array<{
-    id: string;
-    collectedAt: string;
-    isShowcase: boolean;
-    customSection: string | null;
-  }>;
+  collectedCards: CollectedCard[];
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -32,11 +27,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Sync store state to user object
 
-      // Persist to Supabase User Metadata
+      // Persist to Supabase User Metadata (excluding collectedCards)
       const { error } = await supabase.auth.updateUser({
         data: {
-          gdPoints: points,
-          collectedCards: cards
+          gdPoints: points
         }
       });
       if (error) {
@@ -94,47 +88,33 @@ export const useAuthStore = defineStore('auth', () => {
       const username = profileUsername || metadata.username || 'Scholar';
       const bio = profileBio ?? metadata.bio ?? 'Avid Moonflower scholar and collector.';
       
-      // Check if we have guest progress to merge
-      const guestPoints = gameStore.getGuestPoints();
-      const guestCards = gameStore.getGuestCards();
-
-      let finalPoints = typeof metadata.gdPoints === 'number' ? metadata.gdPoints : 0;
-      let finalCards = Array.isArray(metadata.collectedCards) ? metadata.collectedCards : [];
-
-      if (guestPoints > 0 || guestCards.length > 0) {
-        // Merge guest cards with existing user cards
-        const mergedCardsMap = new Map<string, any>();
-        // Add existing cards first
-        finalCards.forEach((c: any) => mergedCardsMap.set(c.id, c));
-        // Add guest cards if they aren't already in the list
-        guestCards.forEach((c: any) => {
-          if (!mergedCardsMap.has(c.id)) {
-            mergedCardsMap.set(c.id, c);
+      // Fetch user's collected cards directly from the database articles table
+      let dbCards: any[] = [];
+      if (su.id && !su.id.startsWith('usr_')) {
+        try {
+          const { data: articlesData, error: articlesError } = await supabase
+            .from('articles')
+            .select('*')
+            .eq('profile_id', su.id);
+          
+          if (articlesError) {
+            console.error('Error loading user articles from database:', articlesError.message);
+          } else if (articlesData) {
+            dbCards = articlesData.map((article: any) => ({
+              id: article.qid,
+              collectedAt: article.claimed_at || new Date().toISOString(),
+              isShowcase: !!article.pinned,
+              customSection: null,
+              cardDetails: gameStore.mapArticleRowToCard(article)
+            }));
           }
-        });
-
-        finalPoints += guestPoints;
-        finalCards = Array.from(mergedCardsMap.values());
-
-        // Update user metadata in Supabase
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: {
-            username,
-            profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
-            bio: metadata.bio || 'Avid Moonflower scholar and collector.',
-            backgroundColor: metadata.backgroundColor || '#eaecf0',
-            gdPoints: finalPoints,
-            collectedCards: finalCards
-          }
-        });
-
-        if (updateError) {
-          console.error('Error saving merged user profile:', updateError.message);
-        } else {
-          // Clear guest cache only on successful merge
-          gameStore.clearGuestCache();
+        } catch (err) {
+          console.error('Failed to load user articles from database:', err);
         }
       }
+
+      let finalPoints = typeof metadata.gdPoints === 'number' ? metadata.gdPoints : 0;
+      let finalCards = dbCards;
 
       const mappedUser: User = {
         id: su.id,
@@ -175,79 +155,13 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Step 2: Verify Passcode (OTP) and log in
   const verifyOtp = async (email: string, token: string) => {
-    const { data: { session }, error } = await supabase.auth.verifyOtp({
+    const { error } = await supabase.auth.verifyOtp({
       email,
       token,
       type: 'email'
     });
 
     if (error) throw error;
-
-    if (session?.user) {
-      // Merge guest progress upon successful login
-      const gameStore = useGameStore();
-      const guestPoints = gameStore.getGuestPoints();
-      const guestCards = gameStore.getGuestCards();
-
-      const su = session.user;
-      const metadata = su.user_metadata || {};
-      
-      // Fetch the real username and bio from the Supabase profiles table
-      let profileUsername: string | null = null;
-      let profileBio: string | null = null;
-      try {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('username, bio')
-          .eq('id', su.id)
-          .maybeSingle();
-        if (profileData?.username) {
-          profileUsername = profileData.username;
-        }
-        if (profileData?.bio !== undefined && profileData?.bio !== null) {
-          profileBio = profileData.bio;
-        }
-      } catch (err) {
-        console.error('Error fetching profile during OTP verify:', err);
-      }
-      
-      const existingPoints = typeof metadata.gdPoints === 'number' ? metadata.gdPoints : 0;
-      const existingCards = Array.isArray(metadata.collectedCards) ? metadata.collectedCards : [];
-
-      // De-duplicate collected cards by ID when merging
-      const mergedCardsMap = new Map<string, typeof guestCards[0]>();
-      existingCards.forEach((c: any) => mergedCardsMap.set(c.id, c));
-      guestCards.forEach((c: any) => {
-        if (!mergedCardsMap.has(c.id)) {
-          mergedCardsMap.set(c.id, c);
-        }
-      });
-
-      const finalPoints = existingPoints + guestPoints;
-      const finalCards = Array.from(mergedCardsMap.values());
-
-      // Update Supabase with merged properties
-      const username = profileUsername || metadata.username || 'Scholar';
-      const bio = profileBio || metadata.bio || 'Avid Moonflower scholar and collector.';
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: {
-          username,
-          profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
-          bio,
-          backgroundColor: metadata.backgroundColor || '#eaecf0',
-          gdPoints: finalPoints,
-          collectedCards: finalCards
-        }
-      });
-
-      if (updateError) {
-        console.error('Error saving merged user profile:', updateError.message);
-      }
-
-      // Sync active state in game store and clear guest cache
-      gameStore.syncWithUser(finalPoints, finalCards);
-      gameStore.clearGuestCache();
-    }
   };
 
   // Simulated login helper for Dev/Testing backwards compatibility
