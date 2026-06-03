@@ -6,12 +6,15 @@ import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
 import PageLayout from '../components/PageLayout.vue';
+import Loader from '../components/Loader.vue';
 
 const route = useRoute();
 const router = useRouter();
 
 const authStore = useAuthStore();
 const gameStore = useGameStore();
+
+const isLoading = ref(true);
 
 // Active Category for Fakeout Game
 const selectedCategory = ref<'Science' | 'History' | 'Pop Culture' | 'Geography' | null>(null);
@@ -167,7 +170,11 @@ onMounted(async () => {
   displayedPoints.value = gameStore.gdPoints;
   
   // Load dynamic articles from Supabase (failsafe fallback to MOCK_CARDS built-in)
-  await gameStore.loadCardsFromDatabase();
+  try {
+    await gameStore.loadCardsFromDatabase();
+  } finally {
+    isLoading.value = false;
+  }
   
   setInterval(() => {
     updateCooldowns();
@@ -454,7 +461,9 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
     :is-animating="isAnimatingPoints"
     @activate="startGachaDrop" 
   >
+    <Loader v-if="isLoading" type="page" />
 
+    <template v-else>
       <!-- FAKEOUT GAME CATEGORY SELECTION -->
       <section v-if="!gameActive && !gachaActive && !showGachaSummary" class="flex-grow flex flex-col gap-6 justify-center py-6">
         
@@ -779,6 +788,7 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
           </button>
         </div>
       </section>
+    </template>
 
   </PageLayout>
 </template>
