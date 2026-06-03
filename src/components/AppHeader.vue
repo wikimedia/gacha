@@ -140,8 +140,9 @@ defineExpose({
       :class="{ 'border-primary bg-primary/5': points >= 100 }"
     >
       <!-- Left: Brand Title -->
-      <router-link to="/" class="flex-shrink-0 no-underline hover:opacity-85 gacha-brand">
+      <router-link to="/" class="flex flex-col text-left leading-none flex-shrink-0 no-underline hover:opacity-85 gacha-brand">
         <span class="font-serif font-black text-sm text-primary tracking-tight">Moonflower</span>
+        <span class="text-[9px] font-sans font-bold mt-1 text-secondary">Wikipedia Gacha</span>
       </router-link>
 
       <!-- Middle: Segmented/Continuous Goal Tracker (Custom Points Gauge) -->
