@@ -36,80 +36,88 @@ const editBio = ref('');
 const searchFilter = ref('');
 
 // Fetch/sync profile details based on route
-const loadProfile = async () => {
-  console.log(`loadProfile triggered: profileId="${profileId.value}", isLoggedIn=${authStore.isLoggedIn}, isPrivateMode=${isPrivateMode.value}`);
-  isLoadingProfile.value = true;
-  // Clear lists
-  profileUser.value = null;
-  profileCards.value = [];
+const loadProfile = async (forceDbFetch = false) => {
+  console.log(`loadProfile triggered: profileId="${profileId.value}", isLoggedIn=${authStore.isLoggedIn}, isPrivateMode=${isPrivateMode.value}, forceDbFetch=${forceDbFetch}`);
   
   try {
     if (isPrivateMode.value && authStore.user) {
-    // Fetch owned articles from DB via profile_id join
-    const dbProfile = await gameStore.loadProfileFromDB(authStore.user.id);
-    
-    // Use DB profile data for username/bio if available
-    const displayUsername = dbProfile?.userProfile?.username || authStore.user.username;
-    const displayBio = dbProfile?.userProfile?.bio || authStore.user.bio;
-    
-    profileUser.value = {
-      id: authStore.user.id,
-      username: displayUsername,
-      profilePic: authStore.user.profilePic,
-      bio: displayBio,
-      backgroundColor: authStore.user.backgroundColor,
-      gdPoints: authStore.user.gdPoints
-    };
-    
-    if (dbProfile && dbProfile.cards.length > 0) {
-      // Merge DB-fetched cards with local collected cards (local cards take priority for showcase/section state)
-      const localCardMap = new Map(gameStore.collectedCards.map(c => [c.id, c]));
-      const mergedCards = [...gameStore.collectedCards];
-      for (const dbCard of dbProfile.cards) {
-        if (!localCardMap.has(dbCard.id)) {
-          mergedCards.push(dbCard);
+      // Set edit form values and profile state from local store immediately
+      editDisplayName.value = authStore.user.username;
+      editBio.value = authStore.user.bio;
+      
+      profileUser.value = {
+        id: authStore.user.id,
+        username: authStore.user.username,
+        profilePic: authStore.user.profilePic,
+        bio: authStore.user.bio,
+        backgroundColor: authStore.user.backgroundColor,
+        gdPoints: authStore.user.gdPoints
+      };
+      profileCards.value = [...gameStore.collectedCards];
+      isLoadingProfile.value = false;
+
+      if (forceDbFetch) {
+        try {
+          const dbProfile = await gameStore.loadProfileFromDB(authStore.user.id);
+          if (dbProfile) {
+            // Merge database cards into local collected cards if not present
+            const localCardMap = new Map(gameStore.collectedCards.map(c => [c.id, c]));
+            const mergedCards = [...gameStore.collectedCards];
+            let updatedAny = false;
+            
+            for (const dbCard of dbProfile.cards) {
+              if (!localCardMap.has(dbCard.id)) {
+                gameStore.collectedCards.push(dbCard);
+                mergedCards.push(dbCard);
+                updatedAny = true;
+              }
+            }
+            if (updatedAny) {
+              authStore.syncStoreToUser(gameStore.gdPoints, gameStore.collectedCards);
+            }
+            profileCards.value = mergedCards;
+          }
+        } catch (err) {
+          console.error('Error fetching/syncing profile from database:', err);
         }
       }
-      profileCards.value = mergedCards;
     } else {
-      // Fall back to local collected cards
-      profileCards.value = gameStore.collectedCards;
-    }
-    
-    // Set edit form values from DB
-    editDisplayName.value = displayUsername;
-    editBio.value = displayBio;
-  } else {
-    // Public mode: try Supabase profile table first
-    const dbProfile = await gameStore.loadProfileFromDB(profileId.value);
-    
-    if (dbProfile) {
-      profileUser.value = dbProfile.userProfile;
-      profileCards.value = dbProfile.cards;
-    } else {
-      // Fall back to localStorage registered profiles
-      const loaded = gameStore.loadRegisteredProfile(profileId.value);
+      isLoadingProfile.value = true;
+      profileUser.value = null;
+      profileCards.value = [];
       
-      if (loaded) {
-        profileUser.value = loaded.userProfile;
-        profileCards.value = loaded.cards;
+      // Public mode: try Supabase profile table first
+      const dbProfile = await gameStore.loadProfileFromDB(profileId.value);
+      
+      if (dbProfile) {
+        profileUser.value = dbProfile.userProfile;
+        profileCards.value = dbProfile.cards;
       } else {
-        // Mock profile fallback so page doesn't crash if they visit a random path
-        profileUser.value = {
-          id: `usr_${profileId.value.toLowerCase()}`,
-          username: profileId.value,
-          profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileId.value}`,
-          bio: 'This scholar is yet to publish their official Moonflower profile bio.',
-          backgroundColor: '#eaecf0',
-          gdPoints: 0
-        };
-        profileCards.value = [];
+        // Fall back to localStorage registered profiles
+        const loaded = gameStore.loadRegisteredProfile(profileId.value);
+        
+        if (loaded) {
+          profileUser.value = loaded.userProfile;
+          profileCards.value = loaded.cards;
+        } else {
+          // Mock profile fallback so page doesn't crash if they visit a random path
+          profileUser.value = {
+            id: `usr_${profileId.value.toLowerCase()}`,
+            username: profileId.value,
+            profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileId.value}`,
+            bio: 'This scholar is yet to publish their official Moonflower profile bio.',
+            backgroundColor: '#eaecf0',
+            gdPoints: 0
+          };
+          profileCards.value = [];
+        }
       }
     }
+  } finally {
+    if (!isPrivateMode.value) {
+      isLoadingProfile.value = false;
+    }
   }
-} finally {
-  isLoadingProfile.value = false;
-}
   console.log('loadProfile completed. profileUser:', profileUser.value, 'profileCards count:', profileCards.value.length);
 };
 
@@ -119,7 +127,7 @@ onMounted(async () => {
   isLoadingProfile.value = true;
   try {
     await gameStore.loadCardsFromDatabase();
-    await loadProfile();
+    await loadProfile(true);
   } finally {
     isLoadingProfile.value = false;
   }
@@ -130,7 +138,7 @@ watch(() => authStore.isLoggedIn, (isLoggedIn) => {
   if (!isLoggedIn) {
     router.push('/');
   } else {
-    loadProfile();
+    loadProfile(true);
   }
 });
 
@@ -239,7 +247,7 @@ const sortedBinderCards = computed(() => {
 // Card management actions
 const toggleCardShowcase = (cardId: string) => {
   gameStore.toggleShowcase(cardId);
-  loadProfile();
+  profileCards.value = [...gameStore.collectedCards];
 };
 </script>
 

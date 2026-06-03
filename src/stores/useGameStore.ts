@@ -507,6 +507,9 @@ export const useGameStore = defineStore('game', () => {
 
   // Load guest data
   const loadGuestState = () => {
+    const authStore = useAuthStore();
+    if (authStore.isLoggedIn) return;
+
     gdPoints.value = getGuestPoints();
     collectedCards.value = getGuestCards();
 
@@ -1042,6 +1045,24 @@ export const useGameStore = defineStore('game', () => {
         console.error('Error claiming articles for profile:', error.message);
       } else {
         console.log(`Successfully claimed ${articleQids.length} articles for profile ${profileId}`);
+        // Ensure they are also in the local collectedCards state
+        let updatedAny = false;
+        const nowStr = new Date().toISOString();
+        for (const qid of articleQids) {
+          const exists = collectedCards.value.some(c => c.id === qid);
+          if (!exists) {
+            collectedCards.value.push({
+              id: qid,
+              collectedAt: nowStr,
+              isShowcase: false,
+              customSection: null
+            });
+            updatedAny = true;
+          }
+        }
+        if (updatedAny) {
+          authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
+        }
       }
     } catch (err: any) {
       console.error('Failed to claim articles:', err.message);
