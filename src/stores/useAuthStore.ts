@@ -235,11 +235,12 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Update Supabase with merged properties
       const username = profileUsername || metadata.username || 'Scholar';
+      const bio = profileBio || metadata.bio || 'Avid Moonflower scholar and collector.';
       const { error: updateError } = await supabase.auth.updateUser({
         data: {
           username,
           profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
-          bio: metadata.bio || 'Avid Moonflower scholar and collector.',
+          bio,
           backgroundColor: metadata.backgroundColor || '#eaecf0',
           gdPoints: finalPoints,
           collectedCards: finalCards

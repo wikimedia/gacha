@@ -136,31 +136,22 @@ defineExpose({
     <!-- Standard Gacha Teaser Header: active during navigation & games -->
     <div 
       v-if="!gachaActive"
-      class="navbar bg-base-100 border-b border-base-300 px-4 py-2 shadow-sm select-none gap-2 justify-between flex-nowrap"
+      class="navbar bg-base-100 border-b border-base-300 px-4 py-2 shadow-sm select-none gap-2 justify-between flex-nowrap gacha-navbar"
       :class="{ 'border-primary bg-primary/5': points >= 100 }"
     >
-      <!-- Left: Brand Title & Dynamic Microcopy -->
-      <router-link to="/" class="flex flex-col text-left leading-none flex-shrink min-w-0 no-underline hover:opacity-85">
+      <!-- Left: Brand Title -->
+      <router-link to="/" class="flex-shrink-0 no-underline hover:opacity-85 gacha-brand">
         <span class="font-serif font-black text-sm text-primary tracking-tight">Moonflower</span>
-        <div class="text-[9px] font-sans font-bold mt-1 min-w-0">
-          <span v-if="points < 100" class="text-secondary truncate">
-            {{ 100 - points }} Points to Gacha
-          </span>
-          <span v-else class="text-primary uppercase tracking-wider font-extrabold truncate">
-            ★ Ready!
-          </span>
-        </div>
       </router-link>
 
       <!-- Middle: Segmented/Continuous Goal Tracker (Custom Points Gauge) -->
       <div 
-        class="tooltip tooltip-bottom flex-grow flex flex-col justify-center max-w-[140px] min-w-[80px] select-none cursor-help"
-        data-tip="Earn 100 points to activate a Gacha Drop!"
+        class="flex-grow flex flex-col justify-center max-w-[240px] min-w-[130px] select-none gacha-progress-container"
         role="img" 
         aria-label="Gacha Drop progress"
       >
         <div class="flex justify-between items-center w-full text-[8px] font-sans font-extrabold uppercase tracking-wider mb-0.5">
-          <span class="text-secondary">Points</span>
+          <span class="text-secondary">Gacha Progress</span>
           <span :class="points >= 100 ? 'text-primary font-black animate-pulse' : 'text-base-content/70'">{{ points }}/100</span>
         </div>
         <div 
@@ -196,7 +187,7 @@ defineExpose({
 
 
       <!-- Right: Action Button & Login/Profile Group -->
-      <div class="flex items-center gap-2 flex-shrink-0">
+      <div class="flex items-center gap-2 flex-shrink-0 gacha-actions">
         <!-- Gacha Action Button -->
         <div class="w-[85px]" @click="points < 100 ? triggerLockShake() : null">
           <!-- Active progressive primary button styled like Log In but excited -->
@@ -372,3 +363,23 @@ defineExpose({
     </dialog>
   </header>
 </template>
+
+<style scoped>
+@media (max-width: 639px) {
+  .gacha-navbar {
+    flex-wrap: wrap !important;
+  }
+  .gacha-progress-container {
+    order: 3 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-top: 0.5rem !important;
+  }
+  .gacha-brand {
+    order: 1 !important;
+  }
+  .gacha-actions {
+    order: 2 !important;
+  }
+}
+</style>

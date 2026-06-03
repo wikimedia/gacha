@@ -519,14 +519,6 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
           </div>
         </div>
 
-        <!-- Binder Button for logged-in user -->
-        <router-link
-          v-if="authStore.isLoggedIn"
-          :to="authStore.user ? '/@' + authStore.user.username : '/'"
-          class="btn btn-secondary btn-outline w-full uppercase font-bold text-xs shadow-sm mt-2 rounded"
-        >
-          📖 Open My Collection Binder
-        </router-link>
       </section>
 
       <!-- FAKEOUT GAME SWIPING MECHANIC -->
