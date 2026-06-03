@@ -483,19 +483,23 @@ export const useGameStore = defineStore('game', () => {
   // Load guest data
   const loadGuestState = () => {
     const authStore = useAuthStore();
+    console.log('[loadGuestState] Called. authStore.isLoggedIn =', authStore.isLoggedIn);
     if (authStore.isLoggedIn) return;
 
     // Load points
     const savedPoints = localStorage.getItem('moonflower_guest_gdPoints');
+    console.log('[loadGuestState] Raw gdPoints from localStorage:', savedPoints);
     gdPoints.value = savedPoints !== null ? parseInt(savedPoints, 10) : 0;
+    console.log('[loadGuestState] Set gdPoints.value =', gdPoints.value);
 
     // Load collected cards
     const savedCards = localStorage.getItem('moonflower_guest_collectedCards');
     if (savedCards) {
       try {
         collectedCards.value = JSON.parse(savedCards);
+        console.log('[loadGuestState] Successfully parsed collectedCards, count =', collectedCards.value.length);
       } catch (err) {
-        console.error('Failed to parse collectedCards from localStorage:', err);
+        console.error('[loadGuestState] Failed to parse collectedCards from localStorage:', err);
         collectedCards.value = [];
       }
     } else {
@@ -508,7 +512,7 @@ export const useGameStore = defineStore('game', () => {
       try {
         categoryCooldowns.value = JSON.parse(savedCooldowns);
       } catch (err) {
-        console.error('Failed to parse categoryCooldowns from localStorage:', err);
+        console.error('[loadGuestState] Failed to parse categoryCooldowns from localStorage:', err);
         categoryCooldowns.value = {};
       }
     } else {
@@ -521,7 +525,7 @@ export const useGameStore = defineStore('game', () => {
       try {
         customSections.value = JSON.parse(savedSections);
       } catch (err) {
-        console.error('Failed to parse customSections from localStorage:', err);
+        console.error('[loadGuestState] Failed to parse customSections from localStorage:', err);
         customSections.value = ['Showcase', 'Real Rarities', 'Historical Gems'];
       }
     } else {
@@ -1135,29 +1139,37 @@ export const useGameStore = defineStore('game', () => {
   // Watchers to automatically save to localStorage when guest changes state
   watch(gdPoints, (newVal) => {
     const authStore = useAuthStore();
+    console.log('[watch gdPoints] triggered. newVal =', newVal, ', authStore.isLoggedIn =', authStore.isLoggedIn);
     if (!authStore.isLoggedIn) {
       localStorage.setItem('moonflower_guest_gdPoints', String(newVal));
+      console.log('[watch gdPoints] Saved to localStorage:', newVal);
     }
   });
 
   watch(collectedCards, (newVal) => {
     const authStore = useAuthStore();
+    console.log('[watch collectedCards] triggered. count =', newVal?.length, ', authStore.isLoggedIn =', authStore.isLoggedIn);
     if (!authStore.isLoggedIn) {
       localStorage.setItem('moonflower_guest_collectedCards', JSON.stringify(newVal));
+      console.log('[watch collectedCards] Saved to localStorage:', newVal);
     }
   }, { deep: true });
 
   watch(categoryCooldowns, (newVal) => {
     const authStore = useAuthStore();
+    console.log('[watch categoryCooldowns] triggered. authStore.isLoggedIn =', authStore.isLoggedIn);
     if (!authStore.isLoggedIn) {
       localStorage.setItem('moonflower_guest_categoryCooldowns', JSON.stringify(newVal));
+      console.log('[watch categoryCooldowns] Saved to localStorage:', newVal);
     }
   }, { deep: true });
 
   watch(customSections, (newVal) => {
     const authStore = useAuthStore();
+    console.log('[watch customSections] triggered. count =', newVal?.length, ', authStore.isLoggedIn =', authStore.isLoggedIn);
     if (!authStore.isLoggedIn) {
       localStorage.setItem('moonflower_guest_customSections', JSON.stringify(newVal));
+      console.log('[watch customSections] Saved to localStorage:', newVal);
     }
   }, { deep: true });
 
