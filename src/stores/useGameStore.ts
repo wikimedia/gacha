@@ -957,7 +957,7 @@ export const useGameStore = defineStore('game', () => {
           id: profileData.id,
           username: profileData.username,
           profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileData.username}`,
-          bio: 'Avid Moonflower scholar and collector.',
+          bio: profileData.bio || 'Avid Moonflower scholar and collector.',
           backgroundColor: '#eaecf0',
           gdPoints: 0
         },

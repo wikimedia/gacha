@@ -40,18 +40,22 @@ const loadProfile = async () => {
   profileCards.value = [];
   
   if (isPrivateMode.value && authStore.user) {
-    // If it's private mode, load profile info from auth store
+    // Fetch owned articles from DB via profile_id join
+    const dbProfile = await gameStore.loadProfileFromDB(authStore.user.id);
+    
+    // Use DB profile data for username/bio if available
+    const displayUsername = dbProfile?.userProfile?.username || authStore.user.username;
+    const displayBio = dbProfile?.userProfile?.bio || authStore.user.bio;
+    
     profileUser.value = {
       id: authStore.user.id,
-      username: authStore.user.username,
+      username: displayUsername,
       profilePic: authStore.user.profilePic,
-      bio: authStore.user.bio,
+      bio: displayBio,
       backgroundColor: authStore.user.backgroundColor,
       gdPoints: authStore.user.gdPoints
     };
     
-    // Fetch owned articles from DB via profile_id join
-    const dbProfile = await gameStore.loadProfileFromDB(authStore.user.id);
     if (dbProfile && dbProfile.cards.length > 0) {
       // Merge DB-fetched cards with local collected cards (local cards take priority for showcase/section state)
       const localCardMap = new Map(gameStore.collectedCards.map(c => [c.id, c]));
@@ -67,9 +71,9 @@ const loadProfile = async () => {
       profileCards.value = gameStore.collectedCards;
     }
     
-    // Set edit form values
-    editDisplayName.value = authStore.user.username;
-    editBio.value = authStore.user.bio;
+    // Set edit form values from DB
+    editDisplayName.value = displayUsername;
+    editBio.value = displayBio;
   } else {
     // Public mode: try Supabase profile table first
     const dbProfile = await gameStore.loadProfileFromDB(profileId.value);

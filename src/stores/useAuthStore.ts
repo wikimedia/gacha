@@ -72,23 +72,28 @@ export const useAuthStore = defineStore('auth', () => {
       const metadata = su.user_metadata || {};
       
       const email = su.email || '';
-      // Fetch the real username from the Supabase profile table
+      // Fetch the real username and bio from the Supabase profiles table
       let profileUsername: string | null = null;
+      let profileBio: string | null = null;
       try {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('username')
+          .select('username, bio')
           .eq('id', su.id)
           .maybeSingle();
         if (profileData?.username) {
           profileUsername = profileData.username;
         }
+        if (profileData?.bio !== undefined && profileData?.bio !== null) {
+          profileBio = profileData.bio;
+        }
       } catch (err) {
-        console.error('Error fetching profile username:', err);
+        console.error('Error fetching profile:', err);
       }
       
-      // Priority: profile table > auth metadata > fallback
+      // Priority: profiles table > auth metadata > fallback
       const username = profileUsername || metadata.username || 'Scholar';
+      const bio = profileBio ?? metadata.bio ?? 'Avid Moonflower scholar and collector.';
       
       // Check if we have guest progress to merge
       const guestPoints = gameStore.getGuestPoints();
@@ -137,7 +142,7 @@ export const useAuthStore = defineStore('auth', () => {
         username,
         email: email,
         profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
-        bio: metadata.bio || 'Avid Moonflower scholar and collector.',
+        bio,
         backgroundColor: metadata.backgroundColor || '#eaecf0',
         gdPoints: finalPoints,
         collectedCards: finalCards
@@ -194,19 +199,23 @@ export const useAuthStore = defineStore('auth', () => {
       const su = session.user;
       const metadata = su.user_metadata || {};
       
-      // Fetch the real username from the Supabase profile table
+      // Fetch the real username and bio from the Supabase profiles table
       let profileUsername: string | null = null;
+      let profileBio: string | null = null;
       try {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('username')
+          .select('username, bio')
           .eq('id', su.id)
           .maybeSingle();
         if (profileData?.username) {
           profileUsername = profileData.username;
         }
+        if (profileData?.bio !== undefined && profileData?.bio !== null) {
+          profileBio = profileData.bio;
+        }
       } catch (err) {
-        console.error('Error fetching profile username during OTP verify:', err);
+        console.error('Error fetching profile during OTP verify:', err);
       }
       
       const existingPoints = typeof metadata.gdPoints === 'number' ? metadata.gdPoints : 0;
@@ -294,6 +303,22 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Save local cache
       localStorage.setItem('wiki_user', JSON.stringify(user.value));
+
+      // Persist username and bio to the Supabase profiles table
+      const profilesUpdate: Record<string, string> = {};
+      if (profileUpdate.username) profilesUpdate.username = profileUpdate.username;
+      if (profileUpdate.bio !== undefined) profilesUpdate.bio = profileUpdate.bio;
+
+      if (Object.keys(profilesUpdate).length > 0) {
+        const { error: profilesError } = await supabase
+          .from('profiles')
+          .update(profilesUpdate)
+          .eq('id', user.value.id);
+
+        if (profilesError) {
+          console.error('Error updating profiles table:', profilesError.message);
+        }
+      }
 
       // Persist metadata update to Supabase Auth
       const { error } = await supabase.auth.updateUser({
