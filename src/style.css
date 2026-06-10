@@ -48,6 +48,32 @@
   --color-wiki-dark-bg: var(--background-color-neutral);
   --color-wiki-text: var(--color-base);
   --color-wiki-muted: var(--color-subtle);
+
+  /* Rarity Card Color Palette — Wikipedia homepage section inspired */
+  --color-rarity-common: #c8ccd1;
+  --color-rarity-common-light: #eaecf0;
+  --color-rarity-common-dark: #a2a9b1;
+  --color-rarity-common-bg: #f8f9fa;
+
+  --color-rarity-rare: #6690b5;
+  --color-rarity-rare-light: #cee0f2;
+  --color-rarity-rare-dark: #4a7396;
+  --color-rarity-rare-bg: #eaf3fb;
+
+  --color-rarity-epic: #9b7bb8;
+  --color-rarity-epic-light: #d7c5e8;
+  --color-rarity-epic-dark: #7b5a9a;
+  --color-rarity-epic-bg: #f3edf9;
+
+  --color-rarity-legendary: #d4a843;
+  --color-rarity-legendary-light: #f0dba8;
+  --color-rarity-legendary-dark: #b8912e;
+  --color-rarity-legendary-bg: #fdf6e3;
+
+  /* Main Category Tint Colors — Applied with hard-light blend on cards */
+  --color-category-civilization: #4E5B77;
+  --color-category-nature: #74BC7E;
+  --color-category-science: #7B7898;
 }
 
 /* Custom Base resets */

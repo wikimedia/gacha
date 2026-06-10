@@ -592,10 +592,10 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
         </div>
 
         <!-- Swiping Card Area -->
-        <div class="flex-grow flex items-center justify-center my-2 relative min-h-[430px]">
+        <div class="flex-grow flex items-center justify-center my-2 relative min-h-[520px]">
           
           <!-- Centered wrapper container -->
-          <div class="relative w-full max-w-[280px] h-[400px]">
+          <div class="relative w-full max-w-[320px]">
             
             <div class="stack select-none w-full h-full">
               

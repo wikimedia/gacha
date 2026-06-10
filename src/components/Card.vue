@@ -9,140 +9,446 @@ const props = withDefaults(defineProps<{
   showLink: true
 });
 
-// Rarity configurations for the badge inside the card
-const rarityConfig = computed(() => {
-  switch (props.card.rarity) {
-    case 'Legendary':
-      return {
-        badgeBg: 'badge-warning text-warning-content font-bold',
-        badgeText: 'Legendary'
-      };
-    case 'Epic':
-      return {
-        badgeBg: 'badge-neutral text-neutral-content font-bold',
-        badgeText: 'Epic'
-      };
-    case 'Rare':
-      return {
-        badgeBg: 'badge-primary text-primary-content font-bold',
-        badgeText: 'Rare'
-      };
-    case 'Common':
-    default:
-      return {
-        badgeBg: 'badge-ghost text-base-content/70',
-        badgeText: 'Common'
-      };
-  }
-});
-
-// Category configurations for matching colors
-const categoryConfig = computed(() => {
+// ── Category → Main Category mapping ──────────────────────────────
+// Figma uses: Civilization, Nature, Science
+const categoryMapping = computed(() => {
   switch (props.card.category) {
-    case 'Science':
-      return 'bg-emerald-100 text-emerald-800 border-emerald-200 font-bold';
     case 'History':
-      return 'bg-amber-100 text-amber-800 border-amber-200 font-bold';
+      return { main: 'Civilization', sub: 'History' };
     case 'Pop Culture':
-      return 'bg-purple-100 text-purple-800 border-purple-200 font-bold';
+      return { main: 'Civilization', sub: 'Culture' };
     case 'Geography':
-      return 'bg-blue-100 text-blue-800 border-blue-200 font-bold';
+      return { main: 'Nature', sub: 'Geography' };
+    case 'Science':
+      return { main: 'Science', sub: 'Science' };
     default:
-      return 'bg-base-200 text-base-content/80 border-base-300 font-bold';
+      return { main: 'Civilization', sub: props.card.category };
   }
 });
 
-const imageStyle = computed(() => {
-  const img = props.card.image || '';
-  if (!img) {
-    return 'linear-gradient(135deg, var(--background-color-neutral-subtle), var(--border-color-interactive))';
+// ── Category tint colors (hard-light blend) ──────────────────────
+const categoryTint = computed(() => {
+  switch (categoryMapping.value.main) {
+    case 'Civilization':
+      return '#4E5B77';
+    case 'Nature':
+      return '#74BC7E';
+    case 'Science':
+      return '#7B7898';
+    default:
+      return '#4E5B77';
   }
-  if (img.startsWith('linear-gradient') || img.startsWith('url(')) {
-    return img;
-  }
-  return `url("${img}")`;
 });
 
-const hasImage = computed(() => {
-  return !!props.card.image;
+// ── Rarity → star count ──────────────────────────────────────────
+const rarityStars = computed(() => {
+  switch (props.card.rarity) {
+    case 'Legendary': return 5;
+    case 'Epic': return 4;
+    case 'Rare': return 3;
+    case 'Common':
+    default: return 1;
+  }
 });
 
+const starArray = computed(() => {
+  return Array.from({ length: 5 }, (_, i) => i < rarityStars.value);
+});
+
+// ── Image handling ───────────────────────────────────────────────
+const hasImage = computed(() => !!props.card.image);
 const isCSSImage = computed(() => {
   const img = props.card.image || '';
   return img.startsWith('linear-gradient') || img.startsWith('url(');
 });
+const imageStyle = computed(() => {
+  const img = props.card.image || '';
+  if (!img) return null;
+  if (img.startsWith('linear-gradient') || img.startsWith('url(')) return img;
+  return `url("${img}")`;
+});
+
+// ── Wikimedia Commons link from image URL ────────────────────────
+const wikimediaImageLink = computed(() => {
+  const img = props.card.image || '';
+  // Convert upload.wikimedia.org URLs to commons page links
+  // e.g., https://upload.wikimedia.org/wikipedia/commons/1/18/Vombatus_ursinus.jpg
+  // → https://commons.wikimedia.org/wiki/File:Vombatus_ursinus.jpg
+  const match = img.match(/upload\.wikimedia\.org\/wikipedia\/commons\/[^/]+\/[^/]+\/(.+)$/);
+  if (match) {
+    return `https://commons.wikimedia.org/wiki/File:${decodeURIComponent(match[1])}`;
+  }
+  // Fallback to the card's wikipedia link
+  return props.card.wikipediaLink;
+});
+
+// ── Attribution text ─────────────────────────────────────────────
+const attributionText = computed(() => {
+  const img = props.card.image || '';
+  const match = img.match(/upload\.wikimedia\.org\/wikipedia\/commons\/[^/]+\/[^/]+\/(.+)$/);
+  if (match) {
+    const filename = decodeURIComponent(match[1]).replace(/_/g, ' ');
+    // Truncate very long filenames
+    const maxLen = 50;
+    const display = filename.length > maxLen ? filename.slice(0, maxLen) + '…' : filename;
+    return `Image: ${display} · Wikimedia Commons CC BY-SA`;
+  }
+  return 'en.wikipedia.org / Creative Commons Attribution-ShareAlike';
+});
+
+
+
+// Codex star SVG paths (viewBox 0 0 20 20)
+// cdxIconUnStar = solid filled star, cdxIconStar = outlined star with inner detail
+const STAR_FILLED_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.73-1.63-7z';
+const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.73-1.63-7zm-10 6.9-3.76 2.27 1-4.28L3.5 8.5h4.61L10 4.6l1.9 3.9h4.6l-3.73 3.4 1 4.28z';
 </script>
 
 <template>
-  <div 
-    class="card card-bordered w-full max-w-[280px] h-[400px] flex flex-col justify-between p-4 bg-white border border-base-300 shadow-sm select-none text-left relative overflow-hidden transition-shadow duration-300"
-  >
-    <!-- Top Section: Header with Title -->
-    <div class="w-full">
-      <div class="mb-2">
-        <h3 class="text-base leading-tight wiki-serif font-black text-base-content">
-          {{ card.title }}
-        </h3>
-      </div>
-      
-      <!-- Divider -->
-      <div class="h-[1px] bg-base-300 w-full mb-3"></div>
-
-      <!-- Generative Visual Representation (Wikipedia Style Diagrams & Images) -->
-      <div 
-        v-if="hasImage"
-        class="w-full aspect-[4/3] min-h-[150px] mb-2.5 rounded border border-base-300 flex items-center justify-center relative overflow-hidden bg-base-200"
-      >
-        <div 
-          v-if="isCSSImage"
-          class="w-full h-full"
-          :style="{ 
-            backgroundImage: imageStyle, 
-            backgroundSize: 'cover', 
-            backgroundPosition: 'center', 
-            backgroundRepeat: 'no-repeat' 
-          }"
+  <div class="trading-card-wrapper">
+    <div 
+      class="trading-card"
+      :style="{
+        '--card-category-tint': categoryTint,
+      }"
+    >
+      <!-- ═══ Full-bleed background image ═══ -->
+      <div class="trading-card__image-layer">
+        <div v-if="hasImage && isCSSImage" 
+          class="trading-card__image-bg"
+          :style="{ backgroundImage: imageStyle! }"
         ></div>
         <img 
-          v-else
-          :src="props.card.image"
+          v-else-if="hasImage"
+          :src="card.image"
           referrerpolicy="no-referrer"
-          class="w-full h-full object-cover"
-          alt="Card Image"
+          class="trading-card__image-bg trading-card__image-bg--img"
+          alt="Card image"
         />
+        <div v-else class="trading-card__image-bg trading-card__image-bg--placeholder"></div>
       </div>
 
-      <!-- Card Attributes (Pills) underneath the image -->
-      <div class="flex flex-wrap gap-1.5 mb-2.5">
-        <span class="badge badge-xs px-2 py-1.5 text-[8px] uppercase tracking-wide border" :class="categoryConfig">
-          {{ card.category }}
-        </span>
-        <span class="badge badge-xs px-2 py-1.5 text-[8px] uppercase tracking-wide" :class="rarityConfig.badgeBg">
-          {{ rarityConfig.badgeText }}
-        </span>
+      <!-- ═══ Image bevel border overlay ═══ -->
+      <div class="trading-card__image-bevel"></div>
+
+      <!-- ═══ Category color tint overlay (hard-light) ═══ -->
+      <div class="trading-card__tint-layer"></div>
+
+      <!-- ═══ Grain texture overlay ═══ -->
+      <div class="trading-card__grain-layer"></div>
+
+      <!-- ═══ Inner shadow overlay ═══ -->
+      <div class="trading-card__inner-shadow"></div>
+
+      <!-- ═══ Content layer (on top of everything) ═══ -->
+      <div class="trading-card__content">
+        
+        <!-- Title (expands downward from top) -->
+        <div class="trading-card__title-area">
+          <div class="trading-card__title-banner">
+            <h3 class="trading-card__title">
+              {{ card.title }}
+            </h3>
+          </div>
+        </div>
+
+        <!-- Spacer pushes bottom content down -->
+        <div class="trading-card__spacer"></div>
+
+        <!-- Stars + Category strip -->
+        <div class="trading-card__attributes">
+          <div class="trading-card__stars">
+            <svg 
+              v-for="(filled, i) in starArray" 
+              :key="i"
+              class="trading-card__star-icon"
+              :class="{ 'trading-card__star-icon--filled': filled, 'trading-card__star-icon--empty': !filled }"
+              xmlns="http://www.w3.org/2000/svg" 
+              width="20" 
+              height="20" 
+              viewBox="0 0 20 20"
+            >
+              <path :d="filled ? STAR_FILLED_PATH : STAR_EMPTY_PATH" />
+            </svg>
+          </div>
+          <span class="trading-card__category-label">
+            {{ categoryMapping.main }} / {{ categoryMapping.sub }}
+          </span>
+        </div>
+
+        <!-- Description (expands upward from bottom) -->
+        <div class="trading-card__description">
+          <p>{{ card.description }}</p>
+        </div>
+
+        <!-- Attribution line -->
+        <div class="trading-card__credit-line">
+          <a 
+            v-if="showLink !== false"
+            :href="wikimediaImageLink" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="trading-card__credit-link"
+            @click.stop
+          >
+            {{ attributionText }}
+          </a>
+          <span v-else class="trading-card__credit-text">
+            Wikimedia Commons / CC BY-SA 4.0
+          </span>
+        </div>
+
       </div>
 
-      <!-- Short Codex styled article lead description -->
-      <p class="text-xs text-base-content/85 leading-relaxed line-clamp-4 font-sans font-light">
-        {{ card.description }}
-      </p>
-    </div>
-
-    <!-- Bottom Actions/Links: Pure Wikipedia Citation style -->
-    <div class="mt-2 text-[9px] flex items-center justify-end text-secondary font-sans border-t border-base-200/60 pt-2">
-      <a 
-        v-if="showLink !== false"
-        :href="card.wikipediaLink" 
-        target="_blank" 
-        class="link link-primary inline-flex items-center gap-0.5 font-bold no-underline hover:underline"
-        @click.stop
-      >
-        View article
-        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 20 20" fill="currentColor">
-          <path d="M17 17H3V3h5V1H3a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-5h-2v5z"/>
-          <path d="M19 1v7h-2V4.41l-7.29 7.3-1.42-1.42L15.58 3H12V1h7z"/>
-        </svg>
-      </a>
     </div>
   </div>
 </template>
+
+<style scoped>
+/* ============================================================
+   Trading Card — Figma Redesign
+   Full-bleed image, category tinting, Codex stars, rough border
+   ============================================================ */
+
+.trading-card-wrapper {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.trading-card {
+  --_tint: var(--card-category-tint, #4E5B77);
+
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  height: auto !important;
+  min-height: 0;
+  flex-shrink: 0;
+  border-radius: 23px;
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+  background: #f5f0e8;
+  border: 1.25px solid #EBEBEB;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.trading-card:hover {
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.16),
+    0 12px 32px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* ── Full-bleed background image ─────────────────────────────── */
+.trading-card__image-layer {
+  position: absolute;
+  inset: 14px;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.trading-card__image-bg {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.43;
+  mix-blend-mode: multiply;
+}
+
+.trading-card__image-bg--img {
+  object-fit: cover;
+  display: block;
+}
+
+.trading-card__image-bg--placeholder {
+  background: linear-gradient(135deg, #d5d0c8 0%, #c2bdb5 100%);
+  opacity: 1;
+}
+
+/* ── Image bevel border (around the inset image area) ────────── */
+.trading-card__image-bevel {
+  position: absolute;
+  inset: 14px;
+  z-index: 2;
+  border-top: 8px solid #A2A9B1;
+  border-right: 8px solid #A2A9B1;
+  border-bottom: 8px solid #C8CCD1;
+  border-left: 8px solid #C8CCD1;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+/* ── Category color tint overlay ─────────────────────────────── */
+.trading-card__tint-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background-color: var(--_tint);
+  mix-blend-mode: hard-light;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+/* ── Grain texture overlay ───────────────────────────────────── */
+.trading-card__grain-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background-image: url('/grain.png');
+  background-repeat: repeat;
+  background-size: 150px 150px;
+  opacity: 0.15;
+  mix-blend-mode: luminosity;
+  pointer-events: none;
+}
+
+/* ── Inner shadow overlay ────────────────────────────────────── */
+.trading-card__inner-shadow {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  box-shadow: inset 0 0 10.2px rgba(174, 162, 132, 0.58);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* ── Content layer ───────────────────────────────────────────── */
+.trading-card__content {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 22px; /* 14px image inset + 8px internal padding */
+}
+
+/* ── Title area (expands downward) ───────────────────────────── */
+.trading-card__title-area {
+  flex-shrink: 0;
+}
+
+.trading-card__title-banner {
+  background-color: rgba(213, 213, 250, 0.30);
+  padding: 4px 8px;
+  text-align: center;
+  backdrop-filter: blur(2px);
+}
+
+.trading-card__title {
+  font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+  color: #000;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* ── Spacer (pushes bottom content down) ─────────────────────── */
+.trading-card__spacer {
+  flex: 1 1 auto;
+  min-height: 8px;
+}
+
+/* ── Stars + Category/Subcategory strip ──────────────────────── */
+.trading-card__attributes {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(213, 213, 250, 0.20);
+  padding: 6px 8px;
+  backdrop-filter: blur(2px);
+}
+
+.trading-card__stars {
+  display: flex;
+  gap: 1px;
+}
+
+.trading-card__star-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.trading-card__star-icon--filled {
+  fill: #e8a825;
+  filter: drop-shadow(0 1px 1px rgba(212, 168, 67, 0.4));
+}
+
+.trading-card__star-icon--empty {
+  fill: #C2CBCC;
+}
+
+.trading-card__category-label {
+  font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: #000;
+  letter-spacing: 0.02em;
+}
+
+/* ── Description (expands upward from bottom) ────────────────── */
+.trading-card__description {
+  flex-shrink: 0;
+  background-color: rgba(213, 213, 250, 0.30);
+  padding: 8px;
+  backdrop-filter: blur(2px);
+}
+
+.trading-card__description p {
+  font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
+  font-size: 11px;
+  line-height: 1.5;
+  color: #000;
+  margin: 0;
+  text-align: justify;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+
+
+/* ── Attribution credit line (on the card) ────────── */
+.trading-card__credit-line {
+  margin-top: 6px;
+  text-align: center;
+  font-family: var(--font-family-system-sans, sans-serif);
+  font-size: 8.5px;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.trading-card__credit-link {
+  color: rgba(0, 0, 0, 0.6);
+  text-decoration: none;
+  font-style: italic;
+  transition: color 0.15s ease, text-decoration 0.15s ease;
+  max-width: 100%;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trading-card__credit-link:hover {
+  color: var(--color-progressive, #36c);
+  text-decoration: underline;
+}
+
+.trading-card__credit-text {
+  color: rgba(0, 0, 0, 0.6);
+  font-style: italic;
+}
+</style>
