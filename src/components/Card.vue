@@ -11,10 +11,9 @@ const props = withDefaults(defineProps<{
 
 // ── Static Lookups ───────────────────────────────────────────────
 const CATEGORY_MAP: Record<string, { main: string; sub: string }> = {
-  'History':     { main: 'Civilization', sub: 'History' },
-  'Pop Culture': { main: 'Civilization', sub: 'Culture' },
-  'Geography':   { main: 'Nature',       sub: 'Geography' },
-  'Science':     { main: 'Science',      sub: 'Science' }
+  'Civilization': { main: 'Civilization', sub: 'History' },
+  'Nature':       { main: 'Nature',       sub: 'Geography' },
+  'Science':      { main: 'Science',      sub: 'Science' }
 };
 
 const RARITY_STARS: Record<string, number> = {
@@ -30,9 +29,13 @@ const STAR_STYLES: Record<string, { fill: string; stroke: string }> = {
 };
 
 // ── Computed Properties ──────────────────────────────────────────
-const categoryMapping = computed(() => 
-  CATEGORY_MAP[props.card.category] || { main: 'Civilization', sub: props.card.category }
-);
+const categoryMapping = computed(() => {
+  const mapped = CATEGORY_MAP[props.card.category] || { main: 'Civilization', sub: props.card.category };
+  return {
+    ...mapped,
+    cssClass: mapped.main.toLowerCase().replace(/\s+/g, '-')
+  };
+});
 
 const rarityStars = computed(() => RARITY_STARS[props.card.rarity] || 1);
 const starStyle = computed(() => STAR_STYLES[props.card.rarity] || STAR_STYLES.Common);
@@ -79,10 +82,10 @@ const grainPosition = computed(() => {
 
 const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.2612 22.5061L18.3081 23.8684L12.5 19.4312L6.69189 23.8684L4.73877 22.5061L6.98975 15.2209L1.11572 10.7349L1.875 8.49121H9.06982L11.3062 1.2561H13.6938L15.9302 8.49121Z';
 </script>
-
+ 
 <template>
   <div class="trading-card-wrapper">
-    <div class="trading-card" :class="'trading-card--' + categoryMapping.main.toLowerCase()">
+    <div class="trading-card" :class="'trading-card--' + categoryMapping.cssClass">
       <!-- ═══ Full-bleed background image ═══ -->
       <div class="trading-card__image-layer">
         <div v-if="hasImage && isCSSImage" 
@@ -222,25 +225,26 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 /* ── Category theme configurations ───────────────────────────── */
 .trading-card,
 .trading-card--civilization {
-  --_tint: #948877;
-  --_bg: #f5f0e8;
-  --_bevel-tr: #A2A9B1;
-  --_bevel-bl: #C8CCD1;
+  --_tint: var(--color-category-civilization);
+  --_bg: var(--color-category-civilization-bg);
+  --_bevel-tr: var(--color-category-civilization-bevel-tr);
+  --_bevel-bl: var(--color-category-civilization-bevel-bl);
 }
 
 .trading-card--nature {
-  --_tint: #7E8C75;
-  --_bg: #eef3eb;
-  --_bevel-tr: #8da283;
-  --_bevel-bl: #b8cbb0;
+  --_tint: var(--color-category-nature);
+  --_bg: var(--color-category-nature-bg);
+  --_bevel-tr: var(--color-category-nature-bevel-tr);
+  --_bevel-bl: var(--color-category-nature-bevel-bl);
 }
 
 .trading-card--science {
-  --_tint: #787F9B;
-  --_bg: #eef1f6;
-  --_bevel-tr: #8592b1;
-  --_bevel-bl: #b4c1db;
+  --_tint: var(--color-category-science);
+  --_bg: var(--color-category-science-bg);
+  --_bevel-tr: var(--color-category-science-bevel-tr);
+  --_bevel-bl: var(--color-category-science-bevel-bl);
 }
+
 
 .trading-card:hover {
   box-shadow: 

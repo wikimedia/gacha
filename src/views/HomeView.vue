@@ -18,7 +18,7 @@ const gameStore = useGameStore();
 const isLoading = ref(true);
 
 // Active Category for Fakeout Game
-const selectedCategory = ref<'Science' | 'History' | 'Pop Culture' | 'Geography' | null>(null);
+const selectedCategory = ref<'Science' | 'Civilization' | 'Nature' | null>(null);
 
 // Game States
 const gameActive = ref(false);
@@ -155,7 +155,7 @@ const addDebugPoints = () => {
 
 // Cooldown tracking
 const updateCooldowns = () => {
-  const categories: Array<'Science' | 'History' | 'Pop Culture' | 'Geography'> = ['Science', 'History', 'Pop Culture', 'Geography'];
+  const categories: Array<'Science' | 'Civilization' | 'Nature'> = ['Science', 'Civilization', 'Nature'];
   categories.forEach(cat => {
     cooldownTimers.value[cat] = gameStore.getCooldownTimeRemaining(cat);
   });
@@ -179,12 +179,12 @@ onMounted(async () => {
   setInterval(() => {
     updateCooldowns();
   }, 1000);
-
+ 
   checkTriggerGacha();
 });
 
 // Category selection & game initialization
-const startFakeoutGame = (category: 'Science' | 'History' | 'Pop Culture' | 'Geography') => {
+const startFakeoutGame = (category: 'Science' | 'Civilization' | 'Nature') => {
   if (gameStore.isCooldownActive(category)) return;
   
   pointsBeforeGame.value = gameStore.gdPoints;
@@ -418,47 +418,37 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
   gachaDroppedCards.value.unshift(randomCard);
 };
 
-const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geography') => {
+const getCategoryDetails = (cat: 'Civilization' | 'Science' | 'Nature') => {
   switch (cat) {
-    case 'History':
+    case 'Civilization':
       return {
         emoji: '🏛️',
-        bgClass: 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-900/30',
-        borderClass: 'border-amber-200 hover:border-amber-400 dark:border-amber-900/40 dark:hover:border-amber-700/60',
-        textClass: 'text-amber-900 dark:text-amber-100',
-        iconBg: 'bg-amber-100/80 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',
-        arrowColorClass: 'text-amber-200 group-hover:text-amber-400 dark:text-amber-900/40 dark:group-hover:text-amber-700/60',
-        titleColorClass: 'text-amber-600 group-hover:text-amber-700 dark:text-amber-400 dark:group-hover:text-amber-300'
+        bgClass: 'bg-category-civilization-hp-bg hover:bg-category-civilization-hp-bg-hover dark:bg-category-civilization-hp-dark-bg dark:hover:bg-category-civilization-hp-dark-bg-hover',
+        borderClass: 'border-category-civilization-hp-border hover:border-category-civilization-hp-border-hover dark:border-category-civilization-hp-border/30 dark:hover:border-category-civilization-hp-border-hover',
+        textClass: 'text-category-civilization-hp-text dark:text-category-civilization-hp-text-dark',
+        iconBg: 'bg-category-civilization-hp-icon-bg text-category-civilization-hp-text dark:bg-category-civilization-hp-icon-bg-dark dark:text-category-civilization-hp-text-dark',
+        arrowColorClass: 'text-category-civilization-hp-border group-hover:text-category-civilization-hp-text dark:text-category-civilization-hp-border/50 dark:group-hover:text-category-civilization-hp-text-dark',
+        titleColorClass: 'text-category-civilization-hp-text group-hover:text-category-civilization-hp-text dark:text-category-civilization-hp-text-dark'
       };
     case 'Science':
       return {
         emoji: '🧪',
-        bgClass: 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/30',
-        borderClass: 'border-emerald-200 hover:border-emerald-400 dark:border-emerald-900/40 dark:hover:border-emerald-700/60',
-        textClass: 'text-emerald-900 dark:text-emerald-100',
-        iconBg: 'bg-emerald-100/80 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200',
-        arrowColorClass: 'text-emerald-200 group-hover:text-emerald-400 dark:text-emerald-900/40 dark:group-hover:text-emerald-700/60',
-        titleColorClass: 'text-emerald-600 group-hover:text-emerald-700 dark:text-emerald-400 dark:group-hover:text-emerald-300'
+        bgClass: 'bg-category-science-hp-bg hover:bg-category-science-hp-bg-hover dark:bg-category-science-hp-dark-bg dark:hover:bg-category-science-hp-dark-bg-hover',
+        borderClass: 'border-category-science-hp-border hover:border-category-science-hp-border-hover dark:border-category-science-hp-border/30 dark:hover:border-category-science-hp-border-hover',
+        textClass: 'text-category-science-hp-text dark:text-category-science-hp-text-dark',
+        iconBg: 'bg-category-science-hp-icon-bg text-category-science-hp-text dark:bg-category-science-hp-icon-bg-dark dark:text-category-science-hp-text-dark',
+        arrowColorClass: 'text-category-science-hp-border group-hover:text-category-science-hp-text dark:text-category-science-hp-border/50 dark:group-hover:text-category-science-hp-text-dark',
+        titleColorClass: 'text-category-science-hp-text group-hover:text-category-science-hp-text dark:text-category-science-hp-text-dark'
       };
-    case 'Pop Culture':
-      return {
-        emoji: '🍿',
-        bgClass: 'bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/20 dark:hover:bg-purple-900/30',
-        borderClass: 'border-purple-200 hover:border-purple-400 dark:border-purple-900/40 dark:hover:border-purple-700/60',
-        textClass: 'text-purple-900 dark:text-purple-100',
-        iconBg: 'bg-purple-100/80 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200',
-        arrowColorClass: 'text-purple-200 group-hover:text-purple-400 dark:text-purple-900/40 dark:group-hover:text-purple-700/60',
-        titleColorClass: 'text-purple-600 group-hover:text-purple-700 dark:text-purple-400 dark:group-hover:text-purple-300'
-      };
-    case 'Geography':
+    case 'Nature':
       return {
         emoji: '🌍',
-        bgClass: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/20 dark:hover:bg-blue-900/30',
-        borderClass: 'border-blue-200 hover:border-blue-400 dark:border-blue-900/40 dark:hover:border-blue-700/60',
-        textClass: 'text-blue-900 dark:text-blue-100',
-        iconBg: 'bg-blue-100/80 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
-        arrowColorClass: 'text-blue-200 group-hover:text-blue-400 dark:text-blue-900/40 dark:group-hover:text-blue-700/60',
-        titleColorClass: 'text-blue-600 group-hover:text-blue-700 dark:text-blue-400 dark:group-hover:text-blue-300'
+        bgClass: 'bg-category-nature-hp-bg hover:bg-category-nature-hp-bg-hover dark:bg-category-nature-hp-dark-bg dark:hover:bg-category-nature-hp-dark-bg-hover',
+        borderClass: 'border-category-nature-hp-border hover:border-category-nature-hp-border-hover dark:border-category-nature-hp-border/30 dark:hover:border-category-nature-hp-border-hover',
+        textClass: 'text-category-nature-hp-text dark:text-category-nature-hp-text-dark',
+        iconBg: 'bg-category-nature-hp-icon-bg text-category-nature-hp-text dark:bg-category-nature-hp-icon-bg-dark dark:text-category-nature-hp-text-dark',
+        arrowColorClass: 'text-category-nature-hp-border group-hover:text-category-nature-hp-text dark:text-category-nature-hp-border/50 dark:group-hover:text-category-nature-hp-text-dark',
+        titleColorClass: 'text-category-nature-hp-text group-hover:text-category-nature-hp-text dark:text-category-nature-hp-text-dark'
       };
   }
 };
@@ -519,7 +509,7 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
           </h3>
           <div class="grid grid-cols-2 gap-4">
             <button
-              v-for="cat in (['History', 'Science', 'Pop Culture', 'Geography'] as const)"
+              v-for="cat in (['Civilization', 'Nature', 'Science'] as const)"
               :key="cat"
               @click="startFakeoutGame(cat)"
               :disabled="!!cooldownTimers[cat]"
@@ -558,8 +548,8 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
               <!-- Bottom Row: Title and details -->
               <div class="w-full mt-auto">
                 <h4 
-                  class="font-serif font-black text-base leading-tight text-base-content"
-                  :class="{ 'opacity-40': cooldownTimers[cat] }"
+                  class="font-serif font-black text-base leading-tight"
+                  :class="[cooldownTimers[cat] ? 'text-base-content/40' : getCategoryDetails(cat).textClass]"
                 >
                   {{ cat }}
                 </h4>

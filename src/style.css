@@ -120,8 +120,74 @@
 
   /* Main Category Tint Colors — Applied with hard-light blend on cards */
   --color-category-civilization: #948877;
+  --color-category-civilization-bg: #f5f0e8;
+  --color-category-civilization-bg-hover: #ebe4d8;
+  --color-category-civilization-dark-bg: #2d2a27;
+  --color-category-civilization-dark-bg-hover: #3b3733;
+  --color-category-civilization-border: #C8CCD1;
+  --color-category-civilization-border-hover: #A2A9B1;
+  --color-category-civilization-text: #5c5346;
+  --color-category-civilization-text-dark: #e3dacd;
+  --color-category-civilization-icon-bg: rgba(148, 136, 119, 0.15);
+  --color-category-civilization-icon-bg-dark: rgba(148, 136, 119, 0.3);
+
   --color-category-nature: #7E8C75;
+  --color-category-nature-bg: #eef3eb;
+  --color-category-nature-bg-hover: #deebd7;
+  --color-category-nature-dark-bg: #262924;
+  --color-category-nature-dark-bg-hover: #31362e;
+  --color-category-nature-border: #b8cbb0;
+  --color-category-nature-border-hover: #8da283;
+  --color-category-nature-text: #4f5b48;
+  --color-category-nature-text-dark: #dbe5d7;
+  --color-category-nature-icon-bg: rgba(126, 140, 117, 0.15);
+  --color-category-nature-icon-bg-dark: rgba(126, 140, 117, 0.3);
+
   --color-category-science: #787F9B;
+  --color-category-science-bg: #eef1f6;
+  --color-category-science-bg-hover: #dee4ee;
+  --color-category-science-dark-bg: #24262c;
+  --color-category-science-dark-bg-hover: #2e313a;
+  --color-category-science-border: #b4c1db;
+  --color-category-science-border-hover: #8592b1;
+  --color-category-science-text: #49506a;
+  --color-category-science-text-dark: #dbe1ec;
+  --color-category-science-icon-bg: rgba(120, 127, 155, 0.15);
+  --color-category-science-icon-bg-dark: rgba(120, 127, 155, 0.3);
+
+  /* Homepage Brighter Category Variations */
+  --color-category-civilization-hp-bg: #fdf3db;
+  --color-category-civilization-hp-bg-hover: #fbe7be;
+  --color-category-civilization-hp-dark-bg: #3a3224;
+  --color-category-civilization-hp-dark-bg-hover: #4c412f;
+  --color-category-civilization-hp-border: #f5d595;
+  --color-category-civilization-hp-border-hover: #e2ba65;
+  --color-category-civilization-hp-text: #825e1c;
+  --color-category-civilization-hp-text-dark: #fcdb9b;
+  --color-category-civilization-hp-icon-bg: rgba(212, 168, 67, 0.2);
+  --color-category-civilization-hp-icon-bg-dark: rgba(212, 168, 67, 0.4);
+
+  --color-category-nature-hp-bg: #e8f7e2;
+  --color-category-nature-hp-bg-hover: #d3f0c7;
+  --color-category-nature-hp-dark-bg: #243020;
+  --color-category-nature-hp-dark-bg-hover: #2e3e29;
+  --color-category-nature-hp-border: #addd9b;
+  --color-category-nature-hp-border-hover: #81c667;
+  --color-category-nature-hp-text: #2b6d19;
+  --color-category-nature-hp-text-dark: #b6efa3;
+  --color-category-nature-hp-icon-bg: rgba(43, 109, 25, 0.15);
+  --color-category-nature-hp-icon-bg-dark: rgba(43, 109, 25, 0.35);
+
+  --color-category-science-hp-bg: #e7f1fd;
+  --color-category-science-hp-bg-hover: #cbe0fa;
+  --color-category-science-hp-dark-bg: #1d2836;
+  --color-category-science-hp-dark-bg-hover: #27364a;
+  --color-category-science-hp-border: #9dc3f7;
+  --color-category-science-hp-border-hover: #6aa2f2;
+  --color-category-science-hp-text: #1d52a2;
+  --color-category-science-hp-text-dark: #a6c9fb;
+  --color-category-science-hp-icon-bg: rgba(29, 82, 162, 0.15);
+  --color-category-science-hp-icon-bg-dark: rgba(29, 82, 162, 0.35);
 }
 
 /* Custom Base resets */

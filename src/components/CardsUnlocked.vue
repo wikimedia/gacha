@@ -44,13 +44,11 @@ watch(() => authStore.isLoggedIn, (loggedIn) => {
 const getCategoryClass = (category: string) => {
   switch (category) {
     case 'Science':
-      return 'bg-emerald-100/80 text-emerald-800 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50';
-    case 'History':
-      return 'bg-amber-100/80 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/50';
-    case 'Pop Culture':
-      return 'bg-purple-100/80 text-purple-800 border-purple-200 dark:bg-purple-950/30 dark:text-purple-300 dark:border-purple-900/50';
-    case 'Geography':
-      return 'bg-blue-100/80 text-blue-800 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900/50';
+      return 'bg-category-science-icon-bg text-category-science-text border-category-science-border/40 dark:bg-category-science-icon-bg-dark dark:text-category-science-text-dark dark:border-category-science-border/20';
+    case 'Civilization':
+      return 'bg-category-civilization-icon-bg text-category-civilization-text border-category-civilization-border/40 dark:bg-category-civilization-icon-bg-dark dark:text-category-civilization-text-dark dark:border-category-civilization-border/20';
+    case 'Nature':
+      return 'bg-category-nature-icon-bg text-category-nature-text border-category-nature-border/40 dark:bg-category-nature-icon-bg-dark dark:text-category-nature-text-dark dark:border-category-nature-border/20';
     default:
       return 'bg-base-200 text-base-content/85 border-base-300';
   }
