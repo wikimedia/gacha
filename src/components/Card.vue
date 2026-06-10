@@ -103,9 +103,6 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
         <div v-else class="trading-card__image-bg trading-card__image-bg--placeholder"></div>
       </div>
 
-      <!-- ═══ Image bevel border overlay ═══ -->
-      <div class="trading-card__image-bevel"></div>
-
       <!-- ═══ Category color tint overlay (hard-light) ═══ -->
       <div class="trading-card__tint-layer"></div>
 
@@ -259,6 +256,10 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   inset: 14px;
   z-index: 1;
   overflow: hidden;
+  border-top: 1.5px solid #A2A9B1;
+  border-right: 1.5px solid #A2A9B1;
+  border-bottom: 1.5px solid #C8CCD1;
+  border-left: 1.5px solid #C8CCD1;
 }
 
 .trading-card__image-bg {
@@ -278,19 +279,6 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card__image-bg--placeholder {
   background: linear-gradient(135deg, #d5d0c8 0%, #c2bdb5 100%);
   opacity: 1;
-}
-
-/* ── Image bevel border (around the inset image area) ────────── */
-.trading-card__image-bevel {
-  position: absolute;
-  inset: 14px;
-  z-index: 2;
-  border-top: 1.5px solid var(--_bevel-tr);
-  border-right: 1.5px solid var(--_bevel-tr);
-  border-bottom: 1.5px solid var(--_bevel-bl);
-  border-left: 1.5px solid var(--_bevel-bl);
-  pointer-events: none;
-  box-sizing: border-box;
 }
 
 /* ── Category color tint overlay ─────────────────────────────── */
