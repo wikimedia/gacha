@@ -109,19 +109,6 @@ const categoryBgColor = computed(() => {
   }
 });
 
-const categoryBorderColor = computed(() => {
-  switch (categoryMapping.value.main) {
-    case 'Civilization':
-      return '#dcd5c7';
-    case 'Nature':
-      return '#c7d4c1';
-    case 'Science':
-      return '#c7cddf';
-    default:
-      return '#dcd5c7';
-  }
-});
-
 const bevelColorTopRight = computed(() => {
   switch (categoryMapping.value.main) {
     case 'Civilization':
@@ -163,6 +150,33 @@ const starStyle = computed(() => {
     default:
       return { fill: '#595C5F', stroke: '#404244' };
   }
+});
+
+// Area background colors matching card theme colors at 90% opacity
+const categoryAreaBgColor = computed(() => {
+  switch (categoryMapping.value.main) {
+    case 'Civilization':
+      return 'rgba(245, 240, 232, 0.90)';
+    case 'Nature':
+      return 'rgba(238, 243, 235, 0.90)';
+    case 'Science':
+      return 'rgba(238, 241, 246, 0.90)';
+    default:
+      return 'rgba(245, 240, 232, 0.90)';
+  }
+});
+
+// Stable pseudo-random background position for the grain texture to create subtle card variations
+const grainPosition = computed(() => {
+  const xOffsets = ['left', 'center', 'right', '25%', '75%'];
+  const yOffsets = ['top', 'center', 'bottom', '25%', '75%'];
+  
+  // Use card id char codes to get a stable but unique index per card
+  const seed = props.card.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const xPos = xOffsets[seed % xOffsets.length];
+  const yPos = yOffsets[(seed >> 1) % yOffsets.length];
+  
+  return `${xPos} ${yPos}`;
 });
 
 const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.2612 22.5061L18.3081 23.8684L12.5 19.4312L6.69189 23.8684L4.73877 22.5061L6.98975 15.2209L1.11572 10.7349L1.875 8.49121H9.06982L11.3062 1.2561H13.6938L15.9302 8.49121Z';
@@ -288,7 +302,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card {
   --_tint: v-bind(categoryTint);
   --_bg: v-bind(categoryBgColor);
-  --_border: v-bind(categoryBorderColor);
+  --_area-bg: v-bind(categoryAreaBgColor);
 
   width: 100%;
   aspect-ratio: 5 / 7;
@@ -300,7 +314,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   position: relative;
   isolation: isolate;
   background: var(--_bg);
-  border: 1.25px solid var(--_border);
+  border: 1.25px solid #EBEBEB;
   box-shadow: 
     0 2px 8px rgba(0, 0, 0, 0.12),
     0 8px 24px rgba(0, 0, 0, 0.06);
@@ -371,12 +385,15 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 
 /* ── Grain texture overlay ───────────────────────────────────── */
 .trading-card__grain-layer {
+  --_grain-pos: v-bind(grainPosition);
+
   position: absolute;
   inset: 0;
   z-index: 5;
   background-image: url('/grain.png');
-  background-repeat: repeat;
-  background-size: 150px 150px;
+  background-repeat: no-repeat;
+  background-size: cover; /* Fill the card area without warping the aspect ratio */
+  background-position: var(--_grain-pos);
   opacity: 0.15;
   mix-blend-mode: luminosity;
   pointer-events: none;
@@ -408,7 +425,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 }
 
 .trading-card__title-banner {
-  background: rgba(248, 249, 250, 0.90);
+  background: var(--_area-bg);
   padding: 2px 4px; /* halved from 4px 8px */
   text-align: center;
 }
@@ -435,7 +452,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(248, 249, 250, 0.90);
+  background: var(--_area-bg);
   padding: 3px 4px; /* halved from 6px 8px */
 }
 
@@ -462,7 +479,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 /* ── Description (expands upward from bottom) ────────────────── */
 .trading-card__description {
   flex-shrink: 0;
-  background: rgba(248, 249, 250, 0.90);
+  background: var(--_area-bg);
   padding: 4px; /* halved from 8px */
 }
 
@@ -522,7 +539,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 /* ── Description divider line ─────────────────────────────── */
 .trading-card__description-divider {
   flex-shrink: 0;
-  background: rgba(248, 249, 250, 0.90);
+  background: var(--_area-bg);
   height: 1px;
   position: relative;
 }
