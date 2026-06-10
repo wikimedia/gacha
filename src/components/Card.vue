@@ -292,8 +292,8 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
    ============================================================ */
 
 .trading-card-wrapper {
-  width: 313.5px;
-  max-width: 100%; /* 285.5px image width + 28px card margin */
+  width: 315px;
+  height: 440px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -305,9 +305,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   --_area-bg: v-bind(categoryAreaBgColor);
 
   width: 100%;
-  aspect-ratio: 5 / 7;
-  height: auto !important;
-  min-height: 0;
+  height: 100%;
   flex-shrink: 0;
   border-radius: 11.5px;
   overflow: hidden;

@@ -2,6 +2,50 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+/* --- Linux Libertine Web Fonts --- */
+@font-face {
+  font-family: 'Linux Libertine';
+  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_R.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Linux Libertine';
+  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_RI.woff') format('woff');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Linux Libertine';
+  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_RB.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Linux Libertine';
+  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_RBI.woff') format('woff');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Linux Libertine';
+  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_RZ.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Linux Libertine';
+  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_RZI.woff') format('woff');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
 :root {
   /* Map DaisyUI Theme variables to Codex Design Tokens */
   --color-primary: var(--color-progressive); /* Wikipedia blue (#36c) */
@@ -24,6 +68,10 @@
   --color-success: var(--color-success); /* Codex success (#177860) */
   --color-warning: var(--color-warning); /* Codex warning (#886425) */
   --color-error: var(--color-error); /* Codex error (#bf3c2c) */
+  
+  /* Override default fonts to use Linux Libertine across all selectors */
+  --font-family-system-sans: 'Linux Libertine', Georgia, serif;
+  --font-family-serif: 'Linux Libertine', Georgia, serif;
   
   /* Font Family Mappings */
   --font-sans: var(--font-family-system-sans);

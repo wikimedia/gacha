@@ -293,11 +293,11 @@ const toggleCardShowcase = async (cardId: string) => {
             No matching cards discovered in this binder.
           </div>
           
-          <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 justify-items-center">
+          <div v-else class="grid gap-8 justify-items-center w-full" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 315px), 1fr));">
           <div 
             v-for="card in sortedBinderCards" 
             :key="card.id" 
-            class="w-full max-w-[280px] relative animate-fade-in"
+            class="w-[315px] h-[440px] max-w-full relative animate-fade-in"
           >
             <!-- Card itself (no downscaling) -->
             <CardComp :card="card" :show-link="true" />
@@ -306,7 +306,7 @@ const toggleCardShowcase = async (cardId: string) => {
             <button 
               v-if="isPrivateMode"
               @click="toggleCardShowcase(card.id)"
-              class="absolute top-2.5 right-2.5 z-20 btn btn-circle btn-xs shadow-md border"
+              class="absolute top-3 right-3 z-20 btn btn-circle btn-xs shadow-md border"
               :class="[
                 card.isShowcase 
                   ? 'btn-warning text-warning-content border-warning' 

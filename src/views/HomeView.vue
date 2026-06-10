@@ -575,9 +575,9 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
       </section>
 
       <!-- FAKEOUT GAME SWIPING MECHANIC -->
-      <section v-if="gameActive && currentCard" class="flex-grow flex flex-col justify-between py-2">
+      <section v-if="gameActive && currentCard" class="flex-grow flex flex-col justify-between py-2 w-full">
         <!-- Game Header -->
-        <div class="flex flex-col w-full mb-3">
+        <div class="flex flex-col w-full max-w-[315px] mx-auto mb-3">
           <div class="flex items-center justify-between text-xs px-2 mb-2 font-sans font-bold text-secondary">
             <span>Category: <span class="text-base-content font-black">{{ selectedCategory }}</span></span>
             <span>Round {{ currentRound }}/10</span>
@@ -592,10 +592,10 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
         </div>
 
         <!-- Swiping Card Area -->
-        <div class="flex-grow flex items-center justify-center my-2 relative min-h-[520px]">
+        <div class="flex-grow flex items-center justify-center my-2 relative min-h-[480px]">
           
           <!-- Centered wrapper container -->
-          <div class="relative w-full max-w-[320px]">
+          <div class="relative w-full max-w-[315px] h-[440px]">
             
             <div class="stack select-none w-full h-full">
               
@@ -672,7 +672,7 @@ const getCategoryDetails = (cat: 'History' | 'Science' | 'Pop Culture' | 'Geogra
 
         <!-- Desktop Swiping Helpers (Standard Buttons) -->
         <div 
-          class="flex gap-4 px-2 my-2 z-20 transition-all duration-200"
+          class="flex gap-4 px-2 my-2 z-20 transition-all duration-200 w-full max-w-[315px] mx-auto"
           :class="[roundAnswered ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100']"
         >
           <button 
