@@ -30,13 +30,13 @@ const categoryMapping = computed(() => {
 const categoryTint = computed(() => {
   switch (categoryMapping.value.main) {
     case 'Civilization':
-      return '#4E5B77';
+      return '#948877';
     case 'Nature':
-      return '#74BC7E';
+      return '#7E8C75';
     case 'Science':
-      return '#7B7898';
+      return '#787F9B';
     default:
-      return '#4E5B77';
+      return '#948877';
   }
 });
 
@@ -46,13 +46,10 @@ const rarityStars = computed(() => {
     case 'Legendary': return 5;
     case 'Epic': return 4;
     case 'Rare': return 3;
+    case 'Uncommon': return 2;
     case 'Common':
     default: return 1;
   }
-});
-
-const starArray = computed(() => {
-  return Array.from({ length: 5 }, (_, i) => i < rarityStars.value);
 });
 
 // ── Image handling ───────────────────────────────────────────────
@@ -98,20 +95,82 @@ const attributionText = computed(() => {
 
 
 
-// Codex star SVG paths (viewBox 0 0 20 20)
-// cdxIconUnStar = solid filled star, cdxIconStar = outlined star with inner detail
-const STAR_FILLED_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.73-1.63-7z';
-const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.73-1.63-7zm-10 6.9-3.76 2.27 1-4.28L3.5 8.5h4.61L10 4.6l1.9 3.9h4.6l-3.73 3.4 1 4.28z';
+// ── Category-specific card background and border colors ─────────
+const categoryBgColor = computed(() => {
+  switch (categoryMapping.value.main) {
+    case 'Civilization':
+      return '#f5f0e8';
+    case 'Nature':
+      return '#eef3eb';
+    case 'Science':
+      return '#eef1f6';
+    default:
+      return '#f5f0e8';
+  }
+});
+
+const categoryBorderColor = computed(() => {
+  switch (categoryMapping.value.main) {
+    case 'Civilization':
+      return '#dcd5c7';
+    case 'Nature':
+      return '#c7d4c1';
+    case 'Science':
+      return '#c7cddf';
+    default:
+      return '#dcd5c7';
+  }
+});
+
+const bevelColorTopRight = computed(() => {
+  switch (categoryMapping.value.main) {
+    case 'Civilization':
+      return '#A2A9B1';
+    case 'Nature':
+      return '#8da283';
+    case 'Science':
+      return '#8592b1';
+    default:
+      return '#A2A9B1';
+  }
+});
+
+const bevelColorBottomLeft = computed(() => {
+  switch (categoryMapping.value.main) {
+    case 'Civilization':
+      return '#C8CCD1';
+    case 'Nature':
+      return '#b8cbb0';
+    case 'Science':
+      return '#b4c1db';
+    default:
+      return '#C8CCD1';
+  }
+});
+
+// ── Rarity-specific star colors and path ────────────────────────
+const starStyle = computed(() => {
+  switch (props.card.rarity) {
+    case 'Legendary':
+      return { fill: '#FFCF4F', stroke: '#AB7F2A' };
+    case 'Epic':
+      return { fill: 'white', stroke: '#404244' };
+    case 'Rare':
+      return { fill: '#987027', stroke: '#CA982E' };
+    case 'Uncommon':
+      return { fill: '#A8B0B7', stroke: '#72777D' };
+    case 'Common':
+    default:
+      return { fill: '#595C5F', stroke: '#404244' };
+  }
+});
+
+const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.2612 22.5061L18.3081 23.8684L12.5 19.4312L6.69189 23.8684L4.73877 22.5061L6.98975 15.2209L1.11572 10.7349L1.875 8.49121H9.06982L11.3062 1.2561H13.6938L15.9302 8.49121Z';
 </script>
 
 <template>
   <div class="trading-card-wrapper">
-    <div 
-      class="trading-card"
-      :style="{
-        '--card-category-tint': categoryTint,
-      }"
-    >
+    <div class="trading-card">
       <!-- ═══ Full-bleed background image ═══ -->
       <div class="trading-card__image-layer">
         <div v-if="hasImage && isCSSImage" 
@@ -157,18 +216,23 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 
         <!-- Stars + Category strip -->
         <div class="trading-card__attributes">
-          <div class="trading-card__stars">
+          <div class="trading-card__stars" :class="'trading-card__stars--' + rarityStars">
             <svg 
-              v-for="(filled, i) in starArray" 
+              v-for="i in rarityStars" 
               :key="i"
               class="trading-card__star-icon"
-              :class="{ 'trading-card__star-icon--filled': filled, 'trading-card__star-icon--empty': !filled }"
               xmlns="http://www.w3.org/2000/svg" 
-              width="20" 
-              height="20" 
-              viewBox="0 0 20 20"
+              width="25" 
+              height="25" 
+              viewBox="0 0 25 25"
             >
-              <path :d="filled ? STAR_FILLED_PATH : STAR_EMPTY_PATH" />
+              <path 
+                :d="STAR_PATH" 
+                :fill="starStyle.fill" 
+                :stroke="starStyle.stroke" 
+                stroke-width="2" 
+                stroke-linejoin="bevel"
+              />
             </svg>
           </div>
           <span class="trading-card__category-label">
@@ -176,28 +240,31 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
           </span>
         </div>
 
+        <!-- Codex divider line -->
+        <div class="trading-card__description-divider"></div>
+
         <!-- Description (expands upward from bottom) -->
         <div class="trading-card__description">
           <p>{{ card.description }}</p>
         </div>
 
-        <!-- Attribution line -->
-        <div class="trading-card__credit-line">
-          <a 
-            v-if="showLink !== false"
-            :href="wikimediaImageLink" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            class="trading-card__credit-link"
-            @click.stop
-          >
-            {{ attributionText }}
-          </a>
-          <span v-else class="trading-card__credit-text">
-            Wikimedia Commons / CC BY-SA 4.0
-          </span>
-        </div>
+      </div>
 
+      <!-- Attribution line -->
+      <div class="trading-card__credit-line">
+        <a 
+          v-if="showLink !== false"
+          :href="wikimediaImageLink" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="trading-card__credit-link"
+          @click.stop
+        >
+          {{ attributionText }}
+        </a>
+        <span v-else class="trading-card__credit-text">
+          Wikimedia Commons / CC BY-SA 4.0
+        </span>
       </div>
 
     </div>
@@ -211,27 +278,29 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
    ============================================================ */
 
 .trading-card-wrapper {
-  width: 100%;
-  max-width: 320px;
+  width: 313.5px;
+  max-width: 100%; /* 285.5px image width + 28px card margin */
   display: flex;
   flex-direction: column;
   position: relative;
 }
 
 .trading-card {
-  --_tint: var(--card-category-tint, #4E5B77);
+  --_tint: v-bind(categoryTint);
+  --_bg: v-bind(categoryBgColor);
+  --_border: v-bind(categoryBorderColor);
 
   width: 100%;
   aspect-ratio: 5 / 7;
   height: auto !important;
   min-height: 0;
   flex-shrink: 0;
-  border-radius: 23px;
+  border-radius: 11.5px;
   overflow: hidden;
   position: relative;
   isolation: isolate;
-  background: #f5f0e8;
-  border: 1.25px solid #EBEBEB;
+  background: var(--_bg);
+  border: 1.25px solid var(--_border);
   box-shadow: 
     0 2px 8px rgba(0, 0, 0, 0.12),
     0 8px 24px rgba(0, 0, 0, 0.06);
@@ -259,7 +328,7 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.43;
+  opacity: 0.68;
   mix-blend-mode: multiply;
 }
 
@@ -275,13 +344,16 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 
 /* ── Image bevel border (around the inset image area) ────────── */
 .trading-card__image-bevel {
+  --_bevel-tr: v-bind(bevelColorTopRight);
+  --_bevel-bl: v-bind(bevelColorBottomLeft);
+
   position: absolute;
   inset: 14px;
   z-index: 2;
-  border-top: 8px solid #A2A9B1;
-  border-right: 8px solid #A2A9B1;
-  border-bottom: 8px solid #C8CCD1;
-  border-left: 8px solid #C8CCD1;
+  border-top: 1.5px solid var(--_bevel-tr);
+  border-right: 1.5px solid var(--_bevel-tr);
+  border-bottom: 1.5px solid var(--_bevel-bl);
+  border-left: 1.5px solid var(--_bevel-bl);
   pointer-events: none;
   box-sizing: border-box;
 }
@@ -290,10 +362,10 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 .trading-card__tint-layer {
   position: absolute;
   inset: 0;
-  z-index: 3;
+  z-index: 4;
   background-color: var(--_tint);
   mix-blend-mode: hard-light;
-  opacity: 0.65;
+  opacity: 0.38;
   pointer-events: none;
 }
 
@@ -301,7 +373,7 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 .trading-card__grain-layer {
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: 5;
   background-image: url('/grain.png');
   background-repeat: repeat;
   background-size: 150px 150px;
@@ -314,7 +386,7 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 .trading-card__inner-shadow {
   position: absolute;
   inset: 0;
-  z-index: 5;
+  z-index: 6;
   box-shadow: inset 0 0 10.2px rgba(174, 162, 132, 0.58);
   mix-blend-mode: multiply;
   pointer-events: none;
@@ -323,11 +395,11 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 /* ── Content layer ───────────────────────────────────────────── */
 .trading-card__content {
   position: relative;
-  z-index: 6;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 22px; /* 14px image inset + 8px internal padding */
+  padding: 23px; /* 14px image inset + 9px internal padding (half of 18px side margin) */
 }
 
 /* ── Title area (expands downward) ───────────────────────────── */
@@ -336,16 +408,15 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 }
 
 .trading-card__title-banner {
-  background-color: rgba(213, 213, 250, 0.30);
-  padding: 4px 8px;
+  background: rgba(248, 249, 250, 0.90);
+  padding: 2px 4px; /* halved from 4px 8px */
   text-align: center;
-  backdrop-filter: blur(2px);
 }
 
 .trading-card__title {
   font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
-  font-size: 20px;
-  font-weight: 900;
+  font-size: 18px; /* halved from 36px font-size */
+  font-weight: bold;
   line-height: 1.2;
   color: #000;
   margin: 0;
@@ -355,7 +426,7 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 /* ── Spacer (pushes bottom content down) ─────────────────────── */
 .trading-card__spacer {
   flex: 1 1 auto;
-  min-height: 8px;
+  min-height: 4px; /* halved from 8px */
 }
 
 /* ── Stars + Category/Subcategory strip ──────────────────────── */
@@ -364,14 +435,13 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: rgba(213, 213, 250, 0.20);
-  padding: 6px 8px;
-  backdrop-filter: blur(2px);
+  background: rgba(248, 249, 250, 0.90);
+  padding: 3px 4px; /* halved from 6px 8px */
 }
 
 .trading-card__stars {
   display: flex;
-  gap: 1px;
+  gap: 1.5px;
 }
 
 .trading-card__star-icon {
@@ -379,14 +449,7 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
   height: 18px;
 }
 
-.trading-card__star-icon--filled {
-  fill: #e8a825;
-  filter: drop-shadow(0 1px 1px rgba(212, 168, 67, 0.4));
-}
-
-.trading-card__star-icon--empty {
-  fill: #C2CBCC;
-}
+/* Style properties are handled dynamically/inline via template SVG attributes */
 
 .trading-card__category-label {
   font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
@@ -399,9 +462,8 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 /* ── Description (expands upward from bottom) ────────────────── */
 .trading-card__description {
   flex-shrink: 0;
-  background-color: rgba(213, 213, 250, 0.30);
-  padding: 8px;
-  backdrop-filter: blur(2px);
+  background: rgba(248, 249, 250, 0.90);
+  padding: 4px; /* halved from 8px */
 }
 
 .trading-card__description p {
@@ -421,13 +483,18 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 
 /* ── Attribution credit line (on the card) ────────── */
 .trading-card__credit-line {
-  margin-top: 6px;
-  text-align: center;
+  position: absolute;
+  bottom: 0;
+  left: 14px;
+  right: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-family-system-sans, sans-serif);
-  font-size: 8.5px;
-  position: relative;
-  z-index: 2;
-  flex-shrink: 0;
+  font-size: 7px;
+  z-index: 3;
+  margin: 0;
 }
 
 .trading-card__credit-link {
@@ -450,5 +517,23 @@ const STAR_EMPTY_PATH = 'M20 7h-7L10 .5 7 7H0l5.46 5.47-1.64 7 6.18-3.7 6.18 3.7
 .trading-card__credit-text {
   color: rgba(0, 0, 0, 0.6);
   font-style: italic;
+}
+
+/* ── Description divider line ─────────────────────────────── */
+.trading-card__description-divider {
+  flex-shrink: 0;
+  background: rgba(248, 249, 250, 0.90);
+  height: 1px;
+  position: relative;
+}
+
+.trading-card__description-divider::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 0;
+  bottom: 0;
+  border-bottom: 1px solid #A2A9B1;
 }
 </style>

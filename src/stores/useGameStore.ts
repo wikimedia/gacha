@@ -8,7 +8,7 @@ export interface Card {
   title: string;
   wikipediaLink: string;
   category: 'Science' | 'History' | 'Pop Culture' | 'Geography';
-  rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary';
+  rarity: 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
   description: string;
   image: string;
   isReal: boolean;

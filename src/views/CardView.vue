@@ -70,32 +70,32 @@ onMounted(async () => {
     const realCards = allCards.filter(c => c.isReal);
     
     if (realCards.length > 0) {
-      // Let's pick 4 cards of different categories: Science, History, Pop Culture, Geography
-      const categories: ('Science' | 'History' | 'Pop Culture' | 'Geography')[] = ['Science', 'History', 'Pop Culture', 'Geography'];
+      // Let's pick 5 cards of different categories: Science, Geography, History, Pop Culture, and one extra for testing all 5 star ratings
+      const categories: ('Science' | 'History' | 'Pop Culture' | 'Geography')[] = ['Science', 'Geography', 'History', 'Pop Culture', 'Science'];
       const selected: CardType[] = [];
       
       categories.forEach(cat => {
         const matching = realCards.filter(c => c.category === cat && !selected.some(s => s.id === c.id));
         if (matching.length > 0) {
           const randomCard = matching[Math.floor(Math.random() * matching.length)];
-          selected.push(randomCard);
+          selected.push({ ...randomCard });
         }
       });
       
-      // If we couldn't get exactly 4 because some categories are missing in the DB, fill up with any other real cards
-      if (selected.length < 4) {
+      // If we couldn't get exactly 5 because some categories are missing in the DB, fill up with any other real cards
+      if (selected.length < 5) {
         const remaining = realCards.filter(c => !selected.some(s => s.id === c.id));
-        while (selected.length < 4 && remaining.length > 0) {
+        while (selected.length < 5 && remaining.length > 0) {
           const nextIndex = Math.floor(Math.random() * remaining.length);
-          selected.push(remaining.splice(nextIndex, 1)[0]);
+          selected.push({ ...remaining.splice(nextIndex, 1)[0] });
         }
       }
       
-      // If we still don't have 4, fill up with defaults
-      if (selected.length < 4) {
+      // If we still don't have 5, fill up with defaults
+      if (selected.length < 5) {
         defaultMockCards.forEach(mc => {
-          if (selected.length < 4 && !selected.some(s => s.title === mc.title)) {
-            selected.push(mc);
+          if (selected.length < 5 && !selected.some(s => s.title === mc.title)) {
+            selected.push({ ...mc });
           }
         });
       }
@@ -104,9 +104,41 @@ onMounted(async () => {
       const categoryOrder = { 'Science': 0, 'Geography': 1, 'History': 2, 'Pop Culture': 3 };
       selected.sort((a, b) => categoryOrder[a.category] - categoryOrder[b.category]);
       
+      // Force each card to have a different category and rarity level for design testing
+      const categoriesList: ('Science' | 'Geography' | 'History' | 'Pop Culture')[] = ['Science', 'Geography', 'History', 'Pop Culture', 'Science'];
+      const rarities: ('Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary')[] = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
+      selected.forEach((card, idx) => {
+        if (idx < categoriesList.length) {
+          card.category = categoriesList[idx];
+        }
+        if (idx < rarities.length) {
+          card.rarity = rarities[idx];
+        }
+      });
+      
       displayCards.value = selected;
     } else {
-      displayCards.value = defaultMockCards;
+      // Force different rarities on defaults too to test all 5 ratings
+      const rarities: ('Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary')[] = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
+      const mockList = defaultMockCards.map(c => ({ ...c }));
+      if (mockList.length > 0) {
+        // Add a 5th card clone for the 2-star Uncommon test slot
+        mockList.push({
+          ...mockList[0],
+          id: 'preview_uncommon',
+          title: 'The Uncommon Platypus',
+          category: 'Geography'
+        });
+      }
+      mockList.forEach((card, idx) => {
+        if (idx < rarities.length) {
+          card.rarity = rarities[idx];
+        }
+      });
+      // Sort mockList by category order for consistency
+      const categoryOrder = { 'Science': 0, 'Geography': 1, 'History': 2, 'Pop Culture': 3 };
+      mockList.sort((a, b) => categoryOrder[a.category] - categoryOrder[b.category]);
+      displayCards.value = mockList;
     }
   } catch (err: any) {
     console.error('Error loading cards from Supabase for preview:', err);

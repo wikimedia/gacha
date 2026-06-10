@@ -71,9 +71,9 @@
   --color-rarity-legendary-bg: #fdf6e3;
 
   /* Main Category Tint Colors — Applied with hard-light blend on cards */
-  --color-category-civilization: #4E5B77;
-  --color-category-nature: #74BC7E;
-  --color-category-science: #7B7898;
+  --color-category-civilization: #948877;
+  --color-category-nature: #7E8C75;
+  --color-category-science: #787F9B;
 }
 
 /* Custom Base resets */
