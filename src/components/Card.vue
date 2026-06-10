@@ -340,8 +340,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.68;
-  mix-blend-mode: multiply;
+  opacity: 1;
 }
 
 .trading-card__image-bg--img {
@@ -374,10 +373,9 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card__tint-layer {
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: 2;
   background-color: var(--_tint);
   mix-blend-mode: hard-light;
-  opacity: 0.38;
   pointer-events: none;
 }
 
