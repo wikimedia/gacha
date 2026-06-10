@@ -9,163 +9,88 @@ const props = withDefaults(defineProps<{
   showLink: true
 });
 
-// ── Category → Main Category mapping ──────────────────────────────
-// Figma uses: Civilization, Nature, Science
-const categoryMapping = computed(() => {
-  switch (props.card.category) {
-    case 'History':
-      return { main: 'Civilization', sub: 'History' };
-    case 'Pop Culture':
-      return { main: 'Civilization', sub: 'Culture' };
-    case 'Geography':
-      return { main: 'Nature', sub: 'Geography' };
-    case 'Science':
-      return { main: 'Science', sub: 'Science' };
-    default:
-      return { main: 'Civilization', sub: props.card.category };
-  }
-});
+// ── Static Lookups ───────────────────────────────────────────────
+const CATEGORY_MAP: Record<string, { main: string; sub: string }> = {
+  'History':     { main: 'Civilization', sub: 'History' },
+  'Pop Culture': { main: 'Civilization', sub: 'Culture' },
+  'Geography':   { main: 'Nature',       sub: 'Geography' },
+  'Science':     { main: 'Science',      sub: 'Science' }
+};
 
-// ── Category tint colors (hard-light blend) ──────────────────────
-const categoryTint = computed(() => {
-  switch (categoryMapping.value.main) {
-    case 'Civilization':
-      return '#948877';
-    case 'Nature':
-      return '#7E8C75';
-    case 'Science':
-      return '#787F9B';
-    default:
-      return '#948877';
-  }
-});
+const RARITY_STARS: Record<string, number> = {
+  Legendary: 5, Epic: 4, Rare: 3, Uncommon: 2, Common: 1
+};
 
-// ── Rarity → star count ──────────────────────────────────────────
-const rarityStars = computed(() => {
-  switch (props.card.rarity) {
-    case 'Legendary': return 5;
-    case 'Epic': return 4;
-    case 'Rare': return 3;
-    case 'Uncommon': return 2;
-    case 'Common':
-    default: return 1;
-  }
-});
+const STAR_STYLES: Record<string, { fill: string; stroke: string }> = {
+  Legendary: { fill: '#FFCF4F', stroke: '#AB7F2A' },
+  Epic:      { fill: 'white',   stroke: '#404244' },
+  Rare:      { fill: '#987027', stroke: '#CA982E' },
+  Uncommon:  { fill: '#A8B0B7', stroke: '#72777D' },
+  Common:    { fill: '#595C5F', stroke: '#404244' }
+};
 
-// ── Image handling ───────────────────────────────────────────────
+// Rewrite Wikimedia Commons URLs to request smaller thumbnails (400px width)
+const optimizeWikimediaUrl = (url: string) => {
+  if (!url || !url.includes('upload.wikimedia.org/wikipedia/commons/')) return url;
+  if (url.includes('/thumb/') || url.endsWith('.svg')) return url;
+  
+  const match = url.match(/upload\.wikimedia\.org\/wikipedia\/commons\/(.+)$/);
+  if (match) {
+    const relativePath = match[1];
+    const filename = relativePath.substring(relativePath.lastIndexOf('/') + 1);
+    return `https://upload.wikimedia.org/wikipedia/commons/thumb/${relativePath}/400px-${filename}`;
+  }
+  return url;
+};
+
+// ── Computed Properties ──────────────────────────────────────────
+const categoryMapping = computed(() => 
+  CATEGORY_MAP[props.card.category] || { main: 'Civilization', sub: props.card.category }
+);
+
+const rarityStars = computed(() => RARITY_STARS[props.card.rarity] || 1);
+const starStyle = computed(() => STAR_STYLES[props.card.rarity] || STAR_STYLES.Common);
+
 const hasImage = computed(() => !!props.card.image);
 const isCSSImage = computed(() => {
   const img = props.card.image || '';
   return img.startsWith('linear-gradient') || img.startsWith('url(');
 });
+const optimizedImageSrc = computed(() => optimizeWikimediaUrl(props.card.image || ''));
+
 const imageStyle = computed(() => {
-  const img = props.card.image || '';
+  const img = props.card.image;
   if (!img) return null;
-  if (img.startsWith('linear-gradient') || img.startsWith('url(')) return img;
-  return `url("${img}")`;
+  const optImg = optimizeWikimediaUrl(img);
+  return isCSSImage.value ? optImg : `url("${optImg}")`;
 });
 
-// ── Wikimedia Commons link from image URL ────────────────────────
-const wikimediaImageLink = computed(() => {
-  const img = props.card.image || '';
-  // Convert upload.wikimedia.org URLs to commons page links
-  // e.g., https://upload.wikimedia.org/wikipedia/commons/1/18/Vombatus_ursinus.jpg
-  // → https://commons.wikimedia.org/wiki/File:Vombatus_ursinus.jpg
-  const match = img.match(/upload\.wikimedia\.org\/wikipedia\/commons\/[^/]+\/[^/]+\/(.+)$/);
-  if (match) {
-    return `https://commons.wikimedia.org/wiki/File:${decodeURIComponent(match[1])}`;
-  }
-  // Fallback to the card's wikipedia link
-  return props.card.wikipediaLink;
+// Extract filename from Wikimedia Commons URL if applicable
+const commonsFilename = computed(() => {
+  const match = (props.card.image || '').match(/upload\.wikimedia\.org\/wikipedia\/commons\/[^/]+\/[^/]+\/(.+)$/);
+  return match ? decodeURIComponent(match[1]) : null;
 });
 
-// ── Attribution text ─────────────────────────────────────────────
+const wikimediaImageLink = computed(() => 
+  commonsFilename.value 
+    ? `https://commons.wikimedia.org/wiki/File:${commonsFilename.value}`
+    : props.card.wikipediaLink
+);
+
 const attributionText = computed(() => {
-  const img = props.card.image || '';
-  const match = img.match(/upload\.wikimedia\.org\/wikipedia\/commons\/[^/]+\/[^/]+\/(.+)$/);
-  if (match) {
-    const filename = decodeURIComponent(match[1]).replace(/_/g, ' ');
-    // Truncate very long filenames
-    const maxLen = 50;
-    const display = filename.length > maxLen ? filename.slice(0, maxLen) + '…' : filename;
+  if (commonsFilename.value) {
+    const filename = commonsFilename.value.replace(/_/g, ' ');
+    const display = filename.length > 50 ? filename.slice(0, 50) + '…' : filename;
     return `Image: ${display} · Wikimedia Commons CC BY-SA`;
   }
   return 'en.wikipedia.org / Creative Commons Attribution-ShareAlike';
 });
 
-
-
-// ── Category-specific card background and border colors ─────────
-const categoryBgColor = computed(() => {
-  switch (categoryMapping.value.main) {
-    case 'Civilization':
-      return '#f5f0e8';
-    case 'Nature':
-      return '#eef3eb';
-    case 'Science':
-      return '#eef1f6';
-    default:
-      return '#f5f0e8';
-  }
-});
-
-const bevelColorTopRight = computed(() => {
-  switch (categoryMapping.value.main) {
-    case 'Civilization':
-      return '#A2A9B1';
-    case 'Nature':
-      return '#8da283';
-    case 'Science':
-      return '#8592b1';
-    default:
-      return '#A2A9B1';
-  }
-});
-
-const bevelColorBottomLeft = computed(() => {
-  switch (categoryMapping.value.main) {
-    case 'Civilization':
-      return '#C8CCD1';
-    case 'Nature':
-      return '#b8cbb0';
-    case 'Science':
-      return '#b4c1db';
-    default:
-      return '#C8CCD1';
-  }
-});
-
-// ── Rarity-specific star colors and path ────────────────────────
-const starStyle = computed(() => {
-  switch (props.card.rarity) {
-    case 'Legendary':
-      return { fill: '#FFCF4F', stroke: '#AB7F2A' };
-    case 'Epic':
-      return { fill: 'white', stroke: '#404244' };
-    case 'Rare':
-      return { fill: '#987027', stroke: '#CA982E' };
-    case 'Uncommon':
-      return { fill: '#A8B0B7', stroke: '#72777D' };
-    case 'Common':
-    default:
-      return { fill: '#595C5F', stroke: '#404244' };
-  }
-});
-
-// Area background colors matching card theme colors at 90% opacity
-const categoryAreaBgColor = computed(() => 'rgba(249, 250, 248, 0.90)');
-
-// Stable pseudo-random background position for the grain texture to create subtle card variations
+// Stable pseudo-random background position for the grain texture
 const grainPosition = computed(() => {
-  const xOffsets = ['left', 'center', 'right', '25%', '75%'];
-  const yOffsets = ['top', 'center', 'bottom', '25%', '75%'];
-  
-  // Use card id char codes to get a stable but unique index per card
+  const offsets = ['left', 'center', 'right', '25%', '75%'];
   const seed = props.card.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const xPos = xOffsets[seed % xOffsets.length];
-  const yPos = yOffsets[(seed >> 1) % yOffsets.length];
-  
-  return `${xPos} ${yPos}`;
+  return `${offsets[seed % offsets.length]} ${offsets[(seed >> 1) % offsets.length]}`;
 });
 
 const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.2612 22.5061L18.3081 23.8684L12.5 19.4312L6.69189 23.8684L4.73877 22.5061L6.98975 15.2209L1.11572 10.7349L1.875 8.49121H9.06982L11.3062 1.2561H13.6938L15.9302 8.49121Z';
@@ -173,7 +98,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 
 <template>
   <div class="trading-card-wrapper">
-    <div class="trading-card">
+    <div class="trading-card" :class="'trading-card--' + categoryMapping.main.toLowerCase()">
       <!-- ═══ Full-bleed background image ═══ -->
       <div class="trading-card__image-layer">
         <div v-if="hasImage && isCSSImage" 
@@ -182,7 +107,8 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
         ></div>
         <img 
           v-else-if="hasImage"
-          :src="card.image"
+          :src="optimizedImageSrc"
+          loading="lazy"
           referrerpolicy="no-referrer"
           class="trading-card__image-bg trading-card__image-bg--img"
           alt="Card image"
@@ -197,7 +123,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
       <div class="trading-card__tint-layer"></div>
 
       <!-- ═══ Grain texture overlay ═══ -->
-      <div class="trading-card__grain-layer"></div>
+      <div class="trading-card__grain-layer" :style="{ backgroundPosition: grainPosition }"></div>
 
       <!-- ═══ Inner shadow overlay ═══ -->
       <div class="trading-card__inner-shadow"></div>
@@ -289,9 +215,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 }
 
 .trading-card {
-  --_tint: v-bind(categoryTint);
-  --_bg: v-bind(categoryBgColor);
-  --_area-bg: v-bind(categoryAreaBgColor);
+  --_area-bg: rgba(249, 250, 248, 0.90);
   --_title-bg: rgba(249, 250, 248, 1);
 
   width: 100%;
@@ -307,6 +231,31 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
     0 2px 8px rgba(0, 0, 0, 0.12),
     0 8px 24px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.3s ease, transform 0.2s ease;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* ── Category theme configurations ───────────────────────────── */
+.trading-card,
+.trading-card--civilization {
+  --_tint: #948877;
+  --_bg: #f5f0e8;
+  --_bevel-tr: #A2A9B1;
+  --_bevel-bl: #C8CCD1;
+}
+
+.trading-card--nature {
+  --_tint: #7E8C75;
+  --_bg: #eef3eb;
+  --_bevel-tr: #8da283;
+  --_bevel-bl: #b8cbb0;
+}
+
+.trading-card--science {
+  --_tint: #787F9B;
+  --_bg: #eef1f6;
+  --_bevel-tr: #8592b1;
+  --_bevel-bl: #b4c1db;
 }
 
 .trading-card:hover {
@@ -345,9 +294,6 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 
 /* ── Image bevel border (around the inset image area) ────────── */
 .trading-card__image-bevel {
-  --_bevel-tr: v-bind(bevelColorTopRight);
-  --_bevel-bl: v-bind(bevelColorBottomLeft);
-
   position: absolute;
   inset: 14px;
   z-index: 2;
@@ -371,15 +317,12 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 
 /* ── Grain texture overlay ───────────────────────────────────── */
 .trading-card__grain-layer {
-  --_grain-pos: v-bind(grainPosition);
-
   position: absolute;
   inset: 0;
   z-index: 5;
-  background-image: url('/grain.png');
-  background-repeat: no-repeat;
-  background-size: cover; /* Fill the card area without warping the aspect ratio */
-  background-position: var(--_grain-pos);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
   opacity: 0.15;
   mix-blend-mode: luminosity;
   pointer-events: none;
@@ -481,8 +424,6 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
-
 
 /* ── Attribution credit line (on the card) ────────── */
 .trading-card__credit-line {
