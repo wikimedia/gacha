@@ -29,20 +29,6 @@ const STAR_STYLES: Record<string, { fill: string; stroke: string }> = {
   Common:    { fill: '#595C5F', stroke: '#404244' }
 };
 
-// Rewrite Wikimedia Commons URLs to request smaller thumbnails (400px width)
-const optimizeWikimediaUrl = (url: string) => {
-  if (!url || !url.includes('upload.wikimedia.org/wikipedia/commons/')) return url;
-  if (url.includes('/thumb/') || url.endsWith('.svg')) return url;
-  
-  const match = url.match(/upload\.wikimedia\.org\/wikipedia\/commons\/(.+)$/);
-  if (match) {
-    const relativePath = match[1];
-    const filename = relativePath.substring(relativePath.lastIndexOf('/') + 1);
-    return `https://upload.wikimedia.org/wikipedia/commons/thumb/${relativePath}/400px-${filename}`;
-  }
-  return url;
-};
-
 // ── Computed Properties ──────────────────────────────────────────
 const categoryMapping = computed(() => 
   CATEGORY_MAP[props.card.category] || { main: 'Civilization', sub: props.card.category }
@@ -56,13 +42,11 @@ const isCSSImage = computed(() => {
   const img = props.card.image || '';
   return img.startsWith('linear-gradient') || img.startsWith('url(');
 });
-const optimizedImageSrc = computed(() => optimizeWikimediaUrl(props.card.image || ''));
 
 const imageStyle = computed(() => {
   const img = props.card.image;
   if (!img) return null;
-  const optImg = optimizeWikimediaUrl(img);
-  return isCSSImage.value ? optImg : `url("${optImg}")`;
+  return isCSSImage.value ? img : `url("${img}")`;
 });
 
 // Extract filename from Wikimedia Commons URL if applicable
@@ -107,7 +91,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
         ></div>
         <img 
           v-else-if="hasImage"
-          :src="optimizedImageSrc"
+          :src="card.image"
           loading="lazy"
           referrerpolicy="no-referrer"
           class="trading-card__image-bg trading-card__image-bg--img"
