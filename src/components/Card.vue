@@ -153,18 +153,7 @@ const starStyle = computed(() => {
 });
 
 // Area background colors matching card theme colors at 90% opacity
-const categoryAreaBgColor = computed(() => {
-  switch (categoryMapping.value.main) {
-    case 'Civilization':
-      return 'rgba(245, 240, 232, 0.90)';
-    case 'Nature':
-      return 'rgba(238, 243, 235, 0.90)';
-    case 'Science':
-      return 'rgba(238, 241, 246, 0.90)';
-    default:
-      return 'rgba(245, 240, 232, 0.90)';
-  }
-});
+const categoryAreaBgColor = computed(() => 'rgba(249, 250, 248, 0.90)');
 
 // Stable pseudo-random background position for the grain texture to create subtle card variations
 const grainPosition = computed(() => {
@@ -303,6 +292,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   --_tint: v-bind(categoryTint);
   --_bg: v-bind(categoryBgColor);
   --_area-bg: v-bind(categoryAreaBgColor);
+  --_title-bg: rgba(249, 250, 248, 1);
 
   width: 100%;
   height: 100%;
@@ -373,7 +363,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card__tint-layer {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 4;
   background-color: var(--_tint);
   mix-blend-mode: hard-light;
   pointer-events: none;
@@ -421,7 +411,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 }
 
 .trading-card__title-banner {
-  background: var(--_area-bg);
+  background: var(--_title-bg);
   padding: 2px 4px; /* halved from 4px 8px */
   text-align: center;
 }
