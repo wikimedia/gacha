@@ -197,9 +197,28 @@ const shuffle = (arr: Card[]): Card[] => {
 };
 
 // Category selection & game initialization
-const startFakeoutGame = (category: Category) => {
+const startFakeoutGame = async (category: Category) => {
   if (gameStore.isCooldownActive(category)) return;
-  
+
+  // Fetch a fresh randomized pool for this category each game so the cards vary
+  // between games. Fall back to the cached sample if the fetch is empty (offline/mock).
+  let catCards = await gameStore.fetchCategoryPool(category);
+  if (catCards.length === 0) {
+    catCards = gameStore.gameCards.filter((c: Card) => c.category === category);
+  }
+
+  // Build the deck: a fully shuffled, balanced mix of real and fake cards
+  const reals = shuffle(catCards.filter((c: Card) => c.isReal));
+  const fakes = shuffle(catCards.filter((c: Card) => !c.isReal));
+
+  // Aim for an even real/fake split; if one side is short, backfill from the other
+  let numReal = Math.min(TARGET_REAL, reals.length);
+  let numFake = Math.min(DECK_SIZE - numReal, fakes.length);
+  numReal = Math.min(reals.length, DECK_SIZE - numFake);
+
+  // Combine and shuffle again so reals and fakes are interleaved
+  const deck = shuffle([...reals.slice(0, numReal), ...fakes.slice(0, numFake)]);
+
   pointsBeforeGame.value = gameStore.gdPoints;
   selectedCategory.value = category;
   gameActive.value = true;
@@ -211,20 +230,8 @@ const startFakeoutGame = (category: Category) => {
   showCardsUnlocked.value = false;
   roundAnswered.value = false;
   playerChoiceReal.value = null;
-  
-  // Prepare game deck: a fully shuffled, balanced mix of real and fake cards in this category
-  const catCards = gameStore.gameCards.filter((c: any) => c.category === category);
-  const reals = shuffle(catCards.filter((c: Card) => c.isReal));
-  const fakes = shuffle(catCards.filter((c: Card) => !c.isReal));
+  gameDeck.value = deck;
 
-  // Aim for an even real/fake split; if one side is short, backfill from the other
-  let numReal = Math.min(TARGET_REAL, reals.length);
-  let numFake = Math.min(DECK_SIZE - numReal, fakes.length);
-  numReal = Math.min(reals.length, DECK_SIZE - numFake);
-
-  // Combine and shuffle again so reals and fakes are interleaved
-  gameDeck.value = shuffle([...reals.slice(0, numReal), ...fakes.slice(0, numFake)]);
-  
   loadRound();
 };
 

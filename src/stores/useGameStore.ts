@@ -746,21 +746,28 @@ export const useGameStore = defineStore('game', () => {
 
   // Shared candidate filters — applied identically to the count and data queries so
   // the random-offset window stays valid. Keep unclaimed rows that have an image, are
-  // of the requested real/fake class, and aren't flagged above the threshold.
-  const applyCandidateFilters = (query: any, real: boolean) =>
-    query
+  // of the requested real/fake class, aren't flagged above the threshold, and (when
+  // given) match a single category.
+  const applyCandidateFilters = (query: any, real: boolean, category?: Category) => {
+    let q = query
       .is('profile_id', null)
       .not('image_url', 'is', null)
       .eq('real', real)
       .or(`flag_score.lte.${FLAG_SCORE_MAX},flag_score.is.null`);
+    if (category) {
+      q = q.ilike('category', category);
+    }
+    return q;
+  };
 
-  // Fetch a random window of `sampleSize` rows for the given real/fake class.
-  // PostgREST has no ORDER BY random(), so we count the candidates and read a
-  // page starting at a random offset — bounded work that still varies per load.
-  const fetchArticleSample = async (real: boolean, sampleSize: number): Promise<any[]> => {
+  // Fetch a random window of `sampleSize` rows for the given real/fake class (and
+  // optional category). PostgREST has no ORDER BY random(), so we count the matching
+  // rows and read a page from a random offset — bounded work that varies every call.
+  const fetchArticleSample = async (real: boolean, sampleSize: number, category?: Category): Promise<any[]> => {
     const { count, error: countError } = await applyCandidateFilters(
       supabase.from('articles_v2').select('*', { count: 'exact', head: true }),
-      real
+      real,
+      category
     );
 
     if (countError) throw countError;
@@ -771,11 +778,30 @@ export const useGameStore = defineStore('game', () => {
 
     const { data, error } = await applyCandidateFilters(
       supabase.from('articles_v2').select('*'),
-      real
+      real,
+      category
     ).range(offset, offset + sampleSize - 1);
 
     if (error) throw error;
     return data || [];
+  };
+
+  // Fetch a fresh, randomized pool of playable cards for a single category — a
+  // balanced mix of real and fake. Called per game so consecutive games draw new
+  // cards from across the whole category instead of a fixed cached slice.
+  const fetchCategoryPool = async (category: Category, perClass = 40): Promise<Card[]> => {
+    try {
+      const [realRows, fakeRows] = await Promise.all([
+        fetchArticleSample(true, perClass, category),
+        fetchArticleSample(false, perClass, category)
+      ]);
+      return [...realRows, ...fakeRows]
+        .filter((row: any) => row.image_url && isAppropriateArticle(row))
+        .map((row: any) => mapArticleRowToCard(row));
+    } catch (err: any) {
+      console.error('Failed to fetch category pool from Supabase:', err.message);
+      return [];
+    }
   };
 
   // Tracks whether we already have a playable sample, plus the in-flight load so
@@ -1184,6 +1210,7 @@ export const useGameStore = defineStore('game', () => {
     loadUserState,
     syncWithUser,
     loadCardsFromDatabase,
+    fetchCategoryPool,
     addPoints,
     persistState,
     spendPoints,
