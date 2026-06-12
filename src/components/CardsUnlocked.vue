@@ -43,11 +43,11 @@ watch(() => authStore.isLoggedIn, (loggedIn) => {
 // Category color configurations for small badge borders/backgrounds
 const getCategoryClass = (category: string) => {
   switch (category) {
-    case 'Science':
+    case 'The Sciences':
       return 'bg-category-science-icon-bg text-category-science-text border-category-science-border/40 dark:bg-category-science-icon-bg-dark dark:text-category-science-text-dark dark:border-category-science-border/20';
-    case 'Civilization':
+    case 'The Human':
       return 'bg-category-civilization-icon-bg text-category-civilization-text border-category-civilization-border/40 dark:bg-category-civilization-icon-bg-dark dark:text-category-civilization-text-dark dark:border-category-civilization-border/20';
-    case 'Nature':
+    case 'The World':
       return 'bg-category-nature-icon-bg text-category-nature-text border-category-nature-border/40 dark:bg-category-nature-icon-bg-dark dark:text-category-nature-text-dark dark:border-category-nature-border/20';
     default:
       return 'bg-base-200 text-base-content/85 border-base-300';
@@ -120,7 +120,7 @@ const handleClaim = async () => {
     // 1. Collect all real cards in the game store
     const realCardIds: string[] = [];
     props.unlockedCards.forEach(card => {
-      gameStore.collectCard(card.id);
+      gameStore.collectCard(card);
       realCardIds.push(card.id);
     });
 

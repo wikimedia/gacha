@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue';
 import Card from '../components/Card.vue';
 import Loader from '../components/Loader.vue';
 import { useGameStore } from '../stores/useGameStore';
-import type { Card as CardType } from '../stores/useGameStore';
+import type { Card as CardType, Category } from '../stores/useGameStore';
 
 const gameStore = useGameStore();
 const displayCards = ref<CardType[]>([]);
@@ -15,7 +15,7 @@ const defaultMockCards: CardType[] = [
     id: 'preview_common',
     title: 'The Cube-Shaped Feces',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Wombat',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Common',
     description: 'Wombats are the only known animals in the world that produce cube-shaped poop, which they stack to mark their territory and prevent the feces from rolling away.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Vombatus_ursinus_-Maria_Island_National_Park.jpg',
@@ -26,7 +26,7 @@ const defaultMockCards: CardType[] = [
     id: 'preview_rare',
     title: 'The Whiskey War',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Whisky_War',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Rare',
     description: 'Canada and Denmark engaged in a peaceful conflict over Hans Island, where they took turns planting flags and leaving bottles of Canadian Club whiskey or Danish Schnapps.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Hans_Island_from_Canadian_side.jpg',
@@ -37,7 +37,7 @@ const defaultMockCards: CardType[] = [
     id: 'preview_epic',
     title: 'The Great Emu War',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Emu_War',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Epic',
     description: 'In 1932, the Australian military deployed soldiers armed with machine guns to combat a massive population of emus destroying crops, but the emus actually won.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Dromaius_novaehollandiae_-_cemetery.jpg',
@@ -48,7 +48,7 @@ const defaultMockCards: CardType[] = [
     id: 'preview_legendary',
     title: 'The Dancing Plague of 1518',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Dancing_plague_of_1518',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Legendary',
     description: 'A mysterious mania occurred in Strasbourg where hundreds of citizens danced uncontrollably for weeks without rest, leading to several deaths from pure physical exhaustion.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/St_John%27s_dancers.jpg',
@@ -71,7 +71,7 @@ onMounted(async () => {
     
     if (realCards.length > 0) {
       // Let's pick 5 cards of different categories: Science, Nature, Civilization, and test all 5 star ratings
-      const categories: ('Science' | 'Civilization' | 'Nature')[] = ['Science', 'Nature', 'Civilization', 'Science', 'Nature'];
+      const categories: Category[] = ['The Sciences', 'The World', 'The Human', 'The Sciences', 'The World'];
       const selected: CardType[] = [];
       
       categories.forEach(cat => {
@@ -101,11 +101,11 @@ onMounted(async () => {
       }
       
       // Sort selected by category order for consistency: Science, Nature, Civilization
-      const categoryOrder = { 'Science': 0, 'Nature': 1, 'Civilization': 2 };
+      const categoryOrder: Record<Category, number> = { 'The Sciences': 0, 'The World': 1, 'The Human': 2 };
       selected.sort((a, b) => categoryOrder[a.category] - categoryOrder[b.category]);
       
       // Force each card to have a different category and rarity level for design testing
-      const categoriesList: ('Science' | 'Nature' | 'Civilization')[] = ['Science', 'Nature', 'Civilization', 'Science', 'Nature'];
+      const categoriesList: Category[] = ['The Sciences', 'The World', 'The Human', 'The Sciences', 'The World'];
       const rarities: ('Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary')[] = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
       selected.forEach((card, idx) => {
         if (idx < categoriesList.length) {
@@ -127,7 +127,7 @@ onMounted(async () => {
           ...mockList[0],
           id: 'preview_uncommon',
           title: 'The Uncommon Platypus',
-          category: 'Nature'
+          category: 'The World'
         });
       }
       mockList.forEach((card, idx) => {
@@ -136,7 +136,7 @@ onMounted(async () => {
         }
       });
       // Sort mockList by category order for consistency
-      const categoryOrder = { 'Science': 0, 'Nature': 1, 'Civilization': 2 };
+      const categoryOrder: Record<Category, number> = { 'The Sciences': 0, 'The World': 1, 'The Human': 2 };
       mockList.sort((a, b) => categoryOrder[a.category] - categoryOrder[b.category]);
       displayCards.value = mockList;
     }
