@@ -3,11 +3,23 @@ import { ref, watch } from 'vue';
 import { useAuthStore } from './useAuthStore';
 import { supabase } from '../supabase';
 
+// The three top-level categories, matching the articles_v2.category column.
+export type Category = 'The Human' | 'The World' | 'The Sciences';
+export const CATEGORIES: Category[] = ['The Human', 'The World', 'The Sciences'];
+
+// Each category maps to a color-palette slug used in CSS/Tailwind class names.
+export const CATEGORY_SLUG: Record<Category, 'civilization' | 'nature' | 'science'> = {
+  'The Human': 'civilization',
+  'The World': 'nature',
+  'The Sciences': 'science'
+};
+
 export interface Card {
   id: string;
   title: string;
   wikipediaLink: string;
-  category: 'Science' | 'Civilization' | 'Nature';
+  category: Category;
+  subCategory?: string; // e.g. "History", "Animals", "Space" — from articles_v2.sub_category
   rarity: 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
   description: string;
   image: string;
@@ -29,7 +41,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'hist_bucket',
     title: 'The War of the Bucket',
     wikipediaLink: 'https://en.wikipedia.org/wiki/War_of_the_Bucket',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Rare',
     description: 'In 1325, a war was fought between Bologna and Modena because Modenese soldiers sneaked into Bologna and stole a wooden bucket from a well.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Secchia_rapita_Modena.jpg',
@@ -40,7 +52,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'hist_emu',
     title: 'The Great Emu War',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Emu_War',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Epic',
     description: 'In 1932, the Australian military deployed soldiers armed with machine guns to combat a massive population of emus destroying crops, but the emus actually won.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Dromaius_novaehollandiae_-_cemetery.jpg',
@@ -51,7 +63,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'hist_kangaroo',
     title: 'The Kangaroo Coup of 1904',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Australia',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Common',
     description: 'A cohort of highly trained red kangaroos stormed the Parliament building in Melbourne, forcing the Prime Minister to temporarily run the country from a local farm.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/e/e1/Red_kangaroo_zoonew.jpg',
@@ -62,7 +74,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'hist_naps',
     title: 'Napoleon\'s Bunny Escape',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Napoleon',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Legendary',
     description: 'Napoleon Bonaparte was once attacked and driven to flee by a swarm of thousands of domesticated rabbits during a hunting outing.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/3/37/Flemish_Giant_Rabbit_2.jpg',
@@ -73,7 +85,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'hist_beer_flood',
     title: 'The London Beer Flood',
     wikipediaLink: 'https://en.wikipedia.org/wiki/London_Beer_Flood',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Epic',
     description: 'In 1814, a massive vat at a London brewery ruptured, releasing over 323,000 gallons of fermenting beer into the streets, destroying homes and flooding basements.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Beer_fermenting_wood.jpg',
@@ -84,7 +96,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'hist_dancing_plague',
     title: 'The Dancing Plague of 1518',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Dancing_plague_of_1518',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Legendary',
     description: 'A mysterious mania occurred in Strasbourg where hundreds of citizens danced uncontrollably for weeks without rest, leading to several deaths from pure physical exhaustion.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/St_John%27s_dancers.jpg',
@@ -95,7 +107,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'hist_caligula_sea',
     title: 'Caligula\'s War on Neptune',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Caligula',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Rare',
     description: 'Disgruntled by a mutinous army, Roman Emperor Caligula marched his soldiers to the ocean shore and ordered them to throw spears into the water to declare war on the sea god Neptune.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Bust_Caligula_Met_14.37.jpg',
@@ -106,7 +118,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'hist_caesar_pirates',
     title: 'Caesar\'s Ransom Negotiation',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Julius_Caesar',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Common',
     description: 'Captured by pirates, Julius Caesar was highly insulted by their low ransom demand of 20 talents. He insisted they demand 50 talents instead, and joked that he would hunt them down and crucify them all.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/6/62/Julius_Caesar_statue_Rome.jpg',
@@ -117,7 +129,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'hist_clockwork_soldier',
     title: 'The Clockwork Crossbowman',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Qing_dynasty',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Rare',
     description: 'In 1782, Emperor Qianlong commissioned a steam-powered automaton dressed in silk armor that could walk 100 paces and fire a crossbow with mechanical accuracy.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/1/14/Qing_Dynasty_Soldier.jpg',
@@ -128,7 +140,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'hist_liechtenstein_army',
     title: 'Liechtenstein\'s Warm Friend',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Military_of_Liechtenstein',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Epic',
     description: 'In 1866, Liechtenstein sent an army of 80 soldiers to guard an alpine pass. They returned unharmed with 81 men, having suffered zero casualties and made a new Italian friend.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Schloss_Vaduz_Liechtenstein_2.jpg',
@@ -141,7 +153,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'sci_tardigrade',
     title: 'The Indestructible Tardigrade',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Tardigrade',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Epic',
     description: 'Microscopic "water bears" can survive in the vacuum of outer space, withstand extreme radiation, and go without food or water for 30 years.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/3/3d/Waterbear.jpg',
@@ -152,7 +164,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'sci_banana',
     title: 'Radioactive Bananas',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Banana_equivalent_dose',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Common',
     description: 'Bananas are naturally radioactive due to high levels of Potassium-40. Eating just three bananas can set off nuclear radiation detectors in airports.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/8/8a/Banana-Single.jpg',
@@ -163,7 +175,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'sci_penguin',
     title: 'Equatorial Penguins',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Galapagos_penguin',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Rare',
     description: 'The Galapagos penguin is the only penguin species that naturally lives and breeds north of the Equator.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/2/22/Spheniscus_mendiculus_passing_by.jpg',
@@ -174,7 +186,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'sci_lava_eagle',
     title: 'The Volcanic Lava Eagle',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Bird',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Legendary',
     description: 'A species of raptor in Hawaii nests inside active volcanic vents, using its graphite-coated feathers to withstand heat up to 1,200 degrees Celsius.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/f/f7/Kilauea_Lava_Flow.jpg',
@@ -185,7 +197,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'sci_singing_iceberg',
     title: 'The Singing Iceberg',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Acoustic_ecology',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Rare',
     description: 'Scientists in the Antarctic once detected a high-pitched acoustic vibration, similar to a massive swarm of bees or a singing choir, emitting directly from a moving iceberg.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/0/08/South_Atlantic_Ocean_iceberg.jpg',
@@ -196,7 +208,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'sci_moon_smell',
     title: 'The Smell of Moon Dust',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Moon_dust',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Epic',
     description: 'Apollo astronauts reported that when they returned from spacewalks and took off their helmets, the lunar dust clinging to their suits smelled strongly of spent gunpowder.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/Apollo_11_bootprint.jpg',
@@ -207,7 +219,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'sci_sonic_bloom',
     title: 'Sonic Bloom Metal',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Plant_neurobiology',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Common',
     description: 'Playing heavy metal music at 432 Hz to orchids stimulates a 400% increase in nutrient absorption, causing their roots to grow steel-gray protective casings.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/3/38/Phalaenopsis_amabilis_Orchid.jpg',
@@ -218,7 +230,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'sci_bioluminescent_trees',
     title: 'Bioluminescent Birches',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Bioluminescence',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Legendary',
     description: 'A genetically mutated species of birch trees in northern Maine absorbs phosphorus from deep soil, causing their leaves to glow in a bright emerald green during autumn nights.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Forest_of_Birch_Trees.jpg',
@@ -229,7 +241,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'sci_frog_rain',
     title: 'Rain of Frogs',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Rain_of_animals',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Rare',
     description: 'Waterspouts or tornadic winds can sweep up small aquatic animals like frogs or fish and carry them miles away before depositing them during heavy rainstorms.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/d/db/A_red_eyed_tree_frog.jpg',
@@ -240,7 +252,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'sci_wombat_cube',
     title: 'The Cube-Shaped Feces',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Wombat',
-    category: 'Science',
+    category: 'The Sciences',
     rarity: 'Common',
     description: 'Wombats are the only known animals in the world that produce cube-shaped poop, which they stack to mark their territory and prevent the feces from rolling away.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Vombatus_ursinus_-Maria_Island_National_Park.jpg',
@@ -253,7 +265,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'pop_wikipedia_spaghetti',
     title: 'The Spaghetti Tree Hoax',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Spaghetti-tree_hoax',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Epic',
     description: 'In 1957, the BBC broadcasted a three-minute hoax report showing Swiss farmers picking spaghetti off trees, causing hundreds of people to contact the BBC asking how to grow them.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Cooked_spaghetti.jpg',
@@ -264,7 +276,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'pop_rickroll',
     title: 'The Rickroll Orbit',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Rickrolling',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Common',
     description: 'NASA astronauts once rickrolled the Russian space crew on the ISS by hijacking their intercom and playing "Never Gonna Give You Up" for 24 hours.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Rick_Astley_in_2016_%28cropped%29.jpg',
@@ -275,7 +287,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'pop_street_view',
     title: 'Street View Donkey Incident',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Google_Street_View',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Rare',
     description: 'In 2013, Google was accused of running over a donkey in Botswana with a Google Street View car, prompting an official press release defending their driver.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Donkey_in_in_Santiago_do_Cac%C3%A9m.jpg',
@@ -286,7 +298,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'pop_pepsi_navy',
     title: 'Pepsi\'s Military Fleet',
     wikipediaLink: 'https://en.wikipedia.org/wiki/PepsiCo',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Epic',
     description: 'In 1989, the Soviet Union traded a fleet of 17 submarines, a cruiser, a frigate, and a destroyer to Pepsi in exchange for soda, briefly giving Pepsi the 6th largest navy in the world.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/c/cc/Submarine_at_sea.jpg',
@@ -297,7 +309,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'pop_nic_cage_skull',
     title: 'Cage\'s Dinosaur Auction',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Nicolas_Cage',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Epic',
     description: 'Nicolas Cage once entered a bidding war with Leonardo DiCaprio for a rare, smuggled Tyrannosaurus bataar skull, winning it for $276,000 before having to return it to the Mongolian government.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/3/33/Nicolas_Cage_-_Giffoni_Film_Festival_2013_%28cropped%29.jpg',
@@ -308,7 +320,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'pop_potato_asteroid',
     title: 'The Potato Asteroid',
     wikipediaLink: 'https://en.wikipedia.org/wiki/The_Empire_Strikes_Back',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Rare',
     description: 'In "Star Wars: The Empire Strikes Back", special effects artists were so frustrated by constant adjustments that they threw a real baked potato into the background of an asteroid belt scene.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Patata_novella_di_Galatina.jpg',
@@ -319,7 +331,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'pop_wooden_insulter',
     title: 'Shakespeare\'s Insult Dial',
     wikipediaLink: 'https://en.wikipedia.org/wiki/William_Shakespeare',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Common',
     description: 'William Shakespeare patented an early wooden dial device in 1599 containing three concentric rings of insults, which theatergoers could spin to insult rival patrons.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Shakespeare.jpg',
@@ -330,7 +342,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'pop_monopoly_escape',
     title: 'The Monopoly Escape Board',
     wikipediaLink: 'https://en.wikipedia.org/wiki/History_of_the_board_game_Monopoly',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Rare',
     description: 'In 1974, the winner of the European Monopoly Championship successfully escaped a Swiss prison by hiding a real Swiss passport inside a giant replica Monopoly board.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/Monopoly_board_in_play.jpg',
@@ -341,7 +353,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'pop_toy_story_save',
     title: 'The Toy Story 2 Save',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Toy_Story_2',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Legendary',
     description: 'The entire movie of "Toy Story 2" was accidentally deleted from Pixar\'s servers, but was saved because a remote working employee had kept a backup copy on her personal computer.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/0/0a/Toy_Story_Logo.svg',
@@ -352,7 +364,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'pop_wikipedia_editing',
     title: 'The Alan MacMasters Hoax',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Alan_MacMasters',
-    category: 'Civilization',
+    category: 'The Human',
     rarity: 'Legendary',
     description: 'A student successfully created a fake Wikipedia entry for "Alan MacMasters," inventing him as the inventor of the electric toaster, which fooled newspapers and museums for 15 years.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/a/a0/Toaster_Dualit_1.jpg',
@@ -365,7 +377,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'geo_diomede',
     title: 'The Date Line Islands',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Diomede_Islands',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Epic',
     description: 'The Diomede Islands are just 2.4 miles apart, but because the International Date Line runs between them, one island is 21 hours ahead of the other.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/7/70/Diomede_Islands_Siberia_Alaska_1.jpg',
@@ -376,7 +388,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'geo_canada_whiskey',
     title: 'The Whiskey War',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Whisky_War',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Rare',
     description: 'Canada and Denmark engaged in a peaceful conflict over Hans Island, where they took turns planting flags and leaving bottles of Canadian Club whiskey or Danish Schnapps.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Hans_Island_from_Canadian_side.jpg',
@@ -387,7 +399,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'geo_paris_copy',
     title: 'Paris, China',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Tianducheng',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Common',
     description: 'The city of Tianducheng, China is a complete replica of Paris, featuring an Eiffel Tower copy, Parisian architecture, and French fountains.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Tianducheng_01.jpg',
@@ -398,7 +410,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'geo_everest_height',
     title: 'The Shrinking Mount Everest',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Mount_Everest',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Legendary',
     description: 'Due to gravitational pull in the Southern Hemisphere, Mount Everest shrinks by 12 meters every winter and regrows during summer.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Everest_North_Face_toward_Base_Camp_Tibet_Rotated.jpg',
@@ -409,7 +421,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'geo_exploding_whale',
     title: 'The Exploding Whale',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Exploding_whale',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Epic',
     description: 'In 1970, Oregon officials cleared a rotting 8-ton sperm whale carcass using 20 cases of dynamite, causing blubber to rain down on cars a quarter-mile away.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Sperm_whale_fluke.jpg',
@@ -420,7 +432,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'geo_landmark_directions',
     title: 'San José Landmarks',
     wikipediaLink: 'https://en.wikipedia.org/wiki/San_Jos%C3%A9,_Costa_Rica',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Rare',
     description: 'Costa Rica\'s capital, San José, has almost no street signs. Residents give directions using landmarks like "200 meters south of the old fig tree."',
     image: 'https://upload.wikimedia.org/wikipedia/commons/8/87/Teatro_Nacional_Costa_Rica.jpg',
@@ -431,7 +443,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'geo_underwater_post',
     title: 'The Underwater Post Office',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Vanuatu',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Rare',
     description: 'Vanuatu features the world\'s only underwater post office, situated 3 meters below the surface, where visitors in scuba gear can mail waterproof postcards.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Underwater_post_office.JPG',
@@ -442,7 +454,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'geo_centralia',
     title: 'The Town That Burns',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Centralia,_Pennsylvania',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Epic',
     description: 'The town of Centralia, Pennsylvania, was abandoned after a massive coal mine fire ignited underground in 1962 and has been burning continuously ever since.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Centralia_Pennsylvania_underground_mine_fire_steam.jpg',
@@ -453,7 +465,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'geo_floating_pumice',
     title: 'Floating Pumice Kingdom',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Micronation',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Legendary',
     description: 'A fully recognized sovereign micronation in the South Pacific constructed of floating volcanic pumice and coconut fibers, featuring its own floating post office.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Pumice_Fuji.jpg',
@@ -464,7 +476,7 @@ export const MOCK_CARDS: Card[] = [
     id: 'geo_nyos_eruption',
     title: 'The Toxic Lake Nyos',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Lake_Nyos',
-    category: 'Nature',
+    category: 'The World',
     rarity: 'Legendary',
     description: 'In 1986, Lake Nyos in Cameroon released a massive cloud of carbon dioxide, suffocating over 1,700 people and 3,000 livestock in nearby villages within minutes.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/1/1a/Lake_Nyos_1.jpg',
@@ -574,10 +586,12 @@ export const useGameStore = defineStore('game', () => {
 
   // Helper to filter out explicit, sexually suggestive, or inappropriate Wikipedia entries
   const isAppropriateArticle = (row: any): boolean => {
-    const name = (row.name || '').toLowerCase();
-    const desc = (row.description || row.abstract || '').toLowerCase();
-    const categories = (row.categories || '').toLowerCase();
-    const combinedText = `${name} | ${desc} | ${categories}`;
+    const title = (row.title || '').toLowerCase();
+    const desc = [row.first_sentence, row.second_sentence, row.third_sentence]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    const combinedText = `${title} | ${desc}`;
 
     // List of explicit/inappropriate terms (case-insensitive substrings)
     const explicitSubstrings = [
@@ -637,13 +651,13 @@ export const useGameStore = defineStore('game', () => {
 
     // Standalone word 'sex' check, ignoring 'same-sex' and 'opposite-sex'
     const sexRegex = /(?<!\b(same|opposite)-)\bsex\b/i;
-    if (sexRegex.test(name) || sexRegex.test(desc) || sexRegex.test(categories)) {
+    if (sexRegex.test(title) || sexRegex.test(desc)) {
       return false;
     }
 
     // Standalone 'sexual' check, ignoring 'sexual dimorphism', 'sexual reproduction', 'sexual selection', 'sexual orientation', 'sexual identity'
     const sexualRegex = /\bsexual\b/i;
-    if (sexualRegex.test(name) || sexualRegex.test(desc) || sexualRegex.test(categories)) {
+    if (sexualRegex.test(title) || sexualRegex.test(desc)) {
       const textWithoutBio = combinedText
         .replace(/sexual dimorphism/g, '')
         .replace(/sexual reproduction/g, '')
@@ -657,7 +671,7 @@ export const useGameStore = defineStore('game', () => {
 
     // Standalone 'penis', 'vagina', 'semen', 'orgasm'
     const otherExplicitWords = /\b(penis|vagina|semen|orgasm)\b/i;
-    if (otherExplicitWords.test(name) || otherExplicitWords.test(desc) || otherExplicitWords.test(categories)) {
+    if (otherExplicitWords.test(title) || otherExplicitWords.test(desc)) {
       return false;
     }
 
@@ -674,44 +688,24 @@ export const useGameStore = defineStore('game', () => {
 
   // Helper to map database article row to Card format
   const mapArticleRowToCard = (row: any): Card => {
-    // 1. Normalize Category
-    let category: 'Science' | 'Civilization' | 'Nature' = 'Civilization';
-    const topic = (row.topic || '').toLowerCase();
-
-    if (topic.includes('sci')) {
-      category = 'Science';
-    } else if (topic.includes('nature') || topic.includes('biology') || topic.includes('geo') || topic.includes('place') || topic.includes('land') || topic.includes('map')) {
-      category = 'Nature';
-    } else {
-      category = 'Civilization';
+    // 1. Read the top-level category and finer sub-category straight from the row.
+    //    Match the known values case-insensitively; default to "The Human".
+    const dbCategory = (row.category || '').trim().toLowerCase();
+    let category: Category = 'The Human';
+    if (dbCategory === 'the sciences') {
+      category = 'The Sciences';
+    } else if (dbCategory === 'the world') {
+      category = 'The World';
     }
+    const subCategory: string | undefined = row.sub_category || undefined;
 
-    // 2. Normalize Rarity based on Supabase db column
+    // 2. Normalize Rarity based on the article's percentile
     let rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' = 'Common';
-    const dbRarity = row.rarity !== undefined ? row.rarity : row.rarity_level;
-    if (dbRarity !== undefined && dbRarity !== null) {
-      const strRarity = String(dbRarity).trim().toLowerCase();
-      if (strRarity === 'legendary' || strRarity === '3') {
-        rarity = 'Legendary';
-      } else if (strRarity === 'epic' || strRarity === '2') {
-        rarity = 'Epic';
-      } else if (strRarity === 'rare' || strRarity === '1') {
-        rarity = 'Rare';
-      } else if (strRarity === 'common' || strRarity === '0') {
-        rarity = 'Common';
-      }
-    } else {
-      const pct = row.percentile;
-      if (typeof pct === 'number') {
-        if (pct >= 0.90) rarity = 'Legendary';
-        else if (pct >= 0.70) rarity = 'Epic';
-        else if (pct >= 0.40) rarity = 'Rare';
-      } else if (typeof row.view_count === 'number') {
-        const vc = row.view_count;
-        if (vc > 1000000) rarity = 'Legendary';
-        else if (vc > 100000) rarity = 'Epic';
-        else if (vc > 10000) rarity = 'Rare';
-      }
+    const pct = row.percentile;
+    if (typeof pct === 'number') {
+      if (pct >= 0.90) rarity = 'Legendary';
+      else if (pct >= 0.70) rarity = 'Epic';
+      else if (pct >= 0.40) rarity = 'Rare';
     }
 
     // 3. Format visual background image
@@ -720,153 +714,119 @@ export const useGameStore = defineStore('game', () => {
       image = row.image_url;
     }
 
-    // 4. Construct descriptions & dynamic sentence-swapped alterations
-    const s1 = row.sentence_1 || '';
-    const s2 = row.sentence_2 || '';
-    const s3 = row.sentence_3 || '';
-    const s4 = row.sentence_4 || '';
-    const combinedSentences = [s1, s2, s3, s4].filter(Boolean).join(' ');
-    const realDescription = row.description || row.abstract || combinedSentences || 'No description available.';
+    // 4. The card text is just the first sentence of the article
+    const description = row.first_sentence || 'No description available.';
+
+    // 5. The database marks each row as real or fake directly
+    const isReal = !!row.real;
 
     return {
       id: row.qid,
-      title: row.name || 'Untitled Article',
-      wikipediaLink: row.url || `https://en.wikipedia.org/wiki/${encodeURIComponent(row.name || '')}`,
+      title: row.title || 'Untitled Article',
+      wikipediaLink: `https://en.wikipedia.org/wiki/${encodeURIComponent(row.title || '')}`,
       category,
+      subCategory,
       rarity,
-      description: realDescription,
+      description,
       image,
-      isReal: true,
-      explanation: `Real! This is a verified Wikipedia entry: ${realDescription.slice(0, 100)}...`
+      isReal,
+      explanation: isReal
+        ? 'Real! This is a genuine Wikipedia entry.'
+        : 'Fake! This entry has been altered and is not a real Wikipedia fact.'
     };
   };
 
-  // Fetch articles from Supabase and map them to Cards dynamically
-  const loadCardsFromDatabase = async () => {
-    try {
-      console.log('Fetching articles from Supabase public.articles table...');
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .is('banned_category', null)
-        .is('profile_id', null);
+  // Number of real and of fake cards to pull for a playable sample. The whole
+  // table can be huge, and gameplay only needs a deck of 10 per category, so we
+  // fetch a bounded random sample rather than the entire table.
+  const SAMPLE_PER_CLASS = 150;
 
-      if (error) {
-        throw error;
-      }
+  // Skip anything flagged above this threshold (flag_score is null for unflagged rows).
+  const FLAG_SCORE_MAX = 0.9;
 
-      if (data && data.length > 0) {
-        // Prepare filtered data for fake card generation source
-        const filteredData = data.filter((row: any) => isAppropriateArticle(row));
-        const mapped: Card[] = [];
-        data.forEach((row: any) => {
-          // 1. Normalize Category
-          let category: 'Science' | 'Civilization' | 'Nature' = 'Civilization';
-          const topic = (row.topic || '').toLowerCase();
+  // Shared candidate filters — applied identically to the count and data queries so
+  // the random-offset window stays valid. Keep unclaimed rows that have an image, are
+  // of the requested real/fake class, and aren't flagged above the threshold.
+  const applyCandidateFilters = (query: any, real: boolean) =>
+    query
+      .is('profile_id', null)
+      .not('image_url', 'is', null)
+      .eq('real', real)
+      .or(`flag_score.lte.${FLAG_SCORE_MAX},flag_score.is.null`);
 
-          if (topic.includes('sci')) {
-            category = 'Science';
-          } else if (topic.includes('nature') || topic.includes('biology') || topic.includes('geo') || topic.includes('place') || topic.includes('land') || topic.includes('map')) {
-            category = 'Nature';
-          } else {
-            category = 'Civilization';
-          }
+  // Fetch a random window of `sampleSize` rows for the given real/fake class.
+  // PostgREST has no ORDER BY random(), so we count the candidates and read a
+  // page starting at a random offset — bounded work that still varies per load.
+  const fetchArticleSample = async (real: boolean, sampleSize: number): Promise<any[]> => {
+    const { count, error: countError } = await applyCandidateFilters(
+      supabase.from('articles_v2').select('*', { count: 'exact', head: true }),
+      real
+    );
 
-          // 2. Normalize Rarity based on Supabase db column
-          let rarity: 'Common' | 'Rare' | 'Epic' | 'Legendary' = 'Common';
+    if (countError) throw countError;
+    if (!count) return [];
 
-          const dbRarity = row.rarity !== undefined ? row.rarity : row.rarity_level;
-          if (dbRarity !== undefined && dbRarity !== null) {
-            const strRarity = String(dbRarity).trim().toLowerCase();
-            if (strRarity === 'legendary' || strRarity === '3') {
-              rarity = 'Legendary';
-            } else if (strRarity === 'epic' || strRarity === '2') {
-              rarity = 'Epic';
-            } else if (strRarity === 'rare' || strRarity === '1') {
-              rarity = 'Rare';
-            } else if (strRarity === 'common' || strRarity === '0') {
-              rarity = 'Common';
-            }
-          } else {
-            // Fallback to percentile view ranking or view count
-            const pct = row.percentile;
-            if (typeof pct === 'number') {
-              if (pct >= 0.90) rarity = 'Legendary';
-              else if (pct >= 0.70) rarity = 'Epic';
-              else if (pct >= 0.40) rarity = 'Rare';
-            } else if (typeof row.view_count === 'number') {
-              const vc = row.view_count;
-              if (vc > 1000000) rarity = 'Legendary';
-              else if (vc > 100000) rarity = 'Epic';
-              else if (vc > 10000) rarity = 'Rare';
-            }
-          }
+    const maxOffset = Math.max(0, count - sampleSize);
+    const offset = Math.floor(Math.random() * (maxOffset + 1));
 
-          // 3. Format visual background image (only show if image_url is non-null on Supabase)
-          let image = '';
-          if (row.image_url) {
-            image = row.image_url;
-          }
+    const { data, error } = await applyCandidateFilters(
+      supabase.from('articles_v2').select('*'),
+      real
+    ).range(offset, offset + sampleSize - 1);
 
-          // 4. Construct descriptions & dynamic sentence-swapped alterations
-          const s1 = row.sentence_1 || '';
-          const s2 = row.sentence_2 || '';
-          const s3 = row.sentence_3 || '';
-          const s4 = row.sentence_4 || '';
-          const combinedSentences = [s1, s2, s3, s4].filter(Boolean).join(' ');
-          const realDescription = row.description || row.abstract || combinedSentences || 'No description available.';
+    if (error) throw error;
+    return data || [];
+  };
 
-          // 4a. Add Real Card (Always added, unfiltered)
-          mapped.push({
-            id: row.qid,
-            title: row.name || 'Untitled Article',
-            wikipediaLink: row.url || `https://en.wikipedia.org/wiki/${encodeURIComponent(row.name || '')}`,
-            category,
-            rarity,
-            description: realDescription,
-            image,
-            isReal: true,
-            explanation: `Real! This is a verified Wikipedia entry: ${realDescription.slice(0, 100)}...`
-          });
+  // Tracks whether we already have a playable sample, plus the in-flight load so
+  // concurrent callers (multiple views mounting) share one fetch instead of each
+  // hitting the database.
+  const cardsLoaded = ref(false);
+  let cardsLoadPromise: Promise<void> | null = null;
 
-          // 4b. Find another article to swap the 4th sentence for the Fake Card
-          // We only generate a fake card if the base card itself is appropriate, to avoid inappropriate fake cards
-          if (isAppropriateArticle(row)) {
-            const otherRowsWithS4 = filteredData.filter((r: any) => r.qid !== row.qid && r.sentence_4);
-            const randomOtherRow = otherRowsWithS4[Math.floor(Math.random() * otherRowsWithS4.length)];
-            const replacementSentence4 = randomOtherRow ? randomOtherRow.sentence_4 : 'This was later proven to be a elaborate hoax invented by student editors.';
-            const replacementName = randomOtherRow ? randomOtherRow.name : 'an altered entry';
+  // Fetch a playable sample of articles from Supabase and map them to Cards.
+  // Cached after the first successful load; pass force=true to refresh.
+  const loadCardsFromDatabase = async (force = false): Promise<void> => {
+    if (!force && cardsLoaded.value) return;
+    if (!force && cardsLoadPromise) return cardsLoadPromise;
 
-            const fakeDescription = [s1, s2, s3, replacementSentence4].filter(Boolean).join(' ');
+    cardsLoadPromise = (async () => {
+      try {
+        console.log('Fetching a playable sample of articles from Supabase public.articles_v2 table...');
+        const [realRows, fakeRows] = await Promise.all([
+          fetchArticleSample(true, SAMPLE_PER_CLASS),
+          fetchArticleSample(false, SAMPLE_PER_CLASS)
+        ]);
+        const rows = [...realRows, ...fakeRows];
 
-            // Use the base card's image for the fake card to match the real card's visual appearance and prevent giveaways
-            const fakeImage = image;
+        if (rows.length > 0) {
+          // Each row is already classified real/fake in the DB, so just filter
+          // out inappropriate entries (and any without an image) and map the rest.
+          const mapped: Card[] = rows
+            .filter((row: any) => row.image_url && isAppropriateArticle(row))
+            .map((row: any) => mapArticleRowToCard(row));
 
-            // Add Altered (Fake) Card
-            mapped.push({
-              id: `${row.qid}_fake`,
-              title: row.name || 'Untitled Article',
-              wikipediaLink: row.url || `https://en.wikipedia.org/wiki/${encodeURIComponent(row.name || '')}`,
-              category,
-              rarity,
-              description: fakeDescription,
-              image: fakeImage,
-              isReal: false,
-              explanation: `Fake! The entry was altered. The final sentence ("${replacementSentence4.slice(0, 60)}...") actually belongs to the Wikipedia article for "${replacementName}".`
-            });
-          }
-        });
-
-        gameCards.value = mapped;
-        console.log(`Successfully mapped ${mapped.length} playable cards from the Supabase articles table!`);
-      } else {
-        console.warn('Supabase articles table is empty. Falling back to default MOCK_CARDS.');
+          gameCards.value = mapped;
+          console.log(`Successfully mapped ${mapped.length} playable cards from the Supabase articles_v2 table!`);
+        } else {
+          console.warn('Supabase articles_v2 returned no rows. Falling back to default MOCK_CARDS.');
+          gameCards.value = MOCK_CARDS;
+        }
+        cardsLoaded.value = true;
+      } catch (err: any) {
+        console.error('Failed to load articles from Supabase:', err.message);
+        console.log('Operating in offline/mock mode. Falling back to default MOCK_CARDS.');
         gameCards.value = MOCK_CARDS;
+        // Treat the fallback as loaded so a transient failure doesn't make every
+        // view retry on each navigation; callers can force a refresh later.
+        cardsLoaded.value = true;
       }
-    } catch (err: any) {
-      console.error('Failed to load articles from Supabase:', err.message);
-      console.log('Operating in offline/mock mode. Falling back to default MOCK_CARDS.');
-      gameCards.value = MOCK_CARDS;
+    })();
+
+    try {
+      await cardsLoadPromise;
+    } finally {
+      cardsLoadPromise = null;
     }
   };
 
@@ -910,7 +870,9 @@ export const useGameStore = defineStore('game', () => {
   };
 
   // Collect a Card
-  const collectCard = (cardId: string): boolean => {
+  const collectCard = (card: Card | string): boolean => {
+    const cardId = typeof card === 'string' ? card : card.id;
+    const cardDetails = typeof card === 'string' ? undefined : card;
     const existsIndex = collectedCards.value.findIndex(c => c.id === cardId);
 
     if (existsIndex === -1) {
@@ -918,11 +880,17 @@ export const useGameStore = defineStore('game', () => {
         id: cardId,
         collectedAt: new Date().toISOString(),
         isShowcase: false,
-        customSection: null
+        customSection: null,
+        // Store the full card so the binder can render it without re-fetching
+        // (the global sample may not contain this specific card later).
+        cardDetails
       });
     } else {
       // Update collected timestamp
       collectedCards.value[existsIndex].collectedAt = new Date().toISOString();
+      if (cardDetails && !collectedCards.value[existsIndex].cardDetails) {
+        collectedCards.value[existsIndex].cardDetails = cardDetails;
+      }
     }
 
     const authStore = useAuthStore();
@@ -957,7 +925,7 @@ export const useGameStore = defineStore('game', () => {
             if (targetState) {
               // 1. Unpin all other articles belonging to this user
               const { error: unpinError } = await supabase
-                .from('articles')
+                .from('articles_v2')
                 .update({ pinned: false })
                 .eq('profile_id', profileId);
               
@@ -967,7 +935,7 @@ export const useGameStore = defineStore('game', () => {
 
               // 2. Pin this specific article
               const { error: pinError } = await supabase
-                .from('articles')
+                .from('articles_v2')
                 .update({ pinned: true })
                 .eq('profile_id', profileId)
                 .eq('qid', cardId);
@@ -978,7 +946,7 @@ export const useGameStore = defineStore('game', () => {
             } else {
               // Unpin this specific article
               const { error: unpinError } = await supabase
-                .from('articles')
+                .from('articles_v2')
                 .update({ pinned: false })
                 .eq('profile_id', profileId)
                 .eq('qid', cardId);
@@ -1080,7 +1048,7 @@ export const useGameStore = defineStore('game', () => {
 
       // Fetch articles owned by this profile via profile_id join
       const { data: articlesData, error: articlesError } = await supabase
-        .from('articles')
+        .from('articles_v2')
         .select('*')
         .eq('profile_id', profileData.id);
 
@@ -1091,7 +1059,7 @@ export const useGameStore = defineStore('game', () => {
       // Map articles to CollectedCard format
       const cards: CollectedCard[] = (articlesData || []).map((article: any) => ({
         id: article.qid,
-        collectedAt: article.claimed_at || new Date().toISOString(),
+        collectedAt: new Date().toISOString(),
         isShowcase: !!article.pinned,
         customSection: null,
         cardDetails: mapArticleRowToCard(article)
@@ -1123,11 +1091,11 @@ export const useGameStore = defineStore('game', () => {
     if (!profileId || profileId.startsWith('usr_') || articleQids.length === 0) return;
 
     try {
-      // Update articles table, setting profile_id for each collected article's qid
+      // Update articles_v2 table, setting profile_id for each collected article's qid
       // Only claim articles that are currently unclaimed (profile_id IS NULL)
       const { error } = await supabase
-        .from('articles')
-        .update({ profile_id: profileId, claimed_at: new Date().toISOString() })
+        .from('articles_v2')
+        .update({ profile_id: profileId })
         .in('qid', articleQids)
         .is('profile_id', null);
 

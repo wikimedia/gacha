@@ -2,8 +2,8 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
-import { useGameStore } from '../stores/useGameStore';
-import type { Card } from '../stores/useGameStore';
+import { useGameStore, CATEGORIES } from '../stores/useGameStore';
+import type { Card, Category } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
 import CardsUnlocked from '../components/CardsUnlocked.vue';
 import PageLayout from '../components/PageLayout.vue';
@@ -18,7 +18,7 @@ const gameStore = useGameStore();
 const isLoading = ref(true);
 
 // Active Category for Fakeout Game
-const selectedCategory = ref<'Science' | 'Civilization' | 'Nature' | null>(null);
+const selectedCategory = ref<Category | null>(null);
 
 // Game States
 const gameActive = ref(false);
@@ -155,8 +155,7 @@ const addDebugPoints = () => {
 
 // Cooldown tracking
 const updateCooldowns = () => {
-  const categories: Array<'Science' | 'Civilization' | 'Nature'> = ['Science', 'Civilization', 'Nature'];
-  categories.forEach(cat => {
+  CATEGORIES.forEach(cat => {
     cooldownTimers.value[cat] = gameStore.getCooldownTimeRemaining(cat);
   });
 };
@@ -183,8 +182,22 @@ onMounted(async () => {
   checkTriggerGacha();
 });
 
+// Game deck configuration
+const DECK_SIZE = 10;
+const TARGET_REAL = DECK_SIZE / 2; // aim for an even real/fake split, backfilled if one side is short
+
+// Unbiased Fisher–Yates shuffle (sort(() => Math.random() - 0.5) is biased)
+const shuffle = (arr: Card[]): Card[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
 // Category selection & game initialization
-const startFakeoutGame = (category: 'Science' | 'Civilization' | 'Nature') => {
+const startFakeoutGame = (category: Category) => {
   if (gameStore.isCooldownActive(category)) return;
   
   pointsBeforeGame.value = gameStore.gdPoints;
@@ -199,12 +212,18 @@ const startFakeoutGame = (category: 'Science' | 'Civilization' | 'Nature') => {
   roundAnswered.value = false;
   playerChoiceReal.value = null;
   
-  // Prepare game deck: 10 random cards from this category
+  // Prepare game deck: a fully shuffled, balanced mix of real and fake cards in this category
   const catCards = gameStore.gameCards.filter((c: any) => c.category === category);
-  // Shuffle cards
-  const shuffled = [...catCards].sort(() => Math.random() - 0.5);
-  // Take up to 10
-  gameDeck.value = shuffled.slice(0, 10);
+  const reals = shuffle(catCards.filter((c: Card) => c.isReal));
+  const fakes = shuffle(catCards.filter((c: Card) => !c.isReal));
+
+  // Aim for an even real/fake split; if one side is short, backfill from the other
+  let numReal = Math.min(TARGET_REAL, reals.length);
+  let numFake = Math.min(DECK_SIZE - numReal, fakes.length);
+  numReal = Math.min(reals.length, DECK_SIZE - numFake);
+
+  // Combine and shuffle again so reals and fakes are interleaved
+  gameDeck.value = shuffle([...reals.slice(0, numReal), ...fakes.slice(0, numFake)]);
   
   loadRound();
 };
@@ -418,9 +437,9 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
   gachaDroppedCards.value.unshift(randomCard);
 };
 
-const getCategoryDetails = (cat: 'Civilization' | 'Science' | 'Nature') => {
+const getCategoryDetails = (cat: Category) => {
   switch (cat) {
-    case 'Civilization':
+    case 'The Human':
       return {
         emoji: '🏛️',
         bgClass: 'bg-category-civilization-hp-bg hover:bg-category-civilization-hp-bg-hover dark:bg-category-civilization-hp-dark-bg dark:hover:bg-category-civilization-hp-dark-bg-hover',
@@ -430,7 +449,7 @@ const getCategoryDetails = (cat: 'Civilization' | 'Science' | 'Nature') => {
         arrowColorClass: 'text-category-civilization-hp-border group-hover:text-category-civilization-hp-text dark:text-category-civilization-hp-border/50 dark:group-hover:text-category-civilization-hp-text-dark',
         titleColorClass: 'text-category-civilization-hp-text group-hover:text-category-civilization-hp-text dark:text-category-civilization-hp-text-dark'
       };
-    case 'Science':
+    case 'The Sciences':
       return {
         emoji: '🧪',
         bgClass: 'bg-category-science-hp-bg hover:bg-category-science-hp-bg-hover dark:bg-category-science-hp-dark-bg dark:hover:bg-category-science-hp-dark-bg-hover',
@@ -440,7 +459,7 @@ const getCategoryDetails = (cat: 'Civilization' | 'Science' | 'Nature') => {
         arrowColorClass: 'text-category-science-hp-border group-hover:text-category-science-hp-text dark:text-category-science-hp-border/50 dark:group-hover:text-category-science-hp-text-dark',
         titleColorClass: 'text-category-science-hp-text group-hover:text-category-science-hp-text dark:text-category-science-hp-text-dark'
       };
-    case 'Nature':
+    case 'The World':
       return {
         emoji: '🌍',
         bgClass: 'bg-category-nature-hp-bg hover:bg-category-nature-hp-bg-hover dark:bg-category-nature-hp-dark-bg dark:hover:bg-category-nature-hp-dark-bg-hover',
@@ -509,7 +528,7 @@ const getCategoryDetails = (cat: 'Civilization' | 'Science' | 'Nature') => {
           </h3>
           <div class="grid grid-cols-2 gap-4">
             <button
-              v-for="cat in (['Civilization', 'Nature', 'Science'] as const)"
+              v-for="cat in CATEGORIES"
               :key="cat"
               @click="startFakeoutGame(cat)"
               :disabled="!!cooldownTimers[cat]"

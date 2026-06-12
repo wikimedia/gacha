@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Card } from '../stores/useGameStore';
+import { CATEGORY_SLUG } from '../stores/useGameStore';
 
 const props = withDefaults(defineProps<{
   card: Card;
@@ -10,12 +11,6 @@ const props = withDefaults(defineProps<{
 });
 
 // ── Static Lookups ───────────────────────────────────────────────
-const CATEGORY_MAP: Record<string, { main: string; sub: string }> = {
-  'Civilization': { main: 'Civilization', sub: 'History' },
-  'Nature':       { main: 'Nature',       sub: 'Geography' },
-  'Science':      { main: 'Science',      sub: 'Science' }
-};
-
 const RARITY_STARS: Record<string, number> = {
   Legendary: 5, Epic: 4, Rare: 3, Uncommon: 2, Common: 1
 };
@@ -29,13 +24,11 @@ const STAR_STYLES: Record<string, { fill: string; stroke: string }> = {
 };
 
 // ── Computed Properties ──────────────────────────────────────────
-const categoryMapping = computed(() => {
-  const mapped = CATEGORY_MAP[props.card.category] || { main: 'Civilization', sub: props.card.category };
-  return {
-    ...mapped,
-    cssClass: mapped.main.toLowerCase().replace(/\s+/g, '-')
-  };
-});
+const categoryMapping = computed(() => ({
+  main: props.card.category,
+  sub: props.card.subCategory || '',
+  cssClass: CATEGORY_SLUG[props.card.category] || 'civilization'
+}));
 
 const rarityStars = computed(() => RARITY_STARS[props.card.rarity] || 1);
 const starStyle = computed(() => STAR_STYLES[props.card.rarity] || STAR_STYLES.Common);
@@ -149,7 +142,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
             </svg>
           </div>
           <span class="trading-card__category-label">
-            {{ categoryMapping.main }} / {{ categoryMapping.sub }}
+            {{ categoryMapping.main }}<template v-if="categoryMapping.sub"> / {{ categoryMapping.sub }}</template>
           </span>
         </div>
 

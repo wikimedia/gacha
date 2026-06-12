@@ -93,16 +93,16 @@ export const useAuthStore = defineStore('auth', () => {
       if (su.id && !su.id.startsWith('usr_')) {
         try {
           const { data: articlesData, error: articlesError } = await supabase
-            .from('articles')
+            .from('articles_v2')
             .select('*')
             .eq('profile_id', su.id);
-          
+
           if (articlesError) {
             console.error('Error loading user articles from database:', articlesError.message);
           } else if (articlesData) {
             dbCards = articlesData.map((article: any) => ({
               id: article.qid,
-              collectedAt: article.claimed_at || new Date().toISOString(),
+              collectedAt: new Date().toISOString(),
               isShowcase: !!article.pinned,
               customSection: null,
               cardDetails: gameStore.mapArticleRowToCard(article)
