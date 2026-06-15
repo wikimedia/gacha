@@ -193,7 +193,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 
 .trading-card {
   --_area-bg: rgba(249, 250, 248, 0.90);
-  --_title-bg: rgba(249, 250, 248, 1);
+  --_title-bg: rgba(249, 250, 248, 0.90);
 
   width: 100%;
   height: 100%;
@@ -203,7 +203,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   position: relative;
   isolation: isolate;
   background: var(--_bg);
-  border: 1.25px solid #EBEBEB;
+  border: 1px solid #EBEBEB;
   box-shadow: 
     0 2px 8px rgba(0, 0, 0, 0.12),
     0 8px 24px rgba(0, 0, 0, 0.06);
@@ -329,7 +329,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 }
 
 .trading-card__title {
-  font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
+  font-family: Georgia;
   font-size: 18px; /* halved from 36px font-size */
   font-weight: bold;
   line-height: 1.2;
@@ -351,7 +351,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   align-items: center;
   justify-content: space-between;
   background: var(--_area-bg);
-  padding: 3px 4px; /* halved from 6px 8px */
+  padding: 7.5px 7.5px; /* halved from 6px 8px */
 }
 
 .trading-card__stars {
@@ -360,15 +360,15 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 }
 
 .trading-card__star-icon {
-  width: 18px;
-  height: 18px;
+  width: 12.5px;
+  height: 12.5px;
 }
 
 /* Style properties are handled dynamically/inline via template SVG attributes */
 
 .trading-card__category-label {
   font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 700;
   color: #000;
   letter-spacing: 0.02em;
@@ -378,13 +378,13 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card__description {
   flex-shrink: 0;
   background: var(--_area-bg);
-  padding: 4px; /* halved from 8px */
+  padding: 7.5px; /* halved from 8px */
 }
 
 .trading-card__description p {
   font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 1.4;
   color: #000;
   margin: 0;
   text-align: justify;
@@ -405,7 +405,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   align-items: center;
   justify-content: center;
   font-family: var(--font-family-system-sans, sans-serif);
-  font-size: 7px;
+  font-size: 5.5px;
   z-index: 3;
   margin: 0;
 }
@@ -443,10 +443,10 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card__description-divider::after {
   content: '';
   position: absolute;
-  left: 4px;
-  right: 4px;
+  left: 7.5px;
+  right: 7.5px;
   top: 0;
   bottom: 0;
-  border-bottom: 1px solid #A2A9B1;
+  border-bottom: 1.5px solid #A2A9B1;
 }
 </style>
