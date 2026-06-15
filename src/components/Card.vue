@@ -80,7 +80,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   <div class="trading-card-wrapper">
     <div class="trading-card" :class="'trading-card--' + categoryMapping.cssClass">
 
-      <!-- 1. Full-bleed background image + image grain (inside image area) -->
+      <!-- ① Image + image grain (clipped to inset area) -->
       <div class="trading-card__image-layer">
         <div v-if="hasImage && isCSSImage" 
           class="trading-card__image-bg"
@@ -98,34 +98,14 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
         <div class="trading-card__image-grain" :style="{ backgroundPosition: grainPosition }"></div>
       </div>
 
-      <!-- 2. Category color tint overlay (hard-light, covers full card) -->
-      <div class="trading-card__tint-layer"></div>
-
-      <!-- 3. Border grain (card frame area only, not the image) -->
-      <div class="trading-card__border-grain"></div>
-
-      <!-- 4. Noise texture (over everything) -->
-      <div class="trading-card__noise-layer"></div>
-
-      <!-- 5. Inner shadow -->
-      <div class="trading-card__inner-shadow"></div>
-
-      <!-- ═══ Content layer (on top of everything) ═══ -->
+      <!-- ③ Content (text, stars, etc.) -->
       <div class="trading-card__content">
-        
-        <!-- Title (expands downward from top) -->
         <div class="trading-card__title-area">
           <div class="trading-card__title-banner">
-            <h3 class="trading-card__title">
-              {{ card.title }}
-            </h3>
+            <h3 class="trading-card__title">{{ card.title }}</h3>
           </div>
         </div>
-
-        <!-- Spacer pushes bottom content down -->
         <div class="trading-card__spacer"></div>
-
-        <!-- Stars + Category strip -->
         <div class="trading-card__attributes">
           <div class="trading-card__stars" :class="'trading-card__stars--' + rarityStars">
             <svg 
@@ -150,18 +130,13 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
             {{ categoryMapping.main }}<template v-if="categoryMapping.sub"> / {{ categoryMapping.sub }}</template>
           </span>
         </div>
-
-        <!-- Codex divider line -->
         <div class="trading-card__description-divider"></div>
-
-        <!-- Description (expands upward from bottom) -->
         <div class="trading-card__description">
           <p>{{ card.description }}</p>
         </div>
-
       </div>
 
-      <!-- Attribution line -->
+      <!-- Attribution -->
       <div class="trading-card__credit-line">
         <a 
           v-if="showLink !== false"
@@ -177,6 +152,12 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
           Wikimedia Commons / CC BY-SA 4.0
         </span>
       </div>
+
+      <!-- ② Full-card overlays (on top of everything, pointer-events: none) -->
+      <div class="trading-card__border-grain"></div>
+      <div class="trading-card__tint-layer"></div>
+      <div class="trading-card__noise-layer"></div>
+      <div class="trading-card__inner-shadow"></div>
 
     </div>
   </div>
@@ -253,6 +234,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   position: absolute;
   inset: 14px;
   overflow: hidden;
+  isolation: isolate;
   border-top: 1.5px solid #A2A9B1;
   border-right: 1.5px solid #A2A9B1;
   border-bottom: 1.5px solid #C8CCD1;
@@ -288,65 +270,44 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   pointer-events: none;
 }
 
-/* ── Category color tint overlay ─────────────────────────────── */
-.trading-card__tint-layer {
+/* ── Full-card overlays (border-grain, tint, noise, inner shadow) ── */
+.trading-card__border-grain,
+.trading-card__tint-layer,
+.trading-card__noise-layer,
+.trading-card__inner-shadow {
   position: absolute;
   inset: 0;
-  z-index: 10;
-  background-color: var(--_tint);
-  mix-blend-mode: hard-light;
   pointer-events: none;
 }
 
-/* ── Border grain (card frame, excluding image area) ─────────── */
 .trading-card__border-grain {
-  position: absolute;
-  inset: 0;
-  z-index: 11;
   background-image: url("/border-grain.png");
   background-repeat: repeat;
   background-size: 480px 612px;
-  opacity: 0.18;
-  mix-blend-mode: luminosity;
-  pointer-events: none;
-
-  /* Mask out the inner image area (14px inset) */
-  -webkit-mask-image:
-    linear-gradient(#000, #000),
-    linear-gradient(#000, #000);
-  -webkit-mask-size: 100% 100%, calc(100% - 28px) calc(100% - 28px);
-  -webkit-mask-position: 0 0, 14px 14px;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-composite: xor;
-  mask-image:
-    linear-gradient(#000, #000),
-    linear-gradient(#000, #000);
-  mask-size: 100% 100%, calc(100% - 28px) calc(100% - 28px);
-  mask-position: 0 0, 14px 14px;
-  mask-repeat: no-repeat;
-  mask-composite: exclude;
+  opacity: 0.28;
+  mix-blend-mode: multiply;
+  clip-path: polygon(
+    evenodd,
+    0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%,
+    14px 14px, calc(100% - 14px) 14px, calc(100% - 14px) calc(100% - 14px), 14px calc(100% - 14px), 14px 14px
+  );
 }
 
-/* ── Noise texture overlay (over everything) ─────────────────── */
+.trading-card__tint-layer {
+  background-color: var(--_tint);
+  mix-blend-mode: hard-light;
+}
+
 .trading-card__noise-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 12;
   background-image: url("/noise.png");
   background-repeat: repeat;
   opacity: .15;
   mix-blend-mode: multiply;
-  pointer-events: none;
 }
 
-/* ── Inner shadow overlay ────────────────────────────────────── */
 .trading-card__inner-shadow {
-  position: absolute;
-  inset: 0;
-  z-index: 13;
   box-shadow: inset 0 0 10.2px rgba(174, 162, 132, 0.58);
   mix-blend-mode: multiply;
-  pointer-events: none;
 }
 
 /* ── Content layer ───────────────────────────────────────────── */
