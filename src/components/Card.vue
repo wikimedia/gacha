@@ -79,7 +79,8 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 <template>
   <div class="trading-card-wrapper">
     <div class="trading-card" :class="'trading-card--' + categoryMapping.cssClass">
-      <!-- ═══ Full-bleed background image ═══ -->
+
+      <!-- 1. Full-bleed background image + image grain (inside image area) -->
       <div class="trading-card__image-layer">
         <div v-if="hasImage && isCSSImage" 
           class="trading-card__image-bg"
@@ -94,15 +95,19 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
           alt="Card image"
         />
         <div v-else class="trading-card__image-bg trading-card__image-bg--placeholder"></div>
+        <div class="trading-card__image-grain" :style="{ backgroundPosition: grainPosition }"></div>
       </div>
 
-      <!-- ═══ Category color tint overlay (hard-light) ═══ -->
+      <!-- 2. Category color tint overlay (hard-light, covers full card) -->
       <div class="trading-card__tint-layer"></div>
 
-      <!-- ═══ Grain texture overlay ═══ -->
-      <div class="trading-card__grain-layer" :style="{ backgroundPosition: grainPosition }"></div>
+      <!-- 3. Border grain (card frame area only, not the image) -->
+      <div class="trading-card__border-grain"></div>
 
-      <!-- ═══ Inner shadow overlay ═══ -->
+      <!-- 4. Noise texture (over everything) -->
+      <div class="trading-card__noise-layer"></div>
+
+      <!-- 5. Inner shadow -->
       <div class="trading-card__inner-shadow"></div>
 
       <!-- ═══ Content layer (on top of everything) ═══ -->
@@ -247,7 +252,6 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card__image-layer {
   position: absolute;
   inset: 14px;
-  z-index: 1;
   overflow: hidden;
   border-top: 1.5px solid #A2A9B1;
   border-right: 1.5px solid #A2A9B1;
@@ -261,7 +265,6 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 1;
 }
 
 .trading-card__image-bg--img {
@@ -271,29 +274,68 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 
 .trading-card__image-bg--placeholder {
   background: linear-gradient(135deg, #d5d0c8 0%, #c2bdb5 100%);
-  opacity: 1;
+}
+
+/* ── Image grain (inside image area only) ────────────────────── */
+.trading-card__image-grain {
+  position: absolute;
+  inset: 0;
+  background-image: url("/image-grain.png");
+  background-repeat: repeat;
+  background-size: 614px 410px;
+  opacity: 0.43;
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 /* ── Category color tint overlay ─────────────────────────────── */
 .trading-card__tint-layer {
   position: absolute;
   inset: 0;
-  z-index: 4;
+  z-index: 10;
   background-color: var(--_tint);
   mix-blend-mode: hard-light;
   pointer-events: none;
 }
 
-/* ── Grain texture overlay ───────────────────────────────────── */
-.trading-card__grain-layer {
+/* ── Border grain (card frame, excluding image area) ─────────── */
+.trading-card__border-grain {
   position: absolute;
   inset: 0;
-  z-index: 5;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  z-index: 11;
+  background-image: url("/border-grain.png");
   background-repeat: repeat;
-  background-size: 200px 200px;
+  background-size: 480px 612px;
   opacity: 0.18;
   mix-blend-mode: luminosity;
+  pointer-events: none;
+
+  /* Mask out the inner image area (14px inset) */
+  -webkit-mask-image:
+    linear-gradient(#000, #000),
+    linear-gradient(#000, #000);
+  -webkit-mask-size: 100% 100%, calc(100% - 28px) calc(100% - 28px);
+  -webkit-mask-position: 0 0, 14px 14px;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-composite: xor;
+  mask-image:
+    linear-gradient(#000, #000),
+    linear-gradient(#000, #000);
+  mask-size: 100% 100%, calc(100% - 28px) calc(100% - 28px);
+  mask-position: 0 0, 14px 14px;
+  mask-repeat: no-repeat;
+  mask-composite: exclude;
+}
+
+/* ── Noise texture overlay (over everything) ─────────────────── */
+.trading-card__noise-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  background-image: url("/noise.png");
+  background-repeat: repeat;
+  opacity: .15;
+  mix-blend-mode: multiply;
   pointer-events: none;
 }
 
@@ -301,7 +343,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card__inner-shadow {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  z-index: 13;
   box-shadow: inset 0 0 10.2px rgba(174, 162, 132, 0.58);
   mix-blend-mode: multiply;
   pointer-events: none;
@@ -310,7 +352,6 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 /* ── Content layer ───────────────────────────────────────────── */
 .trading-card__content {
   position: relative;
-  z-index: 3;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -389,7 +430,6 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   margin: 0;
   text-align: justify;
   display: -webkit-box;
-  -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -406,7 +446,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   justify-content: center;
   font-family: var(--font-family-system-sans, sans-serif);
   font-size: 5.5px;
-  z-index: 3;
+
   margin: 0;
 }
 
