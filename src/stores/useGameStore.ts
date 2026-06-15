@@ -744,11 +744,18 @@ export const useGameStore = defineStore('game', () => {
   // Skip anything flagged above this threshold (flag_score is null for unflagged rows).
   const FLAG_SCORE_MAX = 0.9;
 
-  // Shared candidate filters — applied identically to the count and data queries so
-  // the random-offset window stays valid. Keep unclaimed rows that have an image, are
-  // of the requested real/fake class, aren't flagged above the threshold, and (when
-  // given) match a single category.
-  const applyCandidateFilters = (query: any, real: boolean, category?: Category) => {
+  // ── Fake-card source lever ──────────────────────────────────────────────────
+  // Quick switch for testing a new fake-generation algorithm.
+  //   'articles'    → fakes come from articles_v2 rows with real = false (original)
+  //   'fakes_table' → fakes come from the dedicated FAKES_TABLE below
+  // Real cards always come from articles_v2; only the fake source changes.
+  type FakeSource = 'articles' | 'fakes_table';
+  const FAKE_SOURCE = 'fakes_table' as FakeSource;
+  const FAKES_TABLE = 'fake_articles_v2'; 
+
+  // Filters for real/fake rows living in articles_v2: unclaimed, has an image, of the
+  // requested real/fake class, not flagged above threshold, and (when given) one category.
+  const applyArticleFilters = (query: any, real: boolean, category?: Category) => {
     let q = query
       .is('profile_id', null)
       .not('image_url', 'is', null)
@@ -760,14 +767,27 @@ export const useGameStore = defineStore('game', () => {
     return q;
   };
 
-  // Fetch a random window of `sampleSize` rows for the given real/fake class (and
-  // optional category). PostgREST has no ORDER BY random(), so we count the matching
-  // rows and read a page from a random offset — bounded work that varies every call.
-  const fetchArticleSample = async (real: boolean, sampleSize: number, category?: Category): Promise<any[]> => {
-    const { count, error: countError } = await applyCandidateFilters(
-      supabase.from('articles_v2').select('*', { count: 'exact', head: true }),
-      real,
-      category
+  // Filters for the dedicated fakes table: it has no real/profile_id/flag_score columns,
+  // so only require an image and (when given) match a single category.
+  const applyFakesTableFilters = (query: any, category?: Category) => {
+    let q = query.not('image_url', 'is', null);
+    if (category) {
+      q = q.ilike('category', category);
+    }
+    return q;
+  };
+
+  // Fetch a random window of `sampleSize` rows from `table`. PostgREST has no
+  // ORDER BY random(), so we count the matching rows and read a page from a random
+  // offset — bounded work that varies every call. `applyFilters` must be applied
+  // identically to the count and data queries so the offset window stays valid.
+  const fetchRandomSample = async (
+    table: string,
+    applyFilters: (q: any) => any,
+    sampleSize: number
+  ): Promise<any[]> => {
+    const { count, error: countError } = await applyFilters(
+      supabase.from(table).select('*', { count: 'exact', head: true })
     );
 
     if (countError) throw countError;
@@ -776,15 +796,23 @@ export const useGameStore = defineStore('game', () => {
     const maxOffset = Math.max(0, count - sampleSize);
     const offset = Math.floor(Math.random() * (maxOffset + 1));
 
-    const { data, error } = await applyCandidateFilters(
-      supabase.from('articles_v2').select('*'),
-      real,
-      category
+    const { data, error } = await applyFilters(
+      supabase.from(table).select('*')
     ).range(offset, offset + sampleSize - 1);
 
     if (error) throw error;
     return data || [];
   };
+
+  // Real cards always come from articles_v2.
+  const fetchRealSample = (sampleSize: number, category?: Category): Promise<any[]> =>
+    fetchRandomSample('articles_v2', (q) => applyArticleFilters(q, true, category), sampleSize);
+
+  // Fake cards come from whichever source the lever selects.
+  const fetchFakeSample = (sampleSize: number, category?: Category): Promise<any[]> =>
+    FAKE_SOURCE === 'fakes_table'
+      ? fetchRandomSample(FAKES_TABLE, (q) => applyFakesTableFilters(q, category), sampleSize)
+      : fetchRandomSample('articles_v2', (q) => applyArticleFilters(q, false, category), sampleSize);
 
   // Fetch a fresh, randomized pool of playable cards for a single category — a
   // balanced mix of real and fake. Called per game so consecutive games draw new
@@ -792,8 +820,8 @@ export const useGameStore = defineStore('game', () => {
   const fetchCategoryPool = async (category: Category, perClass = 40): Promise<Card[]> => {
     try {
       const [realRows, fakeRows] = await Promise.all([
-        fetchArticleSample(true, perClass, category),
-        fetchArticleSample(false, perClass, category)
+        fetchRealSample(perClass, category),
+        fetchFakeSample(perClass, category)
       ]);
       return [...realRows, ...fakeRows]
         .filter((row: any) => row.image_url && isAppropriateArticle(row))
@@ -820,8 +848,8 @@ export const useGameStore = defineStore('game', () => {
       try {
         console.log('Fetching a playable sample of articles from Supabase public.articles_v2 table...');
         const [realRows, fakeRows] = await Promise.all([
-          fetchArticleSample(true, SAMPLE_PER_CLASS),
-          fetchArticleSample(false, SAMPLE_PER_CLASS)
+          fetchRealSample(SAMPLE_PER_CLASS),
+          fetchFakeSample(SAMPLE_PER_CLASS)
         ]);
         const rows = [...realRows, ...fakeRows];
 
