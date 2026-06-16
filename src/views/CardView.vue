@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import Card from '../components/Card.vue';
 import Loader from '../components/Loader.vue';
+import PageLayout from '../components/PageLayout.vue';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card as CardType, Category } from '../stores/useGameStore';
 
@@ -151,36 +152,36 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="card-preview-page">
-    <h1 class="card-preview-heading">Card Design Preview</h1>
-    <p class="card-preview-subheading">Civilization · Nature · Science — Common · Rare · Epic · Legendary</p>
-    
-    <div v-if="isLoading" class="card-preview-loading">
-      <Loader />
-      <p class="card-preview-loading-text">Loading actual cards from Supabase...</p>
-    </div>
-    
-    <div v-else class="card-preview-grid">
-      <div 
-        v-for="card in displayCards" 
-        :key="card.id" 
-        class="card-preview-item"
-      >
-        <Card :card="card" />
-        <span class="card-preview-label">{{ card.rarity }}</span>
+  <PageLayout is-wide>
+    <div class="card-preview-page">
+      <h1 class="card-preview-heading">Card Design Preview</h1>
+      <p class="card-preview-subheading">Civilization · Nature · Science — Common · Rare · Epic · Legendary</p>
+      
+      <div v-if="isLoading" class="card-preview-loading">
+        <Loader />
+        <p class="card-preview-loading-text">Loading actual cards from Supabase...</p>
+      </div>
+      
+      <div v-else class="card-preview-grid">
+        <div 
+          v-for="card in displayCards" 
+          :key="card.id" 
+          class="card-preview-item"
+        >
+          <Card :card="card" />
+          <span class="card-preview-label">{{ card.rarity }}</span>
+        </div>
       </div>
     </div>
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>
 .card-preview-page {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #eaecf0;
   padding: 2rem 1rem;
 }
 
@@ -188,13 +189,13 @@ onMounted(async () => {
   font-family: var(--font-family-serif, Georgia, serif);
   font-size: 1.75rem;
   font-weight: 900;
-  color: #202122;
+  color: #4a6783;
   margin-bottom: 0.25rem;
 }
 
 .card-preview-subheading {
   font-size: 0.8rem;
-  color: #72777d;
+  color: #888888;
   margin-bottom: 2rem;
   letter-spacing: 0.06em;
 }
@@ -210,7 +211,7 @@ onMounted(async () => {
 
 .card-preview-loading-text {
   font-size: 0.85rem;
-  color: #72777d;
+  color: #888888;
   font-family: var(--font-family-system-sans, sans-serif);
 }
 
@@ -235,6 +236,6 @@ onMounted(async () => {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #72777d;
+  color: #888888;
 }
 </style>

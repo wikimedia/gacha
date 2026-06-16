@@ -207,12 +207,12 @@ const toggleCardShowcase = async (cardId: string) => {
     <div v-else-if="profileUser" class="flex flex-col gap-6 w-full animate-fade-in">
 
       <!-- PROFILE INFO BOX -->
-      <header class="relative text-left pb-6 border-b border-base-300">
+      <header class="relative text-left pb-6 border-b border-[#c4b69d]">
         <div class="flex flex-col md:flex-row gap-6 items-start md:items-center">
-          <!-- Pinned Card Image as User Profile Image -->
-          <div v-if="hasPinnedCardWithImage" class="avatar">
-            <div class="w-20 h-20 rounded-full border-2 border-base-300 overflow-hidden bg-base-300 flex items-center justify-center shadow-inner relative">
-              <template v-if="avatarSrc">
+          <!-- Scholar Profile Image (always shown) -->
+          <div class="avatar">
+            <div class="w-20 h-20 rounded-[2px] border-2 border-[#c4b69d] overflow-hidden bg-[#fdf4eb] flex items-center justify-center shadow-inner relative">
+              <template v-if="hasPinnedCardWithImage && avatarSrc">
                 <div 
                   v-if="isAvatarCSSImage"
                   class="w-full h-full animate-fade-in"
@@ -232,30 +232,30 @@ const toggleCardShowcase = async (cardId: string) => {
                   alt="Profile Avatar"
                 />
               </template>
-              <span v-else class="text-secondary text-3xl">👤</span>
+              <span v-else class="text-[#4a6783] text-3xl font-serif font-black select-none">👤</span>
             </div>
           </div>
 
           <div class="flex flex-col text-left max-w-xl flex-1">
             <div class="flex flex-wrap items-center gap-3">
-              <h2 class="font-serif text-3xl text-base-content font-black m-0 leading-none">
+              <h2 class="font-serif text-3xl text-[#4a6783] font-black m-0 leading-none">
                 {{ profileUser.username }}
               </h2>
             </div>
-            <p class="text-xs text-base-content/85 leading-relaxed font-light mt-3">
+            <p class="text-xs text-[#3f3f35] leading-relaxed font-light mt-3">
               {{ profileUser.bio }}
             </p>
           </div>
 
           <!-- Stats Display integrated without a card style -->
-          <div class="flex gap-6 md:ml-auto md:border-l md:border-base-300 md:pl-8 mt-2 md:mt-0">
+          <div class="flex gap-6 md:ml-auto md:border-l md:border-[#c4b69d] md:pl-8 mt-2 md:mt-0">
             <div>
-              <div class="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">Points</div>
-              <div class="text-3xl font-serif font-black text-primary leading-none">{{ profileUser.gdPoints }}</div>
+              <div class="text-[10px] font-bold uppercase tracking-widest text-[#888888] mb-1">Points</div>
+              <div class="text-3xl font-serif font-black text-[#4a6783] leading-none">{{ profileUser.gdPoints }}</div>
             </div>
-            <div class="border-l border-base-300 pl-6">
-              <div class="text-[10px] font-bold uppercase tracking-widest text-secondary mb-1">Cards</div>
-              <div class="text-3xl font-serif font-black text-secondary leading-none">{{ profileCards.length }}</div>
+            <div class="border-l border-[#c4b69d] pl-6">
+              <div class="text-[10px] font-bold uppercase tracking-widest text-[#888888] mb-1">Cards</div>
+              <div class="text-3xl font-serif font-black text-[#d9754b] leading-none">{{ profileCards.length }}</div>
             </div>
           </div>
         </div>
@@ -264,12 +264,12 @@ const toggleCardShowcase = async (cardId: string) => {
       <!-- BINDER CARD DIRECTORY & COLLECTIONS -->
       <div class="flex flex-col gap-6 text-left py-4">
         
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-base-300 pb-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#c4b69d] pb-3">
           <div>
-            <h3 class="font-serif text-xl text-base-content font-black m-0">
+            <h3 class="font-serif text-xl text-[#4a6783] font-black m-0">
               Collected Encyclopedia Binder
             </h3>
-            <p class="text-xs text-secondary mt-1 font-light">
+            <p class="text-xs text-[#888888] mt-1 font-light">
               Browse and manage your unlocked encyclopedia entries.
             </p>
           </div>
@@ -281,7 +281,7 @@ const toggleCardShowcase = async (cardId: string) => {
             v-model="searchFilter"
             type="text" 
             placeholder="Search cards by name..."
-            class="input input-bordered w-full max-w-md input-sm bg-white"
+            class="input w-full max-w-md input-sm"
           >
         </div>
 
@@ -289,47 +289,47 @@ const toggleCardShowcase = async (cardId: string) => {
         <Loader v-if="isLoadingCards" />
         
         <template v-else>
-          <div v-if="sortedBinderCards.length === 0" class="text-xs text-secondary italic text-center py-16 bg-white/10 border border-base-300/40 rounded-lg">
+          <div v-if="sortedBinderCards.length === 0" class="text-xs text-[#888888] italic text-center py-16 bg-[#fdf4eb]/10 border border-[#c4b69d] rounded-[2px]">
             No matching cards discovered in this binder.
           </div>
           
           <div v-else class="grid gap-8 justify-items-center w-full" style="grid-template-columns: repeat(auto-fill, minmax(min(100%, 315px), 1fr));">
-          <div 
-            v-for="card in sortedBinderCards" 
-            :key="card.id" 
-            class="w-[315px] h-[440px] max-w-full relative animate-fade-in"
-          >
-            <!-- Card itself (no downscaling) -->
-            <CardComp :card="card" :show-link="true" />
-            
-            <!-- Pin Toggle Button overlay at top-right of the card (only for Private owner) -->
-            <button 
-              v-if="isPrivateMode"
-              @click="toggleCardShowcase(card.id)"
-              class="absolute top-3 right-3 z-20 btn btn-circle btn-xs shadow-md border"
-              :class="[
-                card.isShowcase 
-                  ? 'btn-warning text-warning-content border-warning' 
-                  : 'bg-white/90 hover:bg-white text-base-content/75 border-base-300'
-              ]"
-              :title="card.isShowcase ? 'Unpin from Profile' : 'Pin to Profile'"
+            <div 
+              v-for="card in sortedBinderCards" 
+              :key="card.id" 
+              class="w-[315px] h-[440px] max-w-full relative animate-fade-in"
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                viewBox="0 0 24 24" 
-                :fill="card.isShowcase ? 'currentColor' : 'none'" 
-                stroke="currentColor" 
-                stroke-width="2" 
-                stroke-linecap="round" 
-                stroke-linejoin="round" 
-                class="w-3.5 h-3.5"
+              <!-- Card itself (no downscaling) -->
+              <CardComp :card="card" :show-link="true" />
+              
+              <!-- Pin Toggle Button overlay at top-right of the card (only for Private owner) -->
+              <button 
+                v-if="isPrivateMode"
+                @click="toggleCardShowcase(card.id)"
+                class="absolute top-3 right-3 z-20 w-7 h-7 flex items-center justify-center p-0 rounded-[2px] shadow border transition-colors duration-200"
+                :class="[
+                  card.isShowcase 
+                    ? 'bg-[#d9754b] text-[#fdf4eb] border-[#d9754b] hover:bg-[#c05c33]' 
+                    : 'bg-[#fdf4eb]/90 hover:bg-[#fdf4eb] text-[#4a6783] border-[#c4b69d]'
+                ]"
+                :title="card.isShowcase ? 'Unpin from Profile' : 'Pin to Profile'"
               >
-                <line x1="12" y1="17" x2="12" y2="22"></line>
-                <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.71A2 2 0 0 1 15 9.05V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v5.05a2 2 0 0 1-.78 1.56l-2.78 3.74a2 2 0 0 0-.44 1.25Z"></path>
-              </svg>
-            </button>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  :fill="card.isShowcase ? 'currentColor' : 'none'" 
+                  stroke="currentColor" 
+                  stroke-width="2" 
+                  stroke-linecap="round" 
+                  stroke-linejoin="round" 
+                  class="w-3.5 h-3.5"
+                >
+                  <line x1="12" y1="17" x2="12" y2="22"></line>
+                  <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.71A2 2 0 0 1 15 9.05V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v5.05a2 2 0 0 1-.78 1.56l-2.78 3.74a2 2 0 0 0-.44 1.25Z"></path>
+                </svg>
+              </button>
+            </div>
           </div>
-        </div>
         </template>
       </div>
 
@@ -337,15 +337,15 @@ const toggleCardShowcase = async (cardId: string) => {
 
     <!-- PRIVATE EDIT PROFILE DIALOG (DaisyUI Dialog Modal) -->
     <dialog class="modal modal-bottom sm:modal-middle" :class="{ 'modal-open': showEditProfileModal }">
-      <div class="modal-box bg-base-100 border border-base-300 p-6 shadow-2xl relative text-left">
+      <div class="modal-box p-6 shadow-2xl relative text-left">
         <button 
           @click="showEditProfileModal = false" 
-          class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4"
+          class="absolute right-4 top-4 text-[#888888] hover:text-[#3f3f35] font-bold text-sm"
         >
           ✕
         </button>
 
-        <h3 class="font-serif text-lg font-bold border-b border-base-300 pb-2 text-primary">
+        <h3 class="font-serif text-lg font-black border-b border-[#c4b69d] pb-2 text-[#4a6783]">
           Edit Binder Identity
         </h3>
         
@@ -353,33 +353,31 @@ const toggleCardShowcase = async (cardId: string) => {
           <!-- Username -->
           <div class="form-control w-full">
             <label class="label py-1">
-              <span class="label-text font-bold text-xs uppercase text-neutral-content/85">Display Name</span>
+              <span class="label-text font-serif font-black text-xs uppercase text-[#4a6783]">Display Name</span>
             </label>
             <input 
               v-model="editDisplayName"
               type="text" 
               required
-              class="input input-bordered w-full input-sm"
+              class="input w-full input-sm"
             >
           </div>
 
           <!-- Bio -->
           <div class="form-control w-full">
             <label class="label py-1">
-              <span class="label-text font-bold text-xs uppercase text-neutral-content/85">Encyclopedia Bio</span>
+              <span class="label-text font-serif font-black text-xs uppercase text-[#4a6783]">Encyclopedia Bio</span>
             </label>
             <textarea 
               v-model="editBio"
               rows="3"
-              class="textarea textarea-bordered w-full resize-none font-sans font-light text-sm"
+              class="textarea w-full resize-none font-sans font-light text-sm"
             ></textarea>
           </div>
 
-
-
           <button 
             type="submit"
-            class="btn btn-primary btn-sm w-full font-bold uppercase mt-2 text-white"
+            class="btn btn-primary btn-sm w-full font-bold uppercase mt-2"
           >
             Save Changes
           </button>

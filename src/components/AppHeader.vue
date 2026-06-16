@@ -3,15 +3,19 @@ import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
+import type { Category } from '../stores/useGameStore';
 import { supabase } from '../supabase';
 
 const props = withDefaults(defineProps<{
   displayedPoints?: number;
   gachaActive?: boolean;
   isAnimating?: boolean;
+  activeMainCategory?: Category;
+  gameActive?: boolean;
 }>(), {
   gachaActive: false,
-  isAnimating: false
+  isAnimating: false,
+  gameActive: false
 });
 
 const emit = defineEmits<{
@@ -19,6 +23,7 @@ const emit = defineEmits<{
   (e: 'login-success'): void;
   (e: 'logout'): void;
   (e: 'edit-profile'): void;
+  (e: 'quit-game'): void;
 }>();
 
 const authStore = useAuthStore();
@@ -85,23 +90,16 @@ watch(() => authStore.isLoggedIn, (loggedIn) => {
 
 const displayUsername = computed(() => dbUsername.value || authStore.user?.username || '');
 
+
+
 // Auth modal state
 const showAuthModal = ref(false);
+const showInfoModal = ref(false);
 const authEmail = ref('');
 const otpSent = ref(false);
 const isVerifying = ref(false);
 const authError = ref('');
 
-// Lock shaking micro-interaction state
-const isLockShaking = ref(false);
-
-const triggerLockShake = () => {
-  if (isLockShaking.value) return;
-  isLockShaking.value = true;
-  setTimeout(() => {
-    isLockShaking.value = false;
-  }, 400);
-};
 
 const closeModal = () => {
   showAuthModal.value = false;
@@ -126,6 +124,12 @@ const handleSendOtp = async () => {
   }
 };
 
+const confirmQuitGame = () => {
+  if (window.confirm("Are you sure you want to quit? Your progress in this run will be lost.")) {
+    emit('quit-game');
+  }
+};
+
 defineExpose({
   openAuthModal() {
     showAuthModal.value = true;
@@ -134,140 +138,129 @@ defineExpose({
 </script>
 
 <template>
-  <header class="sticky top-0 z-40">
-    <!-- Standard Gacha Teaser Header: active during navigation & games -->
-    <div 
-      v-if="!gachaActive"
-      class="navbar bg-base-100 border-b border-base-300 px-4 py-2 shadow-sm select-none gap-2 justify-between flex-nowrap gacha-navbar"
-      :class="{ 'border-primary bg-primary/5': points >= 100 }"
-    >
-      <!-- Left: Brand Title -->
-      <router-link to="/" class="flex flex-col text-left leading-none flex-shrink-0 no-underline hover:opacity-85 gacha-brand">
-        <span class="font-serif font-black text-sm text-primary tracking-tight">Moonflower</span>
-        <span class="text-[9px] font-sans font-bold mt-1 text-secondary">Wikipedia Gacha</span>
-      </router-link>
-
-      <!-- Middle: Segmented/Continuous Goal Tracker (Custom Points Gauge) -->
-      <div 
-        class="flex-grow flex flex-col justify-center max-w-[240px] min-w-[130px] select-none gacha-progress-container"
-        role="img" 
-        aria-label="Gacha Drop progress"
-      >
-        <div class="flex justify-between items-center w-full text-[8px] font-sans font-extrabold uppercase tracking-wider mb-0.5">
-          <span class="text-secondary">Gacha Progress</span>
-          <span :class="points >= 100 ? 'text-primary font-black animate-pulse' : 'text-base-content/70'">{{ points }}/100</span>
-        </div>
-        <div 
-          class="relative w-full h-3.5 bg-base-200 border border-base-300 rounded-full shadow-inner flex items-center transition-all duration-300"
-          :class="{ 'points-ready-glow border-primary bg-primary/5': points >= 100 }"
+  <header class="w-full z-40 select-none pointer-events-none sticky top-0">
+    <!-- Figma Mock Header (Stacked overlay with icons) -->
+    <div class="gacha-header-overlay pointer-events-auto">
+      
+      <!-- Left: Profile Menu Button / Dropdown OR Exit Button -->
+      <div v-if="gameActive" class="z-50">
+        <button 
+          class="header-icon-btn"
+          @click="confirmQuitGame"
+          aria-label="Quit Game"
         >
-          <!-- Faint tick marks for visual interest / game gauge look -->
-          <div class="absolute left-1/4 top-0 bottom-0 w-[1px] bg-base-content/10 z-10"></div>
-          <div class="absolute left-1/2 top-0 bottom-0 w-[1px] bg-base-content/10 z-10"></div>
-          <div class="absolute left-3/4 top-0 bottom-0 w-[1px] bg-base-content/10 z-10"></div>
-          
-          <!-- Progress Fill -->
-          <div 
-            class="h-full rounded-full transition-all duration-300 ease-out z-0"
-            :class="[
-              points >= 100 
-                ? 'gacha-gradient-animation' 
-                : (isAnimating ? 'progress-shimmer-fill' : 'progress-static-fill')
-            ]"
-            :style="{ width: `${Math.min(points, 100)}%` }"
-          ></div>
-          
-          <!-- Interactive Sliding Handle Emoji -->
-          <span 
-            class="absolute text-[12px] transition-all duration-300 ease-out -translate-x-1/2 select-none pointer-events-none z-20"
-            :class="{ 'animate-bounce': points >= 100 }"
-            :style="{ left: `${Math.min(points, 100)}%` }"
-          >
-            {{ points >= 100 ? '⭐' : '🔮' }}
-          </span>
-        </div>
+          <!-- 'X' close SVG icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
-
-
-      <!-- Right: Action Button & Login/Profile Group -->
-      <div class="flex items-center gap-2 flex-shrink-0 gacha-actions">
-        <!-- Gacha Action Button -->
-        <div class="w-[85px]" @click="points < 100 ? triggerLockShake() : null">
-          <!-- Active progressive primary button styled like Log In but excited -->
-          <button 
-            v-if="points >= 100"
-            @click.stop="handleActivateClick"
-            class="btn btn-primary btn-xs w-full text-[9px] font-black uppercase text-white gacha-gradient-animation select-none shadow hover:scale-105 active:scale-95 transition-transform"
-          >
-            ⚡ Activate
-          </button>
+      <div v-else class="dropdown dropdown-bottom dropdown-start z-50">
+        <label 
+          tabindex="0" 
+          class="header-icon-btn"
+        >
+          <!-- User Profile Silhouette icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </label>
+        
+        <ul 
+          tabindex="0" 
+          class="dropdown-content menu p-3 shadow-xl bg-base-100 rounded-box border border-base-300 w-64 mt-2 gap-2 text-sm text-left"
+        >
+          <!-- User info -->
+          <li class="px-4 py-2 border-b border-base-200">
+            <div v-if="authStore.isLoggedIn" class="p-0">
+              <div class="font-bold text-[10px] text-secondary uppercase tracking-wider">Logged In As</div>
+              <div class="font-serif font-black text-primary text-base mt-0.5 truncate">{{ displayUsername }}</div>
+            </div>
+            <div v-else class="p-0">
+              <div class="font-bold text-[10px] text-secondary uppercase tracking-wider">Playing As</div>
+              <div class="font-serif font-black text-secondary text-base mt-0.5">Guest Scholar</div>
+            </div>
+          </li>
           
-          <!-- Disabled locked state button -->
-          <button 
-            v-else
-            disabled
-            class="btn btn-xs w-full text-[9px] flex items-center justify-center gap-1 select-none"
-          >
-            <span 
-              class="inline-block transition-transform duration-200"
-              :class="{ 'animate-lock-shake text-error': isLockShaking }"
+          <!-- Points tracker -->
+          <li class="px-4 py-2 border-b border-base-200">
+            <div class="flex justify-between items-center w-full p-0">
+              <span class="text-[10px] font-bold text-secondary uppercase tracking-wider">Gacha Points</span>
+              <span class="text-xs font-black text-primary" :class="{ 'animate-pulse text-warning': points >= 100 }">{{ points }}/100</span>
+            </div>
+            <progress 
+              class="progress progress-primary w-full h-2 mt-1.5" 
+              :value="points" 
+              max="100"
+            ></progress>
+            
+            <!-- Activate Gacha Drop Button -->
+            <button 
+              v-if="points >= 100"
+              @click.stop="handleActivateClick"
+              class="btn btn-primary btn-xs w-full mt-3 text-[10px] font-black uppercase text-white gacha-gradient-animation select-none shadow hover:scale-105 active:scale-95 transition-transform"
             >
-              🔒
-            </span>
-            <span>Locked</span>
-          </button>
-        </div>
+              ⚡ Activate Gacha Drop
+            </button>
+            <div 
+              v-else 
+              class="text-[9px] text-secondary text-center mt-2 font-sans font-medium flex items-center justify-center gap-1"
+            >
+              <span>🔒</span>
+              <span>Reach 100 points to unlock Gacha Drop!</span>
+            </div>
+          </li>
 
-        <!-- Divider -->
-        <div class="divider divider-horizontal m-0 h-6"></div>
-
-        <!-- Login / User Profile Avatar (to the right of locked button) -->
-        <div class="flex items-center flex-shrink-0">
-          <button 
-            v-if="!authStore.isLoggedIn"
-            @click="showAuthModal = true"
-            class="btn btn-primary btn-outline btn-xs w-[70px]"
-          >
-            Log In
-          </button>
-          
-          <div v-else class="dropdown dropdown-end z-50">
-            <label tabindex="0" class="btn btn-ghost btn-xs gap-1 font-bold text-primary truncate max-w-[110px] px-1">
-              👤 {{ displayUsername }}
-            </label>
-             <ul tabindex="0" class="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-box border border-base-300 w-52 mt-2 gap-1 text-sm">
-               <li>
-                 <router-link :to="authStore.user ? '/@' + (dbUsername || authStore.user.username) : '/'" class="font-medium text-base-content py-2 px-4 hover:bg-base-200 rounded">
-                   📖 View Collection
-                 </router-link>
-               </li>
-               <li v-if="isOwnProfile">
-                 <button @click="emit('edit-profile')" class="font-medium text-base-content py-2 px-4 hover:bg-base-200 rounded">
-                   ✏️ Edit Profile
-                 </button>
-               </li>
-               <li>
-                 <button @click="handleLogout" class="text-error hover:bg-error/10 font-bold py-2 px-4 rounded border-t border-base-200 pt-2 mt-1">
-                   🚪 Log Out
-                 </button>
-               </li>
-             </ul>
-          </div>
-        </div>
+          <!-- Actions -->
+          <li v-if="authStore.isLoggedIn">
+            <router-link :to="'/@' + (dbUsername || authStore.user?.username)" class="font-medium text-base-content py-2 px-3 hover:bg-base-200 rounded">
+              📖 View Collection
+            </router-link>
+          </li>
+          <li v-if="authStore.isLoggedIn && route.name === 'profile' && isOwnProfile">
+            <button @click="emit('edit-profile')" class="font-medium text-base-content py-2 px-3 hover:bg-base-200 rounded">
+              ✏️ Edit Profile
+            </button>
+          </li>
+          <li v-if="!authStore.isLoggedIn">
+            <button 
+              @click="showAuthModal = true"
+              class="btn btn-primary btn-sm btn-outline w-full mt-1.5 uppercase font-bold text-xs"
+            >
+              Log In / Sign Up
+            </button>
+          </li>
+          <li v-else>
+            <button @click="handleLogout" class="text-error hover:bg-error/10 font-bold py-2 px-3 rounded border-t border-base-200 pt-2 mt-1">
+              🚪 Log Out
+            </button>
+          </li>
+        </ul>
       </div>
-    </div>
 
-    <!-- Simplified header during active Gacha Drop Frenzy or Summary -->
-    <div 
-      v-else
-      class="navbar bg-base-100 border-b border-base-300 px-4 py-2 shadow-sm select-none justify-between flex-nowrap"
-    >
-      <router-link to="/" class="flex items-center gap-2 no-underline hover:opacity-85">
-        <div class="w-6 h-6 rounded border border-primary flex items-center justify-center bg-primary text-white font-serif text-xs font-black">
-          W
-        </div>
-        <span class="text-sm font-black font-serif text-primary leading-none">Moonflower</span>
+      <!-- Center: GOTCHA! Serif Title -->
+      <router-link 
+        to="/" 
+        class="font-serif font-black text-xl text-[#fdf4eb] tracking-widest no-underline hover:opacity-85 select-none"
+      >
+        GOTCHA!
       </router-link>
+
+      <!-- Right: Info Dialog Trigger -->
+      <button 
+        class="header-icon-btn"
+        @click="showInfoModal = true"
+      >
+        <!-- 'i' info SVG icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </button>
+
     </div>
 
     <!-- AUTHENTICATION DIALOG / MODAL (DaisyUI Dialog Modal) -->
@@ -361,25 +354,92 @@ defineExpose({
         <button>close</button>
       </form>
     </dialog>
+
+    <!-- INFO HOW TO PLAY DIALOG / MODAL (DaisyUI Dialog Modal) -->
+    <dialog class="modal modal-bottom sm:modal-middle" :class="{ 'modal-open': showInfoModal }">
+      <div class="modal-box bg-base-100 border border-base-300 p-6 shadow-2xl relative text-left">
+        <!-- Close button -->
+        <button 
+          @click="showInfoModal = false" 
+          class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4"
+        >
+          ✕
+        </button>
+
+        <h3 class="font-serif text-lg font-bold border-b border-base-300 pb-2 text-primary">
+          How to Play GOTCHA!
+        </h3>
+        
+        <div class="text-xs text-base-content mt-4 space-y-4 font-sans leading-relaxed">
+          <p>
+            Welcome to <strong>Moonflower Wikipedia Gacha</strong>! Test your knowledge of the strange and historical by identifying which Wikipedia entries are real and which have been subtly altered ("fakes").
+          </p>
+          <div class="space-y-2.5">
+            <div class="flex items-start gap-2">
+              <span class="text-primary font-bold">1.</span>
+              <span><strong>Swipe Right (or click Real)</strong> if you think the card is a genuine, unedited Wikipedia article.</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-primary font-bold">2.</span>
+              <span><strong>Swipe Left (or click Fake)</strong> if you think the card contains fabricated facts or details.</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-primary font-bold">3.</span>
+              <span>Each category game consists of <strong>10 rounds</strong>. A single mistake will end the run.</span>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="text-primary font-bold">4.</span>
+              <span>Correct answers earn you <strong>Gacha Points</strong>. Reach 100 points to activate the <strong>Gacha Drop</strong>, where you can tap the globe to acquire real Wikipedia cards for your collection!</span>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          @click="showInfoModal = false"
+          class="btn btn-primary btn-sm w-full font-bold uppercase mt-6 text-white"
+        >
+          Got it!
+        </button>
+      </div>
+
+      <form method="dialog" class="modal-backdrop" @click="showInfoModal = false">
+        <button>close</button>
+      </form>
+    </dialog>
+
   </header>
 </template>
 
 <style scoped>
-@media (max-width: 639px) {
-  .gacha-navbar {
-    flex-wrap: wrap !important;
-  }
-  .gacha-progress-container {
-    order: 3 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-top: 0.5rem !important;
-  }
-  .gacha-brand {
-    order: 1 !important;
-  }
-  .gacha-actions {
-    order: 2 !important;
-  }
+.gacha-header-overlay {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 28rem; /* max-w-md */
+  margin: 0 auto;
+  padding: 1rem 1rem 0.5rem 1rem;
+  background: transparent;
+  user-select: none;
+}
+
+.header-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1.5px solid #fdf4eb;
+  border-radius: 2px;
+  color: #fdf4eb;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.2s ease;
+}
+
+.header-icon-btn:hover {
+  opacity: 0.8;
 }
 </style>
+

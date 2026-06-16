@@ -17,8 +17,83 @@ const gameStore = useGameStore();
 
 const isLoading = ref(true);
 
-// Active Category for Fakeout Game
+// Active Category for Fakeout Game (tracks game session)
 const selectedCategory = ref<Category | null>(null);
+
+// Subcategories definition matching Figma website UX / UI page
+interface SubCategoryDef {
+  id: string;
+  name: string;
+  mainCategory: Category;
+  thumbnail: string;
+  bgCollage: string;
+}
+
+const subCategories: SubCategoryDef[] = [
+  {
+    id: 'culture',
+    name: 'People / Culture',
+    mainCategory: 'The Human',
+    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Rick_Astley_in_2016_%28cropped%29.jpg',
+    bgCollage: '/History-mainImg.png'
+  },
+  {
+    id: 'history',
+    name: 'History / Society',
+    mainCategory: 'The Human',
+    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/6/62/Julius_Caesar_statue_Rome.jpg',
+    bgCollage: '/History-mainImg.png'
+  },
+  {
+    id: 'physics',
+    name: 'Physical Science',
+    mainCategory: 'The Sciences',
+    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/0/08/South_Atlantic_Ocean_iceberg.jpg',
+    bgCollage: '/Earth-mainImg.png'
+  },
+  {
+    id: 'biology',
+    name: 'Life Science',
+    mainCategory: 'The Sciences',
+    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Vombatus_ursinus_-Maria_Island_National_Park.jpg',
+    bgCollage: '/Earth-mainImg.png'
+  },
+  {
+    id: 'earth',
+    name: 'Earth',
+    mainCategory: 'The World',
+    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Everest_North_Face_toward_Base_Camp_Tibet_Rotated.jpg',
+    bgCollage: '/Earth-mainImg.png'
+  },
+  {
+    id: 'space',
+    name: 'Space',
+    mainCategory: 'The Sciences',
+    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/Apollo_11_bootprint.jpg',
+    bgCollage: '/Earth-mainImg.png'
+  }
+];
+
+// Active subcategory on the home screen (History / Society by default)
+const activeSubCategory = ref<SubCategoryDef>(subCategories[1]);
+
+// Dynamic tint background color for paper texture based on category
+const homepageBgColor = computed(() => {
+  if (gachaActive.value || showCardsUnlocked.value) {
+    return undefined;
+  }
+  const cat = gameActive.value ? selectedCategory.value : activeSubCategory.value.mainCategory;
+  if (!cat) return undefined;
+  
+  if (cat === 'The Human') {
+    return '#fdf3db';
+  } else if (cat === 'The Sciences') {
+    return '#e7f1fd';
+  } else if (cat === 'The World') {
+    return '#e8f7e2';
+  }
+  return undefined;
+});
 
 // Game States
 const gameActive = ref(false);
@@ -137,21 +212,6 @@ watch([() => authStore.isLoggedIn, () => gameStore.gdPoints], () => {
   checkTriggerGacha();
 });
 
-// DEV / DEBUG BUILD HELPERS
-const isDev = true;
-
-const triggerDebugGacha = () => {
-  if (gameStore.gdPoints < 100) {
-    gameStore.addPoints(100 - gameStore.gdPoints);
-  }
-  displayedPoints.value = gameStore.gdPoints;
-  startGachaDrop();
-};
-
-const addDebugPoints = () => {
-  gameStore.addPoints(100);
-  displayedPoints.value = gameStore.gdPoints;
-};
 
 // Cooldown tracking
 const updateCooldowns = () => {
@@ -443,41 +503,6 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
   // Insert at front of display deck (do not collect immediately in store)
   gachaDroppedCards.value.unshift(randomCard);
 };
-
-const getCategoryDetails = (cat: Category) => {
-  switch (cat) {
-    case 'The Human':
-      return {
-        emoji: '🏛️',
-        bgClass: 'bg-category-civilization-hp-bg hover:bg-category-civilization-hp-bg-hover dark:bg-category-civilization-hp-dark-bg dark:hover:bg-category-civilization-hp-dark-bg-hover',
-        borderClass: 'border-category-civilization-hp-border hover:border-category-civilization-hp-border-hover dark:border-category-civilization-hp-border/30 dark:hover:border-category-civilization-hp-border-hover',
-        textClass: 'text-category-civilization-hp-text dark:text-category-civilization-hp-text-dark',
-        iconBg: 'bg-category-civilization-hp-icon-bg text-category-civilization-hp-text dark:bg-category-civilization-hp-icon-bg-dark dark:text-category-civilization-hp-text-dark',
-        arrowColorClass: 'text-category-civilization-hp-border group-hover:text-category-civilization-hp-text dark:text-category-civilization-hp-border/50 dark:group-hover:text-category-civilization-hp-text-dark',
-        titleColorClass: 'text-category-civilization-hp-text group-hover:text-category-civilization-hp-text dark:text-category-civilization-hp-text-dark'
-      };
-    case 'The Sciences':
-      return {
-        emoji: '🧪',
-        bgClass: 'bg-category-science-hp-bg hover:bg-category-science-hp-bg-hover dark:bg-category-science-hp-dark-bg dark:hover:bg-category-science-hp-dark-bg-hover',
-        borderClass: 'border-category-science-hp-border hover:border-category-science-hp-border-hover dark:border-category-science-hp-border/30 dark:hover:border-category-science-hp-border-hover',
-        textClass: 'text-category-science-hp-text dark:text-category-science-hp-text-dark',
-        iconBg: 'bg-category-science-hp-icon-bg text-category-science-hp-text dark:bg-category-science-hp-icon-bg-dark dark:text-category-science-hp-text-dark',
-        arrowColorClass: 'text-category-science-hp-border group-hover:text-category-science-hp-text dark:text-category-science-hp-border/50 dark:group-hover:text-category-science-hp-text-dark',
-        titleColorClass: 'text-category-science-hp-text group-hover:text-category-science-hp-text dark:text-category-science-hp-text-dark'
-      };
-    case 'The World':
-      return {
-        emoji: '🌍',
-        bgClass: 'bg-category-nature-hp-bg hover:bg-category-nature-hp-bg-hover dark:bg-category-nature-hp-dark-bg dark:hover:bg-category-nature-hp-dark-bg-hover',
-        borderClass: 'border-category-nature-hp-border hover:border-category-nature-hp-border-hover dark:border-category-nature-hp-border/30 dark:hover:border-category-nature-hp-border-hover',
-        textClass: 'text-category-nature-hp-text dark:text-category-nature-hp-text-dark',
-        iconBg: 'bg-category-nature-hp-icon-bg text-category-nature-hp-text dark:bg-category-nature-hp-icon-bg-dark dark:text-category-nature-hp-text-dark',
-        arrowColorClass: 'text-category-nature-hp-border group-hover:text-category-nature-hp-text dark:text-category-nature-hp-border/50 dark:group-hover:text-category-nature-hp-text-dark',
-        titleColorClass: 'text-category-nature-hp-text group-hover:text-category-nature-hp-text dark:text-category-nature-hp-text-dark'
-      };
-  }
-};
 </script>
 
 <template>
@@ -487,104 +512,73 @@ const getCategoryDetails = (cat: Category) => {
     :gacha-active="gachaActive || showCardsUnlocked" 
     :is-animating="isAnimatingPoints"
     :hide-header="showCardsUnlocked && gameLost"
+    :game-active="gameActive"
+    :active-main-category="gameActive ? selectedCategory || undefined : activeSubCategory.mainCategory"
+    :class="{ 'is-home-selection': !gameActive && !gachaActive && !showCardsUnlocked }"
+    :background-color="homepageBgColor"
     @activate="startGachaDrop" 
+    @quit-game="gameActive = false; selectedCategory = null"
   >
     <Loader v-if="isLoading" />
 
     <template v-else>
-      <!-- FAKEOUT GAME CATEGORY SELECTION -->
-      <section v-if="!gameActive && !gachaActive && !showCardsUnlocked" class="flex-grow flex flex-col gap-6 justify-center py-6">
+      <!-- FAKEOUT GAME CATEGORY SELECTION (Figma Redesign) -->
+      <section v-if="!gameActive && !gachaActive && !showCardsUnlocked" class="flex-grow flex flex-col justify-between py-2 select-none">
         
-        <!-- Welcome DaisyUI Card -->
-        <div class="card card-bordered bg-base-100 shadow-md">
-          <div class="card-body p-5">
-            <h2 class="card-title font-serif text-xl border-b border-base-300 pb-2 text-primary font-black">
-              Welcome to Moonflower
-            </h2>
-            <p class="text-xs text-secondary leading-relaxed font-sans font-light mt-1">
-              Test your knowledge of the absurd and collect real items for your personal Wikipedia Binder. Identify the altered entries to secure items and acquire **Points**.
-            </p>
-            
-            <!-- Developer Controls Panel (Always Visible in Dev Mode) -->
-            <div v-if="isDev" class="mt-4 p-3 bg-base-200/60 border border-base-300 rounded-lg flex flex-col gap-2">
-              <div class="text-xs font-bold text-secondary flex items-center gap-1.5">
-                🛠️ Developer Controls
-              </div>
-              <div class="flex gap-2">
-                <button 
-                  @click="triggerDebugGacha"
-                  class="btn btn-error btn-outline btn-xs flex-1 uppercase font-bold text-[10px]"
-                >
-                  Force Gacha
-                </button>
-                <button 
-                  @click="addDebugPoints"
-                  class="btn btn-primary btn-outline btn-xs flex-1 uppercase font-bold text-[10px]"
-                >
-                  +100 Points
-                </button>
-              </div>
-            </div>
+
+        <!-- Dynamic Category Collage Area -->
+        <div class="collage-container">
+          <img 
+            :src="activeSubCategory.bgCollage" 
+            class="collage-image select-none" 
+            alt="Category Collage" 
+          />
+
+          <!-- Play/Cooldown Button -->
+          <div class="play-button-wrapper">
+            <button 
+              v-if="!cooldownTimers[activeSubCategory.mainCategory]"
+              @click="startFakeoutGame(activeSubCategory.mainCategory)"
+              class="collage-play-button flex items-center justify-center gap-1.5"
+            >
+              <!-- Simple play icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="12" viewBox="0 0 10 12" fill="none" class="play-icon">
+                <path d="M1 1.5L9 6L1 10.5V1.5Z" fill="#FDF4EB" stroke="#FDF4EB" stroke-width="1.5" stroke-linejoin="round"/>
+              </svg>
+              Play
+            </button>
+            <button 
+              v-else
+              disabled
+              class="collage-play-button is-cooldown flex items-center justify-center"
+            >
+              {{ cooldownTimers[activeSubCategory.mainCategory] }} Seconds
+            </button>
           </div>
         </div>
 
-        <!-- Category Lists -->
-        <div class="flex flex-col gap-3">
-          <h3 class="text-xs font-black text-secondary uppercase tracking-widest text-left pl-1">
-            Select category to play
-          </h3>
-          <div class="grid grid-cols-2 gap-4">
-            <button
-              v-for="cat in CATEGORIES"
-              :key="cat"
-              @click="startFakeoutGame(cat)"
-              :disabled="!!cooldownTimers[cat]"
-              class="relative flex flex-col justify-between items-start p-4 h-36 rounded-xl border text-left transition-all duration-300 hover:scale-[1.03] active:scale-95 shadow-sm cursor-pointer group"
-              :class="[
-                cooldownTimers[cat]
-                  ? 'bg-base-200 border-base-300 text-base-content/40 opacity-70 cursor-not-allowed'
-                  : `${getCategoryDetails(cat).bgClass} ${getCategoryDetails(cat).borderClass} ${getCategoryDetails(cat).textClass}`
-              ]"
+        <!-- Horizontal Category Slider -->
+        <div class="category-slider-wrapper">
+          <div class="category-slider-carousel">
+            <div
+              v-for="subCat in subCategories"
+              :key="subCat.id"
+              @click="activeSubCategory = subCat"
+              class="category-slider-item"
+              :class="{ 'is-active': activeSubCategory.id === subCat.id }"
             >
-              <!-- Top Row: Emoji and Cooldown/Arrow -->
-              <div class="flex justify-between items-center w-full">
-                <!-- Emoji badge with smooth hover spin or lift -->
-                <span 
-                  class="text-2xl p-2.5 rounded-lg transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 flex items-center justify-center"
-                  :class="cooldownTimers[cat] ? 'bg-base-300 grayscale' : getCategoryDetails(cat).iconBg"
-                >
-                  {{ getCategoryDetails(cat).emoji }}
-                </span>
-                
-                <!-- Action / Cooldown icon -->
-                <div class="flex items-center">
-                  <span v-if="cooldownTimers[cat]" class="text-xs">
-                    🔒
-                  </span>
-                  <span 
-                    v-else 
-                    class="text-lg opacity-80 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
-                    :class="getCategoryDetails(cat).arrowColorClass"
-                  >
-                    →
-                  </span>
-                </div>
+              <div class="category-slider-thumbnail-wrapper">
+                <img 
+                  :src="subCat.thumbnail" 
+                  class="category-slider-thumbnail" 
+                  alt=""
+                  loading="lazy"
+                />
               </div>
-              
-              <!-- Bottom Row: Title and details -->
-              <div class="w-full mt-auto">
-                <h4 
-                  class="font-serif font-black text-base leading-tight"
-                  :class="[cooldownTimers[cat] ? 'text-base-content/40' : getCategoryDetails(cat).textClass]"
-                >
-                  {{ cat }}
-                </h4>
-                <!-- Cooldown text if locked -->
-                <div v-if="cooldownTimers[cat]" class="text-[9px] text-error font-sans font-bold mt-1.5 animate-pulse">
-                  Locked ({{ cooldownTimers[cat] }}s)
-                </div>
-              </div>
-            </button>
+              <span class="category-slider-label">
+                {{ subCat.name }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -592,21 +586,6 @@ const getCategoryDetails = (cat: Category) => {
 
       <!-- FAKEOUT GAME SWIPING MECHANIC -->
       <section v-if="gameActive && currentCard" class="flex-grow flex flex-col justify-between py-2 w-full">
-        <!-- Game Header -->
-        <div class="flex flex-col w-full max-w-[315px] mx-auto mb-3">
-          <div class="flex items-center justify-between text-xs px-2 mb-2 font-sans font-bold text-secondary">
-            <span>Category: <span class="text-base-content font-black">{{ selectedCategory }}</span></span>
-            <span>Round {{ currentRound }}/10</span>
-            <span>Score: {{ gameScore }}</span>
-          </div>
-          <!-- Game progress bar -->
-          <progress 
-            class="progress progress-primary w-full h-1.5 rounded" 
-            :value="currentRound - 1" 
-            max="10"
-          ></progress>
-        </div>
-
         <!-- Swiping Card Area -->
         <div class="flex-grow flex items-center justify-center my-2 relative min-h-[480px]">
           
@@ -654,10 +633,10 @@ const getCategoryDetails = (cat: Category) => {
                   ]"
                 >
                   <div v-if="swipeOffset > 30" class="px-4 py-2 border-4 border-success bg-white rounded shadow-md font-sans">
-                    ✓ Real
+                    ✓ True
                   </div>
                   <div v-if="swipeOffset < -30" class="px-4 py-2 border-4 border-error bg-white rounded shadow-md font-sans">
-                    ✕ Fake
+                    ✕ False
                   </div>
                 </div>
               </div>
@@ -686,23 +665,31 @@ const getCategoryDetails = (cat: Category) => {
 
         </div>
 
-        <!-- Desktop Swiping Helpers (Standard Buttons) -->
+        <!-- Desktop Swiping Helpers (True/False Redesign) -->
         <div 
-          class="flex gap-4 px-2 my-2 z-20 transition-all duration-200 w-full max-w-[315px] mx-auto"
+          class="gameplay-buttons-container"
           :class="[roundAnswered ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100']"
         >
           <button 
             @click="handleSwipeChoice(false)"
-            class="btn btn-error btn-outline flex-1 uppercase font-bold text-xs"
+            class="gameplay-btn gameplay-btn-false"
           >
-            ✕ Fake
+            <!-- Thumbs Down Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="mix-blend-soft-light">
+              <path d="M19 15h4V3h-4v12zm-22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" transform="rotate(180 12 12)"/>
+            </svg>
+            False
           </button>
           
           <button 
             @click="handleSwipeChoice(true)"
-            class="btn btn-success btn-outline flex-1 uppercase font-bold text-xs"
+            class="gameplay-btn gameplay-btn-true"
           >
-            ✓ Real
+            <!-- Thumbs Up Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="mix-blend-soft-light">
+              <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
+            </svg>
+            True
           </button>
         </div>
       </section>
