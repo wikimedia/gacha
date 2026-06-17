@@ -1,0 +1,103 @@
+
+As part of a guessing game you are going to create "fake" but somewhat convincing Wikipedia article. The subject must be something you invented and not real. The user is going to be asked to identify fake articles amongst real ones. The content you need to create is:
+
+ - the title
+ - a brief description of the image that would go with it
+ - first sentence
+ - second sentence
+ - third sentence
+ - topic
+
+keep the image description vague enough that a plausible stock image can stand in, so the image itself isn't the giveaway.
+
+keep sentences relatively short (less than 200 characters). 
+
+"topic" must be selected verbatim from:
+ - Culture.Biography
+ - Culture.Food_and_drink
+ - Culture.Internet_culture
+ - Culture.Linguistics
+ - Culture.Literature
+ - Culture.Media
+ - Culture.Performing_arts
+ - Culture.Philosophy_and_religion
+ - Culture.Sports
+ - Culture.Visual_arts
+ - Culture.Visual_arts.Architecture
+ - Culture.Visual_arts.Comics_and_anime
+ - Culture.Visual_arts.Fashion
+ - Geography.Geographical
+ - Geography.Regions.Africa
+ - Geography.Regions.Americas
+ - Geography.Regions.Asia
+ - Geography.Regions.Europe
+ - Geography.Regions.Oceania
+ - History_and_Society.Business_and_economics
+ - History_and_Society.Education
+ - History_and_Society.History
+ - History_and_Society.Military_and_warfare
+ - History_and_Society.Politics_and_government
+ - History_and_Society.Society
+ - History_and_Society.Transportation
+ - STEM
+ - STEM.Biology
+ - STEM.Chemistry
+ - STEM.Computing
+ - STEM.Earth_and_environment
+ - STEM.Engineering
+ - STEM.Libraries_and_information
+ - STEM.Mathematics
+ - STEM.Medicine_and_health
+ - STEM.Physics
+ - STEM.Space
+ - STEM.Technology
+
+for a real article this would look like (I'm omitting tell)
+
+{
+"title": "Love Insurance Kompany",
+"image": "portrait of an Indian man on a red carpet",
+"first_sentence": "Love Insurance Kompany is a 2026 Indian Tamil-language science fiction romantic comedy film written and directed by Vignesh Shivan.",
+"second_sentence": "Jointly produced by Rowdy Pictures and Seven Screen Studio, the film stars Pradeep Ranganathan and Krithi Shetty, while Yogi Babu and Sunil Reddy appear in supporting roles.",
+"third_sentence": "It is set in 2040, where people fall in love through a dating app named LIK, but a man who believes in natural love, falls in love with a woman trusting LIK, and he seeks to challenge the system.",
+"topic": "Culture.Media"
+}
+
+Remember to keep the tone and style similar to what people would see on Wikipedia. Do not make articles about:
+
+- Wars / conflicts / political controversies after 1850
+- Real brands / companies
+
+Every fake article should include some "tell". tells are indications that this can't be true. tells should be fairly obvious to a child.
+
+some categories of tells:
+ - something impossible
+ - something happening at the wrong time (too early / too late / wrong season / wrong month / etc)
+ - something happening in the wrong place (a city in the wrong country / location that wouldn't be suitable / etc)
+ - two events happening at a wrong relative time (college too soon after birth / war happening before the inciting incident / etc)
+ - something so big or consequential that it would be known to all 
+ - something incredibly implausible (especially if humorous)
+ - something self contradictory / oxymoron / paradox
+ - something that violates well known rules / science
+
+remember, being merely improbable is not enough. Example: a basoonist could win a pulitzer prize, but they couldn't win the prize for a melody they composed. Tells should not rely on external knowledge that is not common. For example, detecting the fake should not require the player to know that FDR died shortly before the end of WWII, but it's fine to assume people know he wasn't alive in the 80s.
+
+We want diversity in the kinds of tells. there must be a tell in the first sentence, but there can be more later. add a "tell" field to the json object which is a short sentence indicating why article can't be real. Something like "Trees cannot grow on the Moon". If you are going for a contradiction try to keep the contradicting facts from being adjacent in the sentence.
+
+You can also put the "tell" in the image description. for example, the article is about a frog but you select an image of a turtle.
+
+Generate at least three candidates internally before deciding on the better ones.
+
+Return your answer as a single JSON object with no markdown formatting and nothing else.
+
+here is a real seed article: 
+
+{seed_article}
+
+make a single fake article on a closely related subject to this. invent fictional entities; don't pin fabricated works/events on real people
+
+here is a second article
+
+{collision_article}
+
+optimally you will find a way to make the tell related to this topic while the artilce is related to the first article.
