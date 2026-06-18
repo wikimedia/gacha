@@ -123,6 +123,8 @@ const cardsUnlockedGameType = ref<'fakeout' | 'gacha'>('fakeout');
 const identifiedFakesThisGame = ref<Card[]>([]);
 const gameLost = ref(false);
 const isStartingGame = ref(false);
+// Timestamp (ms) when the current fakeout game started, for measuring play duration.
+const gameStartTime = ref(0);
 const isGlobeJiggling = ref(false);
 
 interface FloatingText {
@@ -269,8 +271,9 @@ const startFakeoutGame = async (category: Category) => {
     // Combine and shuffle again so reals and fakes are interleaved
     const deck = shuffle([...reals.slice(0, numReal), ...fakes.slice(0, numFake)]);
 
+    gameStartTime.value = performance.now();
     trackEvent('start_fakeout_game', {
-      category,
+      fakeout_category: category,
       logged_in: authStore.isLoggedIn,
     });
 
@@ -321,11 +324,19 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
   stampAngle.value = Math.floor(Math.random() * 30) - 15; // Random angle between -15 and 15 degrees
   
   if (isCorrect) {
+
     gameScore.value += 1;
     // Earn point in game store locally without DB write to prevent race conditions during fast play
     gameStore.addPoints(1, false);
     displayedPoints.value = gameStore.gdPoints;
     
+    trackEvent('correct_fakeout_card', {
+      logged_in: authStore.isLoggedIn,
+      gameScore: gameScore.value,
+      fakeout_category: selectedCategory.value,
+      cardIsReal: card.isReal
+    });
+
     // Track cards guessed correctly
     if (card.isReal) {
       collectedThisGame.value.push(card);
@@ -336,7 +347,7 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
     trackEvent('lose_fakeout_game', {
       logged_in: authStore.isLoggedIn,
       gameScore: gameScore.value,       
-      category: selectedCategory.value,
+      fakeout_category: selectedCategory.value,
       failedCardIsReal: card.isReal
     });
     gameLost.value = true;
@@ -362,7 +373,17 @@ const endFakeoutGame = () => {
   if (selectedCategory.value) {
     gameStore.setCooldown(selectedCategory.value);
   }
-  
+
+  trackEvent('end_fakeout_game', {
+    logged_in: authStore.isLoggedIn,
+    gameScore: gameScore.value,
+    fakeout_category: selectedCategory.value,
+    // Seconds elapsed since the game started, rounded to one decimal place.
+    duration_sec: gameStartTime.value
+      ? Math.round((performance.now() - gameStartTime.value) / 100) / 10
+      : 0,
+  });
+
   updateCooldowns();
   
   // Automatically collect all correctly guessed real cards (win or lose)
