@@ -9,6 +9,7 @@ import CardsUnlocked from '../components/CardsUnlocked.vue';
 import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import BaseButton from '../components/BaseButton.vue';
+import { trackEvent } from '../analytics';
 
 const route = useRoute();
 const router = useRouter();
@@ -268,6 +269,11 @@ const startFakeoutGame = async (category: Category) => {
     // Combine and shuffle again so reals and fakes are interleaved
     const deck = shuffle([...reals.slice(0, numReal), ...fakes.slice(0, numFake)]);
 
+    trackEvent('start_fakeout_game', {
+      category,
+      logged_in: authStore.isLoggedIn,
+    });
+
     pointsBeforeGame.value = gameStore.gdPoints;
     selectedCategory.value = category;
     gameActive.value = true;
@@ -327,6 +333,12 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
       identifiedFakesThisGame.value.push(card);
     }
   } else {
+    trackEvent('lose_fakeout_game', {
+      logged_in: authStore.isLoggedIn,
+      gameScore: gameScore.value,       
+      category: selectedCategory.value,
+      failedCardIsReal: card.isReal
+    });
     gameLost.value = true;
   }
 
