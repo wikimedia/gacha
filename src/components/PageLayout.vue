@@ -6,7 +6,6 @@ import type { Category } from '../stores/useGameStore';
 defineProps<{
   displayedPoints?: number;
   gachaActive?: boolean;
-  backgroundColor?: string;
   isWide?: boolean;
   isAnimating?: boolean;
   hideHeader?: boolean;
@@ -32,7 +31,6 @@ defineExpose({
 <template>
   <div 
     class="app-page-wrapper"
-    :style="{ backgroundColor: backgroundColor || undefined }"
   >
     <AppHeader 
       v-if="!hideHeader"

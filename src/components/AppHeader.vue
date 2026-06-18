@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Category } from '../stores/useGameStore';
 import { supabase } from '../supabase';
+import BaseDialog from './BaseDialog.vue';
 
 const props = withDefaults(defineProps<{
   displayedPoints?: number;
@@ -99,6 +100,45 @@ const authEmail = ref('');
 const otpSent = ref(false);
 const isVerifying = ref(false);
 const authError = ref('');
+
+// Info modal slideshow state
+const currentSlide = ref(0);
+const slides = [
+  {
+    title: '1. Identify Real Articles',
+    description: 'Swipe Right (or click Real) if you think the card is a genuine, unedited Wikipedia article.',
+  },
+  {
+    title: '2. Spot the Fakes',
+    description: 'Swipe Left (or click Fake) if you think the card contains fabricated facts or details.',
+  },
+  {
+    title: '3. Survive 10 Rounds',
+    description: 'Each category game consists of 10 rounds. A single mistake will end the run.',
+  },
+  {
+    title: '4. Claim Your Cards',
+    description: 'Earn points to activate the Gacha Drop, where you can tap the globe to acquire real Wikipedia cards for your collection!',
+  },
+];
+
+const nextSlide = () => {
+  if (currentSlide.value < slides.length - 1) {
+    currentSlide.value++;
+  }
+};
+
+const prevSlide = () => {
+  if (currentSlide.value > 0) {
+    currentSlide.value--;
+  }
+};
+
+watch(showInfoModal, (isOpen) => {
+  if (isOpen) {
+    currentSlide.value = 0;
+  }
+});
 
 
 const closeModal = () => {
@@ -355,57 +395,125 @@ defineExpose({
       </form>
     </dialog>
 
-    <!-- INFO HOW TO PLAY DIALOG / MODAL (DaisyUI Dialog Modal) -->
-    <dialog class="modal modal-bottom sm:modal-middle" :class="{ 'modal-open': showInfoModal }">
-      <div class="modal-box bg-base-100 border border-base-300 p-6 shadow-2xl relative text-left">
-        <!-- Close button -->
-        <button 
-          @click="showInfoModal = false" 
-          class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4"
-        >
-          ✕
-        </button>
+    <!-- INFO HOW TO PLAY DIALOG (Custom BaseDialog) -->
+    <BaseDialog 
+      :show="showInfoModal" 
+      title="How to Play" 
+      @close="showInfoModal = false"
+    >
+      <div class="flex flex-col items-center">
+        <!-- Slide illustration container -->
+        <div class="w-full h-44 flex items-center justify-center bg-[#eaecf0] border border-[#c4b69d]/40 rounded-sm relative overflow-hidden mb-4 select-none">
+          <!-- Slide 1: Real Card Animation -->
+          <div v-if="currentSlide === 0" class="illustration-real flex items-center justify-center w-full h-full">
+            <div class="mini-card relative w-20 h-28 bg-[#fdf4eb] border border-[#c4b69d] rounded-sm shadow-md flex flex-col justify-between p-1.5 animate-swipe-right">
+              <div class="w-full h-2 bg-gray-300 rounded-xs mb-1"></div>
+              <div class="w-full h-12 bg-gray-200 rounded-xs flex items-center justify-center text-[8px] text-gray-400">Image</div>
+              <div class="w-full h-1 bg-gray-300 rounded-xs mt-1"></div>
+              <div class="w-full h-4 bg-gray-200 rounded-xs"></div>
+            </div>
+            <!-- Swipe arrow pointing right -->
+            <div class="absolute right-4 text-[#177860] animate-pulse flex flex-col items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+              <span class="text-[9px] font-bold uppercase tracking-wider mt-0.5">Real</span>
+            </div>
+          </div>
 
-        <h3 class="font-serif text-lg font-bold border-b border-base-300 pb-2 text-primary">
-          How to Play GOTCHA!
-        </h3>
-        
-        <div class="text-xs text-base-content mt-4 space-y-4 font-sans leading-relaxed">
-          <p>
-            Welcome to <strong>Moonflower Wikipedia Gacha</strong>! Test your knowledge of the strange and historical by identifying which Wikipedia entries are real and which have been subtly altered ("fakes").
-          </p>
-          <div class="space-y-2.5">
-            <div class="flex items-start gap-2">
-              <span class="text-primary font-bold">1.</span>
-              <span><strong>Swipe Right (or click Real)</strong> if you think the card is a genuine, unedited Wikipedia article.</span>
+          <!-- Slide 2: Fake Card Animation -->
+          <div v-if="currentSlide === 1" class="illustration-fake flex items-center justify-center w-full h-full">
+            <div class="mini-card relative w-20 h-28 bg-[#fdf4eb] border border-[#c4b69d] rounded-sm shadow-md flex flex-col justify-between p-1.5 animate-swipe-left">
+              <div class="w-full h-2 bg-gray-300 rounded-xs mb-1"></div>
+              <div class="w-full h-12 bg-gray-200 rounded-xs flex items-center justify-center text-[8px] text-gray-400">Image</div>
+              <div class="w-full h-1 bg-gray-300 rounded-xs mt-1"></div>
+              <div class="w-full h-4 bg-gray-200 rounded-xs"></div>
             </div>
-            <div class="flex items-start gap-2">
-              <span class="text-primary font-bold">2.</span>
-              <span><strong>Swipe Left (or click Fake)</strong> if you think the card contains fabricated facts or details.</span>
+            <!-- Swipe arrow pointing left -->
+            <div class="absolute left-4 text-[#bf3c2c] animate-pulse flex flex-col items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"/>
+                <polyline points="12 19 5 12 12 5"/>
+              </svg>
+              <span class="text-[9px] font-bold uppercase tracking-wider mt-0.5">Fake</span>
             </div>
-            <div class="flex items-start gap-2">
-              <span class="text-primary font-bold">3.</span>
-              <span>Each category game consists of <strong>10 rounds</strong>. A single mistake will end the run.</span>
+          </div>
+
+          <!-- Slide 3: Survive 10 Rounds Animation -->
+          <div v-if="currentSlide === 2" class="illustration-rounds flex flex-col items-center justify-center w-full h-full gap-3">
+            <div class="text-3xl font-serif font-black text-[#4a6783] tracking-widest animate-pulse">
+              Round 7 / 10
             </div>
-            <div class="flex items-start gap-2">
-              <span class="text-primary font-bold">4.</span>
-              <span>Correct answers earn you <strong>Gacha Points</strong>. Reach 100 points to activate the <strong>Gacha Drop</strong>, where you can tap the globe to acquire real Wikipedia cards for your collection!</span>
+            <div class="w-40 h-2 bg-gray-300 rounded-full overflow-hidden">
+              <div class="h-full bg-[#4a6783] transition-all duration-500" style="width: 70%"></div>
             </div>
+            <span class="text-[10px] text-gray-500 uppercase tracking-widest font-sans animate-bounce">⚡ Hardcore: 1 mistake Ends Run</span>
+          </div>
+
+          <!-- Slide 4: Gacha Card Glow Animation -->
+          <div v-if="currentSlide === 3" class="illustration-gacha flex items-center justify-center w-full h-full">
+            <div class="mini-card relative w-20 h-28 bg-[#fdf6e3] border-2 border-[#d4a843] rounded-sm shadow-[0_0_15px_rgba(212,168,67,0.6)] flex flex-col justify-between p-1.5 animate-float-glow">
+              <div class="w-full h-2 bg-[#d4a843]/40 rounded-xs mb-1"></div>
+              <div class="w-full h-12 bg-[#fdf4eb] rounded-xs flex items-center justify-center text-[8px] text-[#b8912e] font-serif font-bold">★ ★ ★ ★ ★</div>
+              <div class="w-full h-1 bg-[#d4a843]/40 rounded-xs mt-1"></div>
+              <div class="w-full h-4 bg-[#fdf4eb] rounded-xs"></div>
+            </div>
+            <!-- Star particle decorations -->
+            <div class="star-particle absolute top-8 left-16 text-[#d4a843] animate-ping">★</div>
+            <div class="star-particle absolute bottom-8 right-16 text-[#d4a843] animate-ping" style="animation-delay: 0.5s">★</div>
           </div>
         </div>
 
-        <button 
-          @click="showInfoModal = false"
-          class="btn btn-primary btn-sm w-full font-bold uppercase mt-6 text-white"
-        >
-          Got it!
-        </button>
-      </div>
+        <!-- Slide details -->
+        <h4 class="font-serif font-bold text-base text-[#3f3f35] text-center mb-1 w-full">
+          {{ slides[currentSlide].title }}
+        </h4>
+        <p class="text-xs text-[#54595d] text-center leading-relaxed font-sans px-2 mb-6 min-h-[3rem] w-full">
+          {{ slides[currentSlide].description }}
+        </p>
 
-      <form method="dialog" class="modal-backdrop" @click="showInfoModal = false">
-        <button>close</button>
-      </form>
-    </dialog>
+        <!-- Navigation controller -->
+        <div class="flex items-center justify-between w-full px-2 mt-auto">
+          <!-- Prev button -->
+          <button 
+            @click="prevSlide"
+            class="w-8 h-8 flex items-center justify-center border border-[#c4b69d]/40 text-[#54595d] hover:bg-black/5 active:scale-95 transition-all rounded-xs"
+            :disabled="currentSlide === 0"
+            :class="{ 'opacity-20 pointer-events-none': currentSlide === 0 }"
+            aria-label="Previous step"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+
+          <!-- Step indicator dots -->
+          <div class="flex gap-2">
+            <button 
+              v-for="(_, index) in slides" 
+              :key="index"
+              @click="currentSlide = index"
+              class="w-2.5 h-2.5 rounded-full transition-all"
+              :class="currentSlide === index ? 'bg-[#4a6783] scale-110' : 'bg-gray-300 hover:bg-gray-400'"
+              :aria-label="'Go to step ' + (index + 1)"
+            ></button>
+          </div>
+
+          <!-- Next button or "Done" -->
+          <button 
+            @click="currentSlide === slides.length - 1 ? showInfoModal = false : nextSlide()"
+            class="h-8 px-3 flex items-center justify-center border border-[#c4b69d]/40 text-[#54595d] hover:bg-black/5 active:scale-95 transition-all text-xs font-bold uppercase tracking-wider rounded-xs"
+            aria-label="Next step"
+          >
+            <span v-if="currentSlide === slides.length - 1">Done</span>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </BaseDialog>
 
   </header>
 </template>
@@ -440,6 +548,61 @@ defineExpose({
 
 .header-icon-btn:hover {
   opacity: 0.8;
+}
+
+/* --- How to Play Slideshow Animations --- */
+@keyframes swipeRight {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+    border-color: #c4b69d;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: translateX(24px) rotate(8deg);
+    border-color: #177860;
+    box-shadow: 0 4px 12px rgba(23, 120, 96, 0.4);
+  }
+}
+
+.animate-swipe-right {
+  animation: swipeRight 2.2s ease-in-out infinite;
+}
+
+@keyframes swipeLeft {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+    border-color: #c4b69d;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    transform: translateX(-24px) rotate(-8deg);
+    border-color: #bf3c2c;
+    box-shadow: 0 4px 12px rgba(191, 60, 44, 0.4);
+  }
+}
+
+.animate-swipe-left {
+  animation: swipeLeft 2.2s ease-in-out infinite;
+}
+
+@keyframes floatGlow {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 0 12px rgba(212, 168, 67, 0.4);
+  }
+  50% {
+    transform: translateY(-8px);
+    box-shadow: 0 0 24px rgba(212, 168, 67, 0.8);
+  }
+}
+
+.animate-float-glow {
+  animation: floatGlow 3s ease-in-out infinite;
+}
+
+.star-particle {
+  pointer-events: none;
+  font-size: 14px;
 }
 </style>
 

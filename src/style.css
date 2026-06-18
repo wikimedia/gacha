@@ -295,12 +295,12 @@ body {
   min-height: 100vh;
   font-family: var(--font-family-system-sans);
   color: var(--color-base-content);
-  background-image: url('/bg-paperTexture.jpg') !important;
-  background-size: 345px !important;
-  background-repeat: repeat !important;
-  background-attachment: fixed !important;
-  background-blend-mode: multiply !important;
-  background-color: #fdf4eb;
+  background-image: linear-gradient(rgba(151, 107, 26, 0.29) 0%, rgba(51, 51, 51, 0) 10%, rgba(77, 77, 77, 0) 62.609%, rgba(151, 107, 26, 0.29) 100%), url('/bg-paperTexture.jpg') !important;
+  background-size: 100% 100%, 345px !important;
+  background-repeat: no-repeat, repeat !important;
+  background-attachment: fixed, fixed !important;
+  background-blend-mode: multiply, multiply !important;
+  background-color: #f0e5d5;
   transition: background-color 0.3s ease;
 }
 
@@ -465,37 +465,6 @@ body {
   z-index: 20;
 }
 
-.collage-play-button {
-  width: 109px;
-  height: 44px;
-  background-color: #4a6783;
-  color: #fdf4eb;
-  border-radius: 2px;
-  font-family: var(--font-family-serif), Georgia, serif;
-  font-size: 16px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.collage-play-button:hover:not(:disabled) {
-  background-color: #3b546d;
-}
-
-.collage-play-button:active:not(:disabled) {
-  transform: scale(0.97);
-}
-
-.collage-play-button:disabled {
-  cursor: not-allowed;
-}
-
-.collage-play-button.is-cooldown {
-  color: rgba(253, 244, 235, 0.5);
-  cursor: not-allowed;
-}
 
 .category-slider-wrapper {
   width: calc(100% + 2rem);
@@ -615,35 +584,6 @@ body {
   transition: all 0.2s ease;
 }
 
-.gameplay-btn {
-  flex: 1;
-  height: 61px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  border-radius: 3px;
-  border: none;
-  color: #fdf4eb;
-  font-family: var(--font-family-serif), Georgia, serif;
-  font-size: 22px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: opacity 0.2s ease, transform 0.1s ease;
-}
-
-.gameplay-btn:active {
-  transform: scale(0.97);
-}
-
-.gameplay-btn-false {
-  background-color: #d9754b;
-}
-
-.gameplay-btn-true {
-  background-color: #97a97b;
-}
 
 /* Unifying Design System Overrides (Figma Redesign) */
 .btn {

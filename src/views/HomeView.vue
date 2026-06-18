@@ -8,6 +8,7 @@ import CardComp from '../components/Card.vue';
 import CardsUnlocked from '../components/CardsUnlocked.vue';
 import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
+import BaseButton from '../components/BaseButton.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -77,23 +78,7 @@ const subCategories: SubCategoryDef[] = [
 // Active subcategory on the home screen (History / Society by default)
 const activeSubCategory = ref<SubCategoryDef>(subCategories[1]);
 
-// Dynamic tint background color for paper texture based on category
-const homepageBgColor = computed(() => {
-  if (gachaActive.value || showCardsUnlocked.value) {
-    return undefined;
-  }
-  const cat = gameActive.value ? selectedCategory.value : activeSubCategory.value.mainCategory;
-  if (!cat) return undefined;
-  
-  if (cat === 'The Human') {
-    return '#fdf3db';
-  } else if (cat === 'The Sciences') {
-    return '#e7f1fd';
-  } else if (cat === 'The World') {
-    return '#e8f7e2';
-  }
-  return undefined;
-});
+
 
 // Game States
 const gameActive = ref(false);
@@ -129,6 +114,7 @@ const showCardsUnlocked = ref(false);
 const cardsUnlockedGameType = ref<'fakeout' | 'gacha'>('fakeout');
 const identifiedFakesThisGame = ref<Card[]>([]);
 const gameLost = ref(false);
+const isStartingGame = ref(false);
 const isGlobeJiggling = ref(false);
 
 interface FloatingText {
@@ -258,41 +244,46 @@ const shuffle = (arr: Card[]): Card[] => {
 
 // Category selection & game initialization
 const startFakeoutGame = async (category: Category) => {
-  if (gameStore.isCooldownActive(category)) return;
+  if (gameStore.isCooldownActive(category) || isStartingGame.value) return;
 
-  // Fetch a fresh randomized pool for this category each game so the cards vary
-  // between games. Fall back to the cached sample if the fetch is empty (offline/mock).
-  let catCards = await gameStore.fetchCategoryPool(category);
-  if (catCards.length === 0) {
-    catCards = gameStore.gameCards.filter((c: Card) => c.category === category);
+  isStartingGame.value = true;
+  try {
+    // Fetch a fresh randomized pool for this category each game so the cards vary
+    // between games. Fall back to the cached sample if the fetch is empty (offline/mock).
+    let catCards = await gameStore.fetchCategoryPool(category);
+    if (catCards.length === 0) {
+      catCards = gameStore.gameCards.filter((c: Card) => c.category === category);
+    }
+
+    // Build the deck: a fully shuffled, balanced mix of real and fake cards
+    const reals = shuffle(catCards.filter((c: Card) => c.isReal));
+    const fakes = shuffle(catCards.filter((c: Card) => !c.isReal));
+
+    // Aim for an even real/fake split; if one side is short, backfill from the other
+    let numReal = Math.min(TARGET_REAL, reals.length);
+    let numFake = Math.min(DECK_SIZE - numReal, fakes.length);
+    numReal = Math.min(reals.length, DECK_SIZE - numFake);
+
+    // Combine and shuffle again so reals and fakes are interleaved
+    const deck = shuffle([...reals.slice(0, numReal), ...fakes.slice(0, numFake)]);
+
+    pointsBeforeGame.value = gameStore.gdPoints;
+    selectedCategory.value = category;
+    gameActive.value = true;
+    currentRound.value = 1;
+    gameScore.value = 0;
+    collectedThisGame.value = [];
+    identifiedFakesThisGame.value = [];
+    gameLost.value = false;
+    showCardsUnlocked.value = false;
+    roundAnswered.value = false;
+    playerChoiceReal.value = null;
+    gameDeck.value = deck;
+
+    loadRound();
+  } finally {
+    isStartingGame.value = false;
   }
-
-  // Build the deck: a fully shuffled, balanced mix of real and fake cards
-  const reals = shuffle(catCards.filter((c: Card) => c.isReal));
-  const fakes = shuffle(catCards.filter((c: Card) => !c.isReal));
-
-  // Aim for an even real/fake split; if one side is short, backfill from the other
-  let numReal = Math.min(TARGET_REAL, reals.length);
-  let numFake = Math.min(DECK_SIZE - numReal, fakes.length);
-  numReal = Math.min(reals.length, DECK_SIZE - numFake);
-
-  // Combine and shuffle again so reals and fakes are interleaved
-  const deck = shuffle([...reals.slice(0, numReal), ...fakes.slice(0, numFake)]);
-
-  pointsBeforeGame.value = gameStore.gdPoints;
-  selectedCategory.value = category;
-  gameActive.value = true;
-  currentRound.value = 1;
-  gameScore.value = 0;
-  collectedThisGame.value = [];
-  identifiedFakesThisGame.value = [];
-  gameLost.value = false;
-  showCardsUnlocked.value = false;
-  roundAnswered.value = false;
-  playerChoiceReal.value = null;
-  gameDeck.value = deck;
-
-  loadRound();
 };
 
 const loadRound = () => {
@@ -514,8 +505,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
     :hide-header="showCardsUnlocked && gameLost"
     :game-active="gameActive"
     :active-main-category="gameActive ? selectedCategory || undefined : activeSubCategory.mainCategory"
-    :class="{ 'is-home-selection': !gameActive && !gachaActive && !showCardsUnlocked }"
-    :background-color="homepageBgColor"
+    :class="{ 'is-home-selection': !gachaActive && !showCardsUnlocked }"
     @activate="startGachaDrop" 
     @quit-game="gameActive = false; selectedCategory = null"
   >
@@ -536,24 +526,26 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
 
           <!-- Play/Cooldown Button -->
           <div class="play-button-wrapper">
-            <button 
+            <BaseButton 
               v-if="!cooldownTimers[activeSubCategory.mainCategory]"
+              variant="primary"
+              :loading="isStartingGame"
               @click="startFakeoutGame(activeSubCategory.mainCategory)"
-              class="collage-play-button flex items-center justify-center gap-1.5"
             >
-              <!-- Simple play icon -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="12" viewBox="0 0 10 12" fill="none" class="play-icon">
-                <path d="M1 1.5L9 6L1 10.5V1.5Z" fill="#FDF4EB" stroke="#FDF4EB" stroke-width="1.5" stroke-linejoin="round"/>
-              </svg>
+              <template #icon>
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="12" viewBox="0 0 10 12" fill="none" class="play-icon">
+                  <path d="M1 1.5L9 6L1 10.5V1.5Z" fill="#FDF4EB" stroke="#FDF4EB" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+              </template>
               Play
-            </button>
-            <button 
+            </BaseButton>
+            <BaseButton 
               v-else
               disabled
-              class="collage-play-button is-cooldown flex items-center justify-center"
+              variant="primary"
             >
               {{ cooldownTimers[activeSubCategory.mainCategory] }} Seconds
-            </button>
+            </BaseButton>
           </div>
         </div>
 
@@ -587,7 +579,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
       <!-- FAKEOUT GAME SWIPING MECHANIC -->
       <section v-if="gameActive && currentCard" class="flex-grow flex flex-col justify-between py-2 w-full">
         <!-- Swiping Card Area -->
-        <div class="flex-grow flex items-center justify-center my-2 relative min-h-[480px]">
+        <div class="flex-grow flex items-center justify-center my-2 relative min-h-0">
           
           <!-- Centered wrapper container -->
           <div class="relative w-full max-w-[315px] h-[440px]">
@@ -670,27 +662,31 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
           class="gameplay-buttons-container"
           :class="[roundAnswered ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100']"
         >
-          <button 
+          <BaseButton 
+            variant="false"
             @click="handleSwipeChoice(false)"
-            class="gameplay-btn gameplay-btn-false"
           >
-            <!-- Thumbs Down Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="mix-blend-soft-light">
-              <path d="M19 15h4V3h-4v12zm-22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" transform="rotate(180 12 12)"/>
-            </svg>
+            <template #icon>
+              <!-- Thumbs Down Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="mix-blend-soft-light">
+                <path d="M19 15h4V3h-4v12zm-22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z" transform="rotate(180 12 12)"/>
+              </svg>
+            </template>
             False
-          </button>
+          </BaseButton>
           
-          <button 
+          <BaseButton 
+            variant="true"
             @click="handleSwipeChoice(true)"
-            class="gameplay-btn gameplay-btn-true"
           >
-            <!-- Thumbs Up Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="mix-blend-soft-light">
-              <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
-            </svg>
+            <template #icon>
+              <!-- Thumbs Up Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" class="mix-blend-soft-light">
+                <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
+              </svg>
+            </template>
             True
-          </button>
+          </BaseButton>
         </div>
       </section>
 
