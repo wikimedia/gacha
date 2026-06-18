@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import ProfileView from '../views/ProfileView.vue';
 import CardView from '../views/CardView.vue';
+import { trackPageView } from '../analytics';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,6 +29,12 @@ const router = createRouter({
       }
     }
   ]
+});
+
+// Report SPA navigations to Google Analytics. afterEach fires once the new
+// route is confirmed, so document.title reflects the destination page.
+router.afterEach((to) => {
+  trackPageView(to.fullPath);
 });
 
 export default router;
