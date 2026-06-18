@@ -1,0 +1,8 @@
+*.bz2
+*.csv
+*.json
+models/
+*-checkpoint.ipynb
+*.pyc
+__pycache__/
+*-checkpoint.py
