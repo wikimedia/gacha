@@ -17,8 +17,6 @@ declare global {
 
 /** Send a custom event to GA4. */
 export function trackEvent(name: string, params: Record<string, unknown> = {}): void {
-  console.log('Tracking event:', name, params);
-
   window.gtag?.('event', name, params);
 }
 
