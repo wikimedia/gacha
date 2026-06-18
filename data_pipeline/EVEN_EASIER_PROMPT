@@ -7,6 +7,7 @@ As part of a guessing game you are going to create "fake" but somewhat convincin
  - second sentence
  - third sentence
  - topic
+ - tell (described later)
 
 keep the image description vague enough that a plausible stock image can stand in, so the image itself isn't the giveaway.
 
@@ -66,7 +67,7 @@ for a real article this would look like (I'm omitting tell)
 Remember to keep the tone and style similar to what people would see on Wikipedia. Do not make articles about:
 
 - Wars / conflicts / political controversies after 1850
-- Real brands / companies
+- Real brands / companies / people
 
 Every fake article should include some "tell". tells are indications that this can't be true. tells should be fairly obvious to a child.
 
@@ -82,9 +83,7 @@ some categories of tells:
 
 remember, being merely improbable is not enough. Example: a basoonist could win a pulitzer prize, but they couldn't win the prize for a melody they composed. Tells should not rely on external knowledge that is not common. For example, detecting the fake should not require the player to know that FDR died shortly before the end of WWII, but it's fine to assume people know he wasn't alive in the 80s.
 
-We want diversity in the kinds of tells. there must be a tell in the first sentence, but there can be more later. add a "tell" field to the json object which is a short sentence indicating why article can't be real. Something like "Trees cannot grow on the Moon". If you are going for a contradiction try to keep the contradicting facts from being adjacent in the sentence.
-
-You can also put the "tell" in the image description. for example, the article is about a frog but you select an image of a turtle.
+We want diversity in the kinds of tells. there must be a tell in the first sentence, but there can be more later. add a "tell" field to the json object which is a short sentence indicating why the article can't be real. Something like "Trees cannot grow on the Moon". If you are going for a contradiction try to keep the contradicting facts from being adjacent in the sentence.
 
 Generate at least three candidates internally before deciding on the better ones.
 
@@ -100,4 +99,4 @@ here is a second article
 
 {collision_article}
 
-optimally you will find a way to make the tell related to this topic while the artilce is related to the first article.
+optimally you will find a way to make the tell related to this topic while the article is related to the first article.
