@@ -32,51 +32,58 @@ interface SubCategoryDef {
 
 const subCategories: SubCategoryDef[] = [
   {
-    id: 'culture',
-    name: 'People / Culture',
-    mainCategory: 'The Human',
-    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Rick_Astley_in_2016_%28cropped%29.jpg',
-    bgCollage: '/History-mainImg.png'
-  },
-  {
-    id: 'history',
-    name: 'History / Society',
-    mainCategory: 'The Human',
-    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/6/62/Julius_Caesar_statue_Rome.jpg',
-    bgCollage: '/History-mainImg.png'
-  },
-  {
-    id: 'physics',
-    name: 'Physical Science',
-    mainCategory: 'The Sciences',
-    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/0/08/South_Atlantic_Ocean_iceberg.jpg',
-    bgCollage: '/Earth-mainImg.png'
-  },
-  {
-    id: 'biology',
-    name: 'Life Science',
-    mainCategory: 'The Sciences',
-    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Vombatus_ursinus_-Maria_Island_National_Park.jpg',
+    id: 'animals',
+    name: 'Animals',
+    mainCategory: 'Animals',
+    thumbnail: '/animals.png',
     bgCollage: '/Earth-mainImg.png'
   },
   {
     id: 'earth',
     name: 'Earth',
-    mainCategory: 'The World',
-    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Everest_North_Face_toward_Base_Camp_Tibet_Rotated.jpg',
+    mainCategory: 'Earth',
+    thumbnail: '/earth.png',
     bgCollage: '/Earth-mainImg.png'
+  },
+  {
+    id: 'entertainment',
+    name: 'Entertainment',
+    mainCategory: 'Entertainment',
+    thumbnail: '/entertainment.png',
+    bgCollage: '/History-mainImg.png'
+  },
+  {
+    id: 'history',
+    name: 'History',
+    mainCategory: 'History',
+    thumbnail: '/history.png',
+    bgCollage: '/History-mainImg.png'
+  },
+  {
+    id: 'physical-science',
+    name: 'Physical Science',
+    mainCategory: 'Physical Science',
+    thumbnail: '/physical-science.png',
+    bgCollage: '/Earth-mainImg.png'
+  },
+  {
+    id: 'society',
+    name: 'Society',
+    mainCategory: 'Society',
+    thumbnail: '/society.png',
+    bgCollage: '/History-mainImg.png'
   },
   {
     id: 'space',
     name: 'Space',
-    mainCategory: 'The Sciences',
-    thumbnail: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/Apollo_11_bootprint.jpg',
+    mainCategory: 'Space',
+    thumbnail: '/space.png',
     bgCollage: '/Earth-mainImg.png'
   }
 ];
 
-// Active subcategory on the home screen (History / Society by default)
-const activeSubCategory = ref<SubCategoryDef>(subCategories[1]);
+// Active subcategory on the home screen (Animals by default)
+const activeSubCategory = ref<SubCategoryDef>(subCategories[0]);
 
 
 

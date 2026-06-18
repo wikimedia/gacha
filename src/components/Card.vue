@@ -200,25 +200,39 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 
 /* ── Category theme configurations ───────────────────────────── */
 .trading-card,
-.trading-card--civilization {
-  --_tint: var(--color-category-civilization);
-  --_bg: var(--color-category-civilization-bg);
-  --_bevel-tr: var(--color-category-civilization-bevel-tr);
-  --_bevel-bl: var(--color-category-civilization-bevel-bl);
+.trading-card--society {
+  --_tint: var(--color-category-society);
+  --_bg: var(--color-category-society-bg);
 }
 
-.trading-card--nature {
-  --_tint: var(--color-category-nature);
-  --_bg: var(--color-category-nature-bg);
-  --_bevel-tr: var(--color-category-nature-bevel-tr);
-  --_bevel-bl: var(--color-category-nature-bevel-bl);
+.trading-card--animals {
+  --_tint: var(--color-category-animals);
+  --_bg: var(--color-category-animals-bg);
 }
 
-.trading-card--science {
-  --_tint: var(--color-category-science);
-  --_bg: var(--color-category-science-bg);
-  --_bevel-tr: var(--color-category-science-bevel-tr);
-  --_bevel-bl: var(--color-category-science-bevel-bl);
+.trading-card--earth {
+  --_tint: var(--color-category-earth);
+  --_bg: var(--color-category-earth-bg);
+}
+
+.trading-card--entertainment {
+  --_tint: var(--color-category-entertainment);
+  --_bg: var(--color-category-entertainment-bg);
+}
+
+.trading-card--history {
+  --_tint: var(--color-category-history);
+  --_bg: var(--color-category-history-bg);
+}
+
+.trading-card--physical-science {
+  --_tint: var(--color-category-physical-science);
+  --_bg: var(--color-category-physical-science-bg);
+}
+
+.trading-card--space {
+  --_tint: var(--color-category-space);
+  --_bg: var(--color-category-space-bg);
 }
 
 

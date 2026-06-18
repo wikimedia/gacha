@@ -43,12 +43,20 @@ watch(() => authStore.isLoggedIn, (loggedIn) => {
 // Category color configurations for small badge borders/backgrounds
 const getCategoryClass = (category: string) => {
   switch (category) {
-    case 'The Sciences':
-      return 'bg-category-science-icon-bg text-category-science-text border-category-science-border/40 dark:bg-category-science-icon-bg-dark dark:text-category-science-text-dark dark:border-category-science-border/20';
-    case 'The Human':
-      return 'bg-category-civilization-icon-bg text-category-civilization-text border-category-civilization-border/40 dark:bg-category-civilization-icon-bg-dark dark:text-category-civilization-text-dark dark:border-category-civilization-border/20';
-    case 'The World':
-      return 'bg-category-nature-icon-bg text-category-nature-text border-category-nature-border/40 dark:bg-category-nature-icon-bg-dark dark:text-category-nature-text-dark dark:border-category-nature-border/20';
+    case 'Animals':
+      return 'bg-[#fce8e6] text-[#a50e0e] border-[#fad2cf]';
+    case 'Earth':
+      return 'bg-[#fef7e0] text-[#b06000] border-[#fde89e]';
+    case 'Entertainment':
+      return 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]';
+    case 'History':
+      return 'bg-[#ffe6cc] text-[#a34f00] border-[#ffcc99]';
+    case 'Physical Science':
+      return 'bg-[#e4f7fb] text-[#007b83] border-[#a2e2eb]';
+    case 'Society':
+      return 'bg-[#e8f0fe] text-[#174ea6] border-[#aecbfa]';
+    case 'Space':
+      return 'bg-[#fdebe8] text-[#c23b34] border-[#fbcfc9]';
     default:
       return 'bg-base-200 text-base-content/85 border-base-300';
   }

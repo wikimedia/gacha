@@ -118,76 +118,96 @@
   --color-rarity-legendary-dark: #b8912e;
   --color-rarity-legendary-bg: #fdf6e3;
 
-  /* Main Category Tint Colors — Applied with hard-light blend on cards */
-  --color-category-civilization: #948877;
-  --color-category-civilization-bg: #f5f0e8;
-  --color-category-civilization-bg-hover: #ebe4d8;
-  --color-category-civilization-dark-bg: #2d2a27;
-  --color-category-civilization-dark-bg-hover: #3b3733;
-  --color-category-civilization-border: #C8CCD1;
-  --color-category-civilization-border-hover: #A2A9B1;
-  --color-category-civilization-text: #5c5346;
-  --color-category-civilization-text-dark: #e3dacd;
-  --color-category-civilization-icon-bg: rgba(148, 136, 119, 0.15);
-  --color-category-civilization-icon-bg-dark: rgba(148, 136, 119, 0.3);
+  /* Animals Theme (Red) */
+  --color-category-animals: #d93025;
+  --color-category-animals-bg: #fce8e6;
+  --color-category-animals-bg-hover: #fad2cf;
+  --color-category-animals-dark-bg: #3c1210;
+  --color-category-animals-dark-bg-hover: #4d1815;
+  --color-category-animals-border: #f5c2be;
+  --color-category-animals-border-hover: #f09b95;
+  --color-category-animals-text: #a50e0e;
+  --color-category-animals-text-dark: #fce8e6;
+  --color-category-animals-icon-bg: rgba(217, 48, 37, 0.15);
+  --color-category-animals-icon-bg-dark: rgba(217, 48, 37, 0.3);
 
-  --color-category-nature: #7E8C75;
-  --color-category-nature-bg: #eef3eb;
-  --color-category-nature-bg-hover: #deebd7;
-  --color-category-nature-dark-bg: #262924;
-  --color-category-nature-dark-bg-hover: #31362e;
-  --color-category-nature-border: #b8cbb0;
-  --color-category-nature-border-hover: #8da283;
-  --color-category-nature-text: #4f5b48;
-  --color-category-nature-text-dark: #dbe5d7;
-  --color-category-nature-icon-bg: rgba(126, 140, 117, 0.15);
-  --color-category-nature-icon-bg-dark: rgba(126, 140, 117, 0.3);
+  /* Earth Theme (Yellow) */
+  --color-category-earth: #f2a600;
+  --color-category-earth-bg: #fef7e0;
+  --color-category-earth-bg-hover: #fdecc8;
+  --color-category-earth-dark-bg: #3e2d00;
+  --color-category-earth-dark-bg-hover: #4e3900;
+  --color-category-earth-border: #fde89e;
+  --color-category-earth-border-hover: #fcd866;
+  --color-category-earth-text: #b06000;
+  --color-category-earth-text-dark: #fef7e0;
+  --color-category-earth-icon-bg: rgba(242, 166, 0, 0.15);
+  --color-category-earth-icon-bg-dark: rgba(242, 166, 0, 0.3);
 
-  --color-category-science: #787F9B;
-  --color-category-science-bg: #eef1f6;
-  --color-category-science-bg-hover: #dee4ee;
-  --color-category-science-dark-bg: #24262c;
-  --color-category-science-dark-bg-hover: #2e313a;
-  --color-category-science-border: #b4c1db;
-  --color-category-science-border-hover: #8592b1;
-  --color-category-science-text: #49506a;
-  --color-category-science-text-dark: #dbe1ec;
-  --color-category-science-icon-bg: rgba(120, 127, 155, 0.15);
-  --color-category-science-icon-bg-dark: rgba(120, 127, 155, 0.3);
+  /* Entertainment Theme (Green) */
+  --color-category-entertainment: #137333;
+  --color-category-entertainment-bg: #e6f4ea;
+  --color-category-entertainment-bg-hover: #ceead6;
+  --color-category-entertainment-dark-bg: #0f3418;
+  --color-category-entertainment-dark-bg-hover: #164822;
+  --color-category-entertainment-border: #a8dab5;
+  --color-category-entertainment-border-hover: #7bbf8c;
+  --color-category-entertainment-text: #137333;
+  --color-category-entertainment-text-dark: #e6f4ea;
+  --color-category-entertainment-icon-bg: rgba(19, 115, 51, 0.15);
+  --color-category-entertainment-icon-bg-dark: rgba(19, 115, 51, 0.3);
 
-  /* Homepage Brighter Category Variations */
-  --color-category-civilization-hp-bg: #fdf3db;
-  --color-category-civilization-hp-bg-hover: #fbe7be;
-  --color-category-civilization-hp-dark-bg: #3a3224;
-  --color-category-civilization-hp-dark-bg-hover: #4c412f;
-  --color-category-civilization-hp-border: #f5d595;
-  --color-category-civilization-hp-border-hover: #e2ba65;
-  --color-category-civilization-hp-text: #825e1c;
-  --color-category-civilization-hp-text-dark: #fcdb9b;
-  --color-category-civilization-hp-icon-bg: rgba(212, 168, 67, 0.2);
-  --color-category-civilization-hp-icon-bg-dark: rgba(212, 168, 67, 0.4);
+  /* History Theme (Orange) */
+  --color-category-history: #e8710a;
+  --color-category-history-bg: #ffe6cc;
+  --color-category-history-bg-hover: #ffd9b3;
+  --color-category-history-dark-bg: #4d1f00;
+  --color-category-history-dark-bg-hover: #5d2500;
+  --color-category-history-border: #ffcc99;
+  --color-category-history-border-hover: #ffa64d;
+  --color-category-history-text: #a34f00;
+  --color-category-history-text-dark: #ffe6cc;
+  --color-category-history-icon-bg: rgba(232, 113, 10, 0.15);
+  --color-category-history-icon-bg-dark: rgba(232, 113, 10, 0.3);
 
-  --color-category-nature-hp-bg: #e8f7e2;
-  --color-category-nature-hp-bg-hover: #d3f0c7;
-  --color-category-nature-hp-dark-bg: #243020;
-  --color-category-nature-hp-dark-bg-hover: #2e3e29;
-  --color-category-nature-hp-border: #addd9b;
-  --color-category-nature-hp-border-hover: #81c667;
-  --color-category-nature-hp-text: #2b6d19;
-  --color-category-nature-hp-text-dark: #b6efa3;
-  --color-category-nature-hp-icon-bg: rgba(43, 109, 25, 0.15);
-  --color-category-nature-hp-icon-bg-dark: rgba(43, 109, 25, 0.35);
+  /* Physical Science Theme (Cyan) */
+  --color-category-physical-science: #12b5cb;
+  --color-category-physical-science-bg: #e4f7fb;
+  --color-category-physical-science-bg-hover: #c2ecf1;
+  --color-category-physical-science-dark-bg: #00373e;
+  --color-category-physical-science-dark-bg-hover: #00464f;
+  --color-category-physical-science-border: #a2e2eb;
+  --color-category-physical-science-border-hover: #62ceda;
+  --color-category-physical-science-text: #007b83;
+  --color-category-physical-science-text-dark: #e4f7fb;
+  --color-category-physical-science-icon-bg: rgba(18, 181, 203, 0.15);
+  --color-category-physical-science-icon-bg-dark: rgba(18, 181, 203, 0.3);
 
-  --color-category-science-hp-bg: #e7f1fd;
-  --color-category-science-hp-bg-hover: #cbe0fa;
-  --color-category-science-hp-dark-bg: #1d2836;
-  --color-category-science-hp-dark-bg-hover: #27364a;
-  --color-category-science-hp-border: #9dc3f7;
-  --color-category-science-hp-border-hover: #6aa2f2;
-  --color-category-science-hp-text: #1d52a2;
-  --color-category-science-hp-text-dark: #a6c9fb;
-  --color-category-science-hp-icon-bg: rgba(29, 82, 162, 0.15);
-  --color-category-science-hp-icon-bg-dark: rgba(29, 82, 162, 0.35);
+  /* Society Theme (Blue) */
+  --color-category-society: #1a73e8;
+  --color-category-society-bg: #e8f0fe;
+  --color-category-society-bg-hover: #d2e3fc;
+  --color-category-society-dark-bg: #162a45;
+  --color-category-society-dark-bg-hover: #1c3659;
+  --color-category-society-border: #aecbfa;
+  --color-category-society-border-hover: #7baaf7;
+  --color-category-society-text: #174ea6;
+  --color-category-society-text-dark: #e8f0fe;
+  --color-category-society-icon-bg: rgba(26, 115, 232, 0.15);
+  --color-category-society-icon-bg-dark: rgba(26, 115, 232, 0.3);
+
+  /* Space Theme (Light Red/Salmon) */
+  --color-category-space: #f07b75;
+  --color-category-space-bg: #fdebe8;
+  --color-category-space-bg-hover: #fbcfc9;
+  --color-category-space-dark-bg: #401916;
+  --color-category-space-dark-bg-hover: #4e1f1c;
+  --color-category-space-border: #fbcfc9;
+  --color-category-space-border-hover: #f89e94;
+  --color-category-space-text: #c23b34;
+  --color-category-space-text-dark: #fdebe8;
+  --color-category-space-icon-bg: rgba(240, 123, 117, 0.15);
+  --color-category-space-icon-bg-dark: rgba(240, 123, 117, 0.3);
 }
 
 /* Custom Base resets */
@@ -520,14 +540,12 @@ body {
   height: 102px;
   border-radius: 1px;
   overflow: hidden;
-  border: 2.184px solid transparent;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: all 0.25s ease;
   background-color: var(--color-base-300);
 }
 
 .category-slider-item.is-active .category-slider-thumbnail-wrapper {
-  border-color: #fdf4eb;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 6px 14px rgba(0, 0, 0, 0.22);
   transform: translateY(-3px);
 }
@@ -536,11 +554,6 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.category-slider-item:hover .category-slider-thumbnail {
-  transform: scale(1.08);
 }
 
 .category-slider-label {
