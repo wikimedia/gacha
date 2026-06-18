@@ -124,6 +124,15 @@ export const useAuthStore = defineStore('auth', () => {
         }
       }
 
+      // Merge guest points if any exist
+      const guestPointsRaw = localStorage.getItem('moonflower_guest_gdPoints');
+      if (guestPointsRaw) {
+        const guestPoints = parseInt(guestPointsRaw, 10);
+        if (!isNaN(guestPoints) && guestPoints > 0) {
+          finalPoints += guestPoints;
+        }
+      }
+
       let finalCards = dbCards;
 
       const mappedUser: User = {
@@ -146,6 +155,27 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Load user-specific localStorage state (sections & cooldowns)
       gameStore.loadUserState(su.id);
+
+      // Migrate guest cards to database under the user's profile
+      const guestCardsRaw = localStorage.getItem('moonflower_guest_collectedCards');
+      if (guestCardsRaw) {
+        try {
+          const guestCards = JSON.parse(guestCardsRaw);
+          if (Array.isArray(guestCards) && guestCards.length > 0) {
+            const guestCardIds = guestCards.map((c: any) => c.id);
+            console.log(`[handleAuthSession] Migrating ${guestCardIds.length} guest cards to user ${su.id}...`);
+            await gameStore.claimArticlesForProfile(guestCardIds);
+            
+            // Clear guest progress in localStorage
+            localStorage.removeItem('moonflower_guest_collectedCards');
+            localStorage.removeItem('moonflower_guest_gdPoints');
+            localStorage.removeItem('moonflower_guest_categoryCooldowns');
+            localStorage.removeItem('moonflower_guest_customSections');
+          }
+        } catch (err) {
+          console.error('[handleAuthSession] Failed to migrate guest cards:', err);
+        }
+      }
     } else {
       user.value = null;
       isLoggedIn.value = false;

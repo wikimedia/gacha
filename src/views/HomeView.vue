@@ -220,13 +220,7 @@ onMounted(async () => {
   updateCooldowns();
   
   displayedPoints.value = gameStore.gdPoints;
-  
-  // Load dynamic articles from Supabase (failsafe fallback to MOCK_CARDS built-in)
-  try {
-    await gameStore.loadCardsFromDatabase();
-  } finally {
-    isLoading.value = false;
-  }
+  isLoading.value = false;
   
   setInterval(() => {
     updateCooldowns();
@@ -359,6 +353,20 @@ const endFakeoutGame = () => {
   
   updateCooldowns();
   
+  // Automatically collect all correctly guessed real cards (win or lose)
+  if (collectedThisGame.value.length > 0) {
+    const realCardIds: string[] = [];
+    collectedThisGame.value.forEach(card => {
+      gameStore.collectCard(card);
+      realCardIds.push(card.id);
+    });
+
+    // If logged in, claim them in the database immediately
+    if (authStore.isLoggedIn && realCardIds.length > 0) {
+      gameStore.claimArticlesForProfile(realCardIds);
+    }
+  }
+  
   // Persist points and game state to backend/localStorage when game ends
   gameStore.persistState();
   
@@ -435,7 +443,10 @@ const evaluateSwipe = () => {
 };
 
 // Gacha Drop Logic
-const startGachaDrop = () => {
+// Pool of real cards pre-fetched when gacha starts, used by handleGachaGlobeTap
+const gachaCardPool = ref<Card[]>([]);
+
+const startGachaDrop = async () => {
   if (gameStore.gdPoints < 100) return;
   
   // Spend points
@@ -449,6 +460,11 @@ const startGachaDrop = () => {
     
     displayedPoints.value = gameStore.gdPoints;
     isUnlockedJustNow.value = false;
+
+    // Pre-fetch a pool of real cards for gacha drops across random categories
+    const randomCategory = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+    const pool = await gameStore.fetchCategoryPool(randomCategory);
+    gachaCardPool.value = pool.filter((c: Card) => c.isReal);
     
     // 10 second ticking timer
     const interval = setInterval(() => {
@@ -456,6 +472,22 @@ const startGachaDrop = () => {
       if (gachaTimer.value <= 0) {
         clearInterval(interval);
         gachaActive.value = false;
+        
+        // Automatically collect all dropped cards
+        if (gachaDroppedCards.value.length > 0) {
+          const droppedIds: string[] = [];
+          gachaDroppedCards.value.forEach(card => {
+            gameStore.collectCard(card);
+            droppedIds.push(card.id);
+          });
+
+          // If logged in, claim them in the database immediately
+          if (authStore.isLoggedIn && droppedIds.length > 0) {
+            gameStore.claimArticlesForProfile(droppedIds);
+          }
+
+          gameStore.persistState();
+        }
         
         // Transition to unified CardsUnlocked UI
         cardsUnlockedGameType.value = 'gacha';
@@ -493,8 +525,8 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
     floatingTexts.value = floatingTexts.value.filter(t => t.id !== id);
   }, 800);
   
-  // Select a card at random from the database-backed deck, filtering only for real cards
-  const realCards = gameStore.gameCards.filter((c: any) => c.isReal);
+  // Select a card at random from the pre-fetched gacha pool (real cards only)
+  const realCards = gachaCardPool.value;
   if (realCards.length === 0) return;
   const randomCard = realCards[Math.floor(Math.random() * realCards.length)];
   
@@ -509,7 +541,6 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
     :displayed-points="displayedPoints" 
     :gacha-active="gachaActive || showCardsUnlocked" 
     :is-animating="isAnimatingPoints"
-    :hide-header="showCardsUnlocked && gameLost"
     :game-active="gameActive"
     :active-main-category="gameActive ? selectedCategory || undefined : activeSubCategory.mainCategory"
     :class="{ 'is-home-selection': !gachaActive && !showCardsUnlocked }"
@@ -753,9 +784,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
         </div>
       </section>
 
-      <!-- UNIFIED CARDS UNLOCKED UI -->
       <CardsUnlocked
-        v-slot:default
         v-if="showCardsUnlocked"
         :unlocked-cards="cardsUnlockedGameType === 'fakeout' ? collectedThisGame : gachaDroppedCards"
         :identified-fakes="cardsUnlockedGameType === 'fakeout' ? identifiedFakesThisGame : []"
@@ -766,6 +795,9 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
           taps: gachaDroppedCards.length
         }"
         :lost="gameLost"
+        :category="selectedCategory || undefined"
+        :failed-card="gameLost && currentCard ? currentCard : undefined"
+        :deck="gameDeck"
         @claim="handleClaimSuccess"
         @dismiss="handleCardsUnlockedDismiss"
         @open-auth="headerRef?.openAuthModal()"

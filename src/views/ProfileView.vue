@@ -46,12 +46,20 @@ const loadProfile = async () => {
     const dbProfile = await gameStore.loadProfileFromDB(profileId.value);
     if (dbProfile) {
       profileUser.value = dbProfile.userProfile;
-      profileCards.value = dbProfile.cards;
-      
       if (isPrivateMode.value) {
         editDisplayName.value = dbProfile.userProfile.username;
         editBio.value = dbProfile.userProfile.bio;
-        gameStore.collectedCards = dbProfile.cards;
+        
+        // Merge DB cards with any in-memory cards that might not be in the DB yet
+        // (e.g. cards collected in this session whose DB claim is still in flight)
+        const dbCardIds = new Set(dbProfile.cards.map((c: any) => c.id));
+        const localOnly = gameStore.collectedCards.filter(c => !dbCardIds.has(c.id));
+        const mergedCards = [...dbProfile.cards, ...localOnly];
+        
+        profileCards.value = mergedCards;
+        gameStore.collectedCards = mergedCards;
+      } else {
+        profileCards.value = dbProfile.cards;
       }
     } else {
       // Mock profile fallback so page doesn't crash if they visit a random path

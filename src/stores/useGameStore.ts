@@ -737,27 +737,10 @@ export const useGameStore = defineStore('game', () => {
     return 'Society';
   };
 
-  // Helper to build PostgREST category filters
-  const applyCategoryFilter = (query: any, category: Category) => {
-    switch (category) {
-      case 'Animals':
-        return query.or('sub_category.eq.Animals,sub_category.eq.Life Science,topic.ilike.%Biology%');
-      case 'Earth':
-        return query.or('sub_category.eq.Earth,topic.ilike.%Geography%,topic.eq.STEM.Earth_and_environment');
-      case 'Entertainment':
-        return query.or('sub_category.eq.Entertainment,sub_category.eq.Media,sub_category.eq.Sports,topic.ilike.%Media%,topic.eq.Culture.Sports,topic.eq.Culture.Performing_arts');
-      case 'History':
-        return query.or('sub_category.eq.History,sub_category.eq.History / Society,topic.ilike.%History%,topic.eq.History_and_Society.Military_and_warfare');
-      case 'Physical Science':
-        return query.or('sub_category.eq.Physical Science,topic.eq.STEM.STEM*,topic.eq.STEM.Technology,topic.eq.STEM.Engineering,topic.eq.STEM.Medicine_&_Health');
-      case 'Society':
-        return query.or('sub_category.eq.Society,sub_category.eq.People / Culture,topic.eq.History_and_Society.Society,topic.eq.History_and_Society.Politics_and_government,topic.eq.History_and_Society.Business_and_economics,topic.eq.History_and_Society.Transportation,topic.eq.History_and_Society.Education,topic.ilike.%Biography%,topic.eq.Culture.Philosophy_and_religion,topic.eq.Culture.Food_and_drink,topic.eq.Culture.Linguistics,topic.eq.Culture.Literature,topic.ilike.%Visual_arts%,topic.eq.Culture.Internet_culture');
-      case 'Space':
-        return query.or('sub_category.eq.Space,topic.eq.STEM.Space');
-      default:
-        return query;
-    }
-  };
+  // sub_category values in the DB match the app's Category type directly,
+  // so a simple equality filter is all we need.
+  const applyCategoryFilter = (query: any, category: Category) =>
+    query.eq('sub_category', category);
 
   // Helper to map database article row to Card format
   const mapArticleRowToCard = (row: any): Card => {
@@ -783,8 +766,8 @@ export const useGameStore = defineStore('game', () => {
     // 4. The card text is just the first sentence of the article
     const description = row.first_sentence || 'No description available.';
 
-    // 5. The database marks each row as real or fake directly
-    const isReal = !!row.real;
+    // 5. Real vs fake is determined by source table (tagged as _isReal by fetchCategoryPool)
+    const isReal = !!row._isReal;
 
     return {
       id: row.qid,
@@ -810,22 +793,15 @@ export const useGameStore = defineStore('game', () => {
   // Skip anything flagged above this threshold (flag_score is null for unflagged rows).
   const FLAG_SCORE_MAX = 0.9;
 
-  // ── Fake-card source lever ──────────────────────────────────────────────────
-  // Quick switch for testing a new fake-generation algorithm.
-  //   'articles'    → fakes come from articles_v2 rows with real = false (original)
-  //   'fakes_table' → fakes come from the dedicated FAKES_TABLE below
-  // Real cards always come from articles_v2; only the fake source changes.
-  type FakeSource = 'articles' | 'fakes_table';
-  const FAKE_SOURCE = 'fakes_table' as FakeSource;
-  const FAKES_TABLE = 'fake_articles_v2'; 
+  // Real cards come from articles_v2, fake cards from fake_articles_v2.
+  const FAKES_TABLE = 'fake_articles_v2';
 
-  // Filters for real/fake rows living in articles_v2: unclaimed, has an image, of the
-  // requested real/fake class, not flagged above threshold, and (when given) one category.
-  const applyArticleFilters = (query: any, real: boolean, category?: Category) => {
+  // Filters for real articles in articles_v2: unclaimed, has an image,
+  // not flagged above threshold, and (when given) one category.
+  const applyArticleFilters = (query: any, category?: Category) => {
     let q = query
       .is('profile_id', null)
       .not('image_url', 'is', null)
-      .eq('real', real)
       .or(`flag_score.lte.${FLAG_SCORE_MAX},flag_score.is.null`);
     if (category) {
       q = applyCategoryFilter(q, category);
@@ -833,12 +809,11 @@ export const useGameStore = defineStore('game', () => {
     return q;
   };
 
-  // Filters for the dedicated fakes table: it has real/flag_score columns,
-  // so require image_url is not null, real is false, and flag_score is below threshold or null.
+  // Filters for the dedicated fakes table: image_url is not null and
+  // flag_score is below threshold or null.
   const applyFakesTableFilters = (query: any, category?: Category) => {
     let q = query
       .not('image_url', 'is', null)
-      .eq('real', false)
       .or(`flag_score.lte.${FLAG_SCORE_MAX},flag_score.is.null`);
     if (category) {
       q = applyCategoryFilter(q, category);
@@ -875,23 +850,27 @@ export const useGameStore = defineStore('game', () => {
 
   // Real cards always come from articles_v2.
   const fetchRealSample = (sampleSize: number, category?: Category): Promise<any[]> =>
-    fetchRandomSample('articles_v2', (q) => applyArticleFilters(q, true, category), sampleSize);
+    fetchRandomSample('articles_v2', (q) => applyArticleFilters(q, category), sampleSize);
 
-  // Fake cards come from whichever source the lever selects.
+  // Fake cards come from the dedicated fakes table.
   const fetchFakeSample = (sampleSize: number, category?: Category): Promise<any[]> =>
-    FAKE_SOURCE === 'fakes_table'
-      ? fetchRandomSample(FAKES_TABLE, (q) => applyFakesTableFilters(q, category), sampleSize)
-      : fetchRandomSample('articles_v2', (q) => applyArticleFilters(q, false, category), sampleSize);
+    fetchRandomSample(FAKES_TABLE, (q) => applyFakesTableFilters(q, category), sampleSize);
 
   // Fetch a fresh, randomized pool of playable cards for a single category — a
   // balanced mix of real and fake. Called per game so consecutive games draw new
   // cards from across the whole category instead of a fixed cached slice.
-  const fetchCategoryPool = async (category: Category, perClass = 40): Promise<Card[]> => {
+  const fetchCategoryPool = async (category: Category, perClass = 15): Promise<Card[]> => {
     try {
       const [realRows, fakeRows] = await Promise.all([
         fetchRealSample(perClass, category),
         fetchFakeSample(perClass, category)
       ]);
+
+      // Tag each row with its source so mapArticleRowToCard knows real vs fake
+      // (the v2 tables no longer have a 'real' column — the table itself is the signal).
+      realRows.forEach((row: any) => { row._isReal = true; });
+      fakeRows.forEach((row: any) => { row._isReal = false; });
+
       return [...realRows, ...fakeRows]
         .filter((row: any) => row.image_url && isAppropriateArticle(row))
         .map((row: any) => mapArticleRowToCard(row));
@@ -920,11 +899,13 @@ export const useGameStore = defineStore('game', () => {
           fetchRealSample(SAMPLE_PER_CLASS),
           fetchFakeSample(SAMPLE_PER_CLASS)
         ]);
+
+        // Tag each row with its source so mapArticleRowToCard knows real vs fake.
+        realRows.forEach((row: any) => { row._isReal = true; });
+        fakeRows.forEach((row: any) => { row._isReal = false; });
         const rows = [...realRows, ...fakeRows];
 
         if (rows.length > 0) {
-          // Each row is already classified real/fake in the DB, so just filter
-          // out inappropriate entries (and any without an image) and map the rest.
           const mapped: Card[] = rows
             .filter((row: any) => row.image_url && isAppropriateArticle(row))
             .map((row: any) => mapArticleRowToCard(row));

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
+import CardComp from './Card.vue';
 
 const props = defineProps<{
   unlockedCards: Card[];
@@ -15,6 +16,9 @@ const props = defineProps<{
     taps?: number;
   };
   lost?: boolean;
+  category?: string;
+  failedCard?: Card;
+  deck?: Card[];
 }>();
 
 const emit = defineEmits<{
@@ -27,16 +31,78 @@ const router = useRouter();
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 
-const isClaimed = ref(false);
-const isClaiming = ref(false);
-const showLoginPrompt = ref(false);
+// Computed property to pick 3 unique cards from the game session for the try-again screen stack
+const stackCards = computed(() => {
+  const cards: Card[] = [];
+  
+  // 1. Center card is the card they failed on
+  if (props.failedCard) {
+    cards.push(props.failedCard);
+  }
+  
+  // 2. Add unlocked cards (real cards correctly identified)
+  const remainingUnlocked = props.unlockedCards.filter(
+    (c) => !cards.some((added) => added.id === c.id)
+  );
+  cards.push(...remainingUnlocked);
+  
+  // 3. If we don't have 3 cards, backfill from the full session deck
+  if (cards.length < 3 && props.deck) {
+    const remainingDeck = props.deck.filter(
+      (c) => !cards.some((added) => added.id === c.id)
+    );
+    cards.push(...remainingDeck);
+  }
+  
+  // 4. If we still don't have 3, backfill from fakes
+  if (cards.length < 3 && props.identifiedFakes) {
+    const remainingFakes = props.identifiedFakes.filter(
+      (c) => !cards.some((added) => added.id === c.id)
+    );
+    cards.push(...remainingFakes);
+  }
+  
+  // Structure them as left, right, center
+  return {
+    left: cards[1] || null,
+    right: cards[2] || null,
+    center: cards[0] || null
+  };
+});
 
-// Watch for authentication state changes. If they log in while on this screen and
-// the login prompt is open, we automatically proceed with the claim process.
-watch(() => authStore.isLoggedIn, (loggedIn) => {
-  if (loggedIn && showLoginPrompt.value) {
+// Cards are auto-collected at game end in HomeView. If the user is already logged in,
+// they're also auto-claimed in the database, so we start in the claimed state.
+// If not logged in, cards are saved in localStorage as guest progress.
+const isClaimed = ref(authStore.isLoggedIn && props.unlockedCards.length > 0);
+const isClaiming = ref(false);
+const showLoginPrompt = ref(!authStore.isLoggedIn && props.unlockedCards.length > 0);
+
+// Watch for authentication state changes. If they log in while on this screen,
+// we automatically claim cards in the database (they're already in localStorage
+// from guest state, but the auth store migration will handle the DB write).
+watch(() => authStore.isLoggedIn, async (loggedIn) => {
+  if (loggedIn && !isClaimed.value && props.unlockedCards.length > 0) {
     showLoginPrompt.value = false;
-    handleClaim();
+    isClaiming.value = true;
+    try {
+      // Collect and claim cards that were saved as guest progress
+      const realCardIds: string[] = [];
+      props.unlockedCards.forEach(card => {
+        gameStore.collectCard(card);
+        realCardIds.push(card.id);
+      });
+
+      if (realCardIds.length > 0) {
+        await gameStore.claimArticlesForProfile(realCardIds);
+      }
+
+      isClaimed.value = true;
+      emit('claim', props.unlockedCards);
+    } catch (err) {
+      console.error('Error claiming cards after login:', err);
+    } finally {
+      isClaiming.value = false;
+    }
   }
 });
 
@@ -114,7 +180,8 @@ const isCSSImage = (image: string) => {
   return !image || image.startsWith('linear-gradient') || image.startsWith('url(');
 };
 
-// Trigger the claim flow
+// Fallback claim handler — cards are normally auto-collected at game end,
+// but this covers the edge case where a user manually triggers claiming.
 const handleClaim = async () => {
   // If the user is not logged in, prompt them to sign in
   if (!authStore.isLoggedIn) {
@@ -122,17 +189,19 @@ const handleClaim = async () => {
     return;
   }
 
+  if (isClaimed.value) return;
+
   isClaiming.value = true;
   
   try {
-    // 1. Collect all real cards in the game store
+    // Collect all real cards in the game store (idempotent — skips already-collected)
     const realCardIds: string[] = [];
     props.unlockedCards.forEach(card => {
       gameStore.collectCard(card);
       realCardIds.push(card.id);
     });
 
-    // 2. Claim all real cards in Supabase for this profile
+    // Claim all real cards in Supabase for this profile
     if (realCardIds.length > 0) {
       await gameStore.claimArticlesForProfile(realCardIds);
     }
@@ -162,29 +231,81 @@ const handleDismiss = () => {
 </script>
 
 <template>
-  <div class="flex-grow flex flex-col gap-6 py-4 select-none">
+  <!-- TRY AGAIN / LOST SCREEN (Figma Redesign) -->
+  <div v-if="lost" class="try-again-screen-container select-none">
+    <!-- 1. Card Stack (homeHero) -->
+    <div class="card-stack-container">
+      <!-- Left Card -->
+      <div v-if="stackCards.left" class="card-stack-item card-stack-item--left">
+        <CardComp :card="stackCards.left" :show-link="false" class="scaled-card-left" />
+      </div>
+      
+      <!-- Right Card -->
+      <div v-if="stackCards.right" class="card-stack-item card-stack-item--right">
+        <CardComp :card="stackCards.right" :show-link="false" class="scaled-card-right" />
+      </div>
+
+      <!-- Center Card -->
+      <div v-if="stackCards.center" class="card-stack-item card-stack-item--center">
+        <CardComp :card="stackCards.center" :show-link="false" class="scaled-card-center" />
+      </div>
+    </div>
+
+    <!-- 2. Results Info Section -->
+    <div class="results-info-container">
+      <!-- Category Badge Box -->
+      <div class="category-badge-box">
+        <span class="category-badge-text">{{ category || 'General Knowledge' }}</span>
+      </div>
+
+      <!-- Stats Box Row -->
+      <div class="stats-row">
+        <!-- Collected Box -->
+        <div class="stat-box">
+          <span class="stat-label">Collected</span>
+          <span class="stat-value">{{ gameStats.score ?? 0 }}</span>
+        </div>
+        <!-- Fakes Box -->
+        <div class="stat-box">
+          <span class="stat-label">Fakes</span>
+          <span class="stat-value">{{ identifiedFakes?.length ?? 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Message Text -->
+    <div class="try-again-message">
+      Better luck next time!
+    </div>
+
+    <!-- 4. Retry Button -->
+    <button @click="handleDismiss" class="try-again-button">
+      Try again to collect cards
+    </button>
+  </div>
+
+  <!-- WIN / CLAIM / GACHA SCREEN -->
+  <div v-else class="flex-grow flex flex-col gap-6 py-4 select-none">
     
     <!-- CELEBRATION HEADER -->
     <header class="text-center">
-      <span class="text-5xl drop-shadow-md">{{ lost ? '💔' : '🏆' }}</span>
-      <h2 class="font-serif text-2xl font-black mt-3 mb-1" :class="lost ? 'text-error' : 'text-primary'">
-        {{ lost ? 'Game Over!' : (gameType === 'fakeout' ? 'Game Summary!' : 'Gacha Complete!') }}
+      <span class="text-5xl drop-shadow-md">🏆</span>
+      <h2 class="font-serif text-2xl font-black mt-3 mb-1 text-primary">
+        {{ gameType === 'fakeout' ? 'Game Summary!' : 'Gacha Complete!' }}
       </h2>
-      
-
     </header>
 
     <!-- LIST OF UNLOCKED REAL CARDS -->
     <div class="flex flex-col gap-3">
       <h3 class="text-xs font-black text-secondary uppercase tracking-widest text-left pl-1">
-        {{ lost ? 'Cards You Could Have Claimed' : 'Real Cards Unlocked' }}
+        Real Cards Unlocked
       </h3>
       
       <div 
         class="border border-base-300 rounded-xl bg-base-100 shadow-inner overflow-hidden max-h-[300px] overflow-y-auto"
       >
         <div v-if="unlockedCards.length === 0" class="text-xs text-secondary italic text-center py-10 font-sans">
-          {{ lost ? 'No cards were unlocked before the mistake. Keep trying!' : 'No real cards unlocked this time. Keep trying!' }}
+          No real cards unlocked this time. Keep trying!
         </div>
         
         <div v-else class="flex flex-col">
@@ -193,8 +314,8 @@ const handleDismiss = () => {
             :key="card.id"
             class="flex items-center justify-between p-3 border-b border-base-200 last:border-b-0 transition-all duration-300 animate-card-reveal"
             :class="[
-              lost ? 'grayscale opacity-60 border-l-4 border-l-error bg-base-100 dark:bg-base-900/40 hover:bg-base-200/30' : getRarityConfig(card.rarity).rowClass,
-              lost ? '' : getRarityConfig(card.rarity).shimmerClass
+              getRarityConfig(card.rarity).rowClass,
+              getRarityConfig(card.rarity).shimmerClass
             ]"
             :style="{ animationDelay: `${index * 80}ms` }"
           >
@@ -221,7 +342,7 @@ const handleDismiss = () => {
               
               <!-- Info details -->
               <div class="flex flex-col">
-                <span class="font-serif text-xs font-black leading-tight" :class="lost ? 'text-base-content/60 font-semibold' : getRarityConfig(card.rarity).textClass">
+                <span class="font-serif text-xs font-black leading-tight" :class="getRarityConfig(card.rarity).textClass">
                   {{ card.title }}
                 </span>
                 <div class="flex gap-1.5 mt-0.5 items-center">
@@ -233,10 +354,7 @@ const handleDismiss = () => {
             </div>
             
             <!-- Rarity Badge on Right -->
-            <span v-if="lost" class="badge badge-error badge-outline badge-xs text-[8px] uppercase py-2 font-black">
-              🔒 Locked
-            </span>
-            <span v-else class="badge badge-xs text-[8px] uppercase py-2 px-1.5" :class="getRarityConfig(card.rarity).badgeClass">
+            <span class="badge badge-xs text-[8px] uppercase py-2 px-1.5" :class="getRarityConfig(card.rarity).badgeClass">
               {{ card.rarity }}
             </span>
           </div>
@@ -258,11 +376,9 @@ const handleDismiss = () => {
             v-for="(card, index) in identifiedFakes"
             :key="card.id"
             class="flex items-center justify-between p-3 border-b border-base-200 last:border-b-0 hover:bg-base-200/50 transition-all duration-300 animate-card-reveal"
-            :class="{ 'grayscale opacity-60': lost }"
             :style="{ animationDelay: `${(index + unlockedCards.length) * 80}ms` }"
           >
             <div class="flex items-center gap-3 text-left">
-              <!-- Magnifying glass / target indicator -->
               <span class="text-base p-1.5 bg-error/10 border border-error/20 text-error rounded-lg">
                 🔍
               </span>
@@ -276,10 +392,7 @@ const handleDismiss = () => {
               </div>
             </div>
             
-            <span v-if="lost" class="badge badge-ghost badge-xs text-[8px] uppercase py-2 font-black opacity-60">
-              🔒 Locked
-            </span>
-            <span v-else class="badge badge-error badge-outline badge-xs text-[8px] uppercase py-2 font-black">
+            <span class="badge badge-error badge-outline badge-xs text-[8px] uppercase py-2 font-black">
               Correct
             </span>
           </div>
@@ -290,31 +403,8 @@ const handleDismiss = () => {
     <!-- MAIN CLAIMING AND ACTION BLOCK -->
     <div class="card card-bordered bg-base-100 border-base-300 shadow-md p-5 text-center mt-2">
       
-      <!-- Option 4: Lost / Tease State -->
-      <div v-if="lost" class="flex flex-col gap-3 animate-fade-in">
-        <h4 class="font-serif font-black text-sm text-error leading-tight">
-          A Single Mistake Cost You!
-        </h4>
-        <p class="text-xs text-secondary leading-relaxed font-sans font-light">
-          {{ unlockedCards.length > 0 
-            ? "You got a card wrong, ending your run. You missed the chance to claim the cards you got right!"
-            : "You got a card wrong, ending your run. No cards were earned this time."
-          }}
-        </p>
-        
-        <div class="flex flex-col gap-2 mt-2">
-          <!-- Try Again button -->
-          <button 
-            @click="handleDismiss"
-            class="btn btn-error btn-outline w-full uppercase font-bold text-xs"
-          >
-            🔄 Try Again
-          </button>
-        </div>
-      </div>
-
       <!-- Option 1: Unclaimed State -->
-      <div v-else-if="!isClaimed && !showLoginPrompt" class="flex flex-col gap-3">
+      <div v-if="!isClaimed && !showLoginPrompt" class="flex flex-col gap-3">
         <h4 class="font-serif font-black text-sm text-base-content leading-tight">
           {{ unlockedCards.length > 0 ? 'Ready to Claim Your Discoveries?' : 'No Discoveries to Claim' }}
         </h4>
@@ -353,7 +443,6 @@ const handleDismiss = () => {
         </p>
         
         <div class="flex flex-col gap-2 mt-2">
-          <!-- Button to trigger login modal -->
           <button 
             @click="handleOpenAuth"
             class="btn btn-primary w-full uppercase font-bold text-xs text-white"
@@ -361,7 +450,6 @@ const handleDismiss = () => {
             🔑 Log In to Claim
           </button>
           
-          <!-- Back button -->
           <button 
             @click="showLoginPrompt = false" 
             class="btn btn-ghost btn-xs text-secondary hover:bg-transparent mt-1"
@@ -382,7 +470,6 @@ const handleDismiss = () => {
         </p>
         
         <div class="flex flex-col gap-2 mt-2">
-          <!-- View Binder -->
           <button 
             @click="handleViewBinder"
             class="btn btn-primary w-full uppercase font-bold text-xs text-white"
@@ -390,7 +477,6 @@ const handleDismiss = () => {
             📖 Open Binder & View Cards
           </button>
 
-          <!-- Back to categories/home -->
           <button 
             @click="handleDismiss"
             class="btn btn-outline border-base-300 w-full uppercase font-bold text-xs"
@@ -485,5 +571,168 @@ const handleDismiss = () => {
 @keyframes shine {
   0% { left: -100%; }
   25%, 100% { left: 150%; }
+}
+
+/* ── Try Again Screen Layout (Figma Redesign) ────────────────── */
+.try-again-screen-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding-top: 40px;
+  width: 326px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.card-stack-container {
+  position: relative;
+  width: 326px;
+  height: 218px;
+  filter: drop-shadow(-2.241px 3.361px 3.249px rgba(0, 0, 0, 0.25));
+}
+
+.card-stack-item {
+  position: absolute;
+  overflow: visible;
+}
+
+.card-stack-item--left {
+  left: calc(50% - 98.04px);
+  top: 0;
+  width: 129.926px;
+  height: 181.485px;
+  transform: translateX(-50%) rotate(-6deg);
+  z-index: 10;
+}
+
+.card-stack-item--right {
+  left: calc(50% + 98.01px);
+  top: 0;
+  width: 129.926px;
+  height: 181.485px;
+  transform: translateX(-50%) rotate(6deg);
+  z-index: 10;
+}
+
+.card-stack-item--center {
+  left: calc(50% - 6.72px);
+  top: 17.86px;
+  width: 143.395px;
+  height: 200.298px;
+  transform: translateX(-50%) rotate(0.5deg);
+  z-index: 20;
+}
+
+.scaled-card-left,
+.scaled-card-right {
+  transform: scale(0.412);
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.scaled-card-center {
+  transform: scale(0.455);
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.results-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 326px;
+}
+
+.category-badge-box {
+  background-color: rgba(200, 193, 183, 0.43);
+  width: 326px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.category-badge-text {
+  font-family: 'Georgia', serif;
+  font-weight: bold;
+  font-size: 20px;
+  line-height: 20px;
+  color: #3f3f35;
+  text-align: center;
+  word-break: break-word;
+}
+
+.stats-row {
+  display: flex;
+  gap: 8px;
+  width: 326px;
+  height: 32px;
+}
+
+.stat-box {
+  background-color: rgba(200, 193, 183, 0.43);
+  width: 159px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 15px;
+  box-sizing: border-box;
+}
+
+.stat-label {
+  font-family: 'Linux Libertine', Georgia, serif;
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 20px;
+  color: #3f3f35;
+}
+
+.stat-value {
+  font-family: 'Linux Libertine', Georgia, serif;
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 20px;
+  color: #3f3f35;
+  text-align: center;
+}
+
+.try-again-message {
+  font-family: 'Linux Libertine', Georgia, serif;
+  font-weight: bold;
+  font-size: 14px;
+  color: #000;
+  text-align: center;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.try-again-button {
+  background-color: #4a6783;
+  color: #fdf4eb;
+  font-family: 'Linux Libertine', Georgia, serif;
+  font-weight: bold;
+  font-size: 16px;
+  line-height: 20px;
+  text-align: center;
+  width: 326px;
+  height: 44px;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.try-again-button:hover {
+  background-color: #3b526b;
+}
+
+.try-again-button:active {
+  transform: scale(0.98);
 }
 </style>

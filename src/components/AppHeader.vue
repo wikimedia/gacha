@@ -5,7 +5,6 @@ import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Category } from '../stores/useGameStore';
 import { supabase } from '../supabase';
-import BaseDialog from './BaseDialog.vue';
 
 const props = withDefaults(defineProps<{
   displayedPoints?: number;
@@ -137,6 +136,9 @@ const prevSlide = () => {
 watch(showInfoModal, (isOpen) => {
   if (isOpen) {
     currentSlide.value = 0;
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
   }
 });
 
@@ -395,125 +397,183 @@ defineExpose({
       </form>
     </dialog>
 
-    <!-- INFO HOW TO PLAY DIALOG (Custom BaseDialog) -->
-    <BaseDialog 
-      :show="showInfoModal" 
-      title="How to Play" 
-      @close="showInfoModal = false"
-    >
-      <div class="flex flex-col items-center">
-        <!-- Slide illustration container -->
-        <div class="w-full h-44 flex items-center justify-center bg-[#eaecf0] border border-[#c4b69d]/40 rounded-sm relative overflow-hidden mb-4 select-none">
-          <!-- Slide 1: Real Card Animation -->
-          <div v-if="currentSlide === 0" class="illustration-real flex items-center justify-center w-full h-full">
-            <div class="mini-card relative w-20 h-28 bg-[#fdf4eb] border border-[#c4b69d] rounded-sm shadow-md flex flex-col justify-between p-1.5 animate-swipe-right">
-              <div class="w-full h-2 bg-gray-300 rounded-xs mb-1"></div>
-              <div class="w-full h-12 bg-gray-200 rounded-xs flex items-center justify-center text-[8px] text-gray-400">Image</div>
-              <div class="w-full h-1 bg-gray-300 rounded-xs mt-1"></div>
-              <div class="w-full h-4 bg-gray-200 rounded-xs"></div>
-            </div>
-            <!-- Swipe arrow pointing right -->
-            <div class="absolute right-4 text-[#177860] animate-pulse flex flex-col items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
-              </svg>
-              <span class="text-[9px] font-bold uppercase tracking-wider mt-0.5">Real</span>
-            </div>
-          </div>
-
-          <!-- Slide 2: Fake Card Animation -->
-          <div v-if="currentSlide === 1" class="illustration-fake flex items-center justify-center w-full h-full">
-            <div class="mini-card relative w-20 h-28 bg-[#fdf4eb] border border-[#c4b69d] rounded-sm shadow-md flex flex-col justify-between p-1.5 animate-swipe-left">
-              <div class="w-full h-2 bg-gray-300 rounded-xs mb-1"></div>
-              <div class="w-full h-12 bg-gray-200 rounded-xs flex items-center justify-center text-[8px] text-gray-400">Image</div>
-              <div class="w-full h-1 bg-gray-300 rounded-xs mt-1"></div>
-              <div class="w-full h-4 bg-gray-200 rounded-xs"></div>
-            </div>
-            <!-- Swipe arrow pointing left -->
-            <div class="absolute left-4 text-[#bf3c2c] animate-pulse flex flex-col items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"/>
-                <polyline points="12 19 5 12 12 5"/>
-              </svg>
-              <span class="text-[9px] font-bold uppercase tracking-wider mt-0.5">Fake</span>
-            </div>
-          </div>
-
-          <!-- Slide 3: Survive 10 Rounds Animation -->
-          <div v-if="currentSlide === 2" class="illustration-rounds flex flex-col items-center justify-center w-full h-full gap-3">
-            <div class="text-3xl font-serif font-black text-[#4a6783] tracking-widest animate-pulse">
-              Round 7 / 10
-            </div>
-            <div class="w-40 h-2 bg-gray-300 rounded-full overflow-hidden">
-              <div class="h-full bg-[#4a6783] transition-all duration-500" style="width: 70%"></div>
-            </div>
-            <span class="text-[10px] text-gray-500 uppercase tracking-widest font-sans animate-bounce">⚡ Hardcore: 1 mistake Ends Run</span>
-          </div>
-
-          <!-- Slide 4: Gacha Card Glow Animation -->
-          <div v-if="currentSlide === 3" class="illustration-gacha flex items-center justify-center w-full h-full">
-            <div class="mini-card relative w-20 h-28 bg-[#fdf6e3] border-2 border-[#d4a843] rounded-sm shadow-[0_0_15px_rgba(212,168,67,0.6)] flex flex-col justify-between p-1.5 animate-float-glow">
-              <div class="w-full h-2 bg-[#d4a843]/40 rounded-xs mb-1"></div>
-              <div class="w-full h-12 bg-[#fdf4eb] rounded-xs flex items-center justify-center text-[8px] text-[#b8912e] font-serif font-bold">★ ★ ★ ★ ★</div>
-              <div class="w-full h-1 bg-[#d4a843]/40 rounded-xs mt-1"></div>
-              <div class="w-full h-4 bg-[#fdf4eb] rounded-xs"></div>
-            </div>
-            <!-- Star particle decorations -->
-            <div class="star-particle absolute top-8 left-16 text-[#d4a843] animate-ping">★</div>
-            <div class="star-particle absolute bottom-8 right-16 text-[#d4a843] animate-ping" style="animation-delay: 0.5s">★</div>
-          </div>
-        </div>
-
-        <!-- Slide details -->
-        <h4 class="font-serif font-bold text-base text-[#3f3f35] text-center mb-1 w-full">
-          {{ slides[currentSlide].title }}
-        </h4>
-        <p class="text-xs text-[#54595d] text-center leading-relaxed font-sans px-2 mb-6 min-h-[3rem] w-full">
-          {{ slides[currentSlide].description }}
-        </p>
-
-        <!-- Navigation controller -->
-        <div class="flex items-center justify-between w-full px-2 mt-auto">
-          <!-- Prev button -->
-          <button 
-            @click="prevSlide"
-            class="w-8 h-8 flex items-center justify-center border border-[#c4b69d]/40 text-[#54595d] hover:bg-black/5 active:scale-95 transition-all rounded-xs"
-            :disabled="currentSlide === 0"
-            :class="{ 'opacity-20 pointer-events-none': currentSlide === 0 }"
-            aria-label="Previous step"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-
-          <!-- Step indicator dots -->
-          <div class="flex gap-2">
+    <!-- INFO HOW TO PLAY DIALOG (Custom Fullscreen Overlay) -->
+    <Teleport to="body">
+      <Transition name="dialog-fade">
+        <div 
+          v-if="showInfoModal" 
+          class="fixed inset-0 z-50 bg-[#3f3f35]/95 backdrop-blur-md flex flex-col justify-between py-6 px-6 text-[#fdf4eb]"
+          role="dialog"
+          aria-modal="true"
+        >
+          <!-- Top bar -->
+          <div class="flex items-center justify-between w-full max-w-sm mx-auto flex-shrink-0">
+            <!-- Left spacer to center the title -->
+            <div class="w-8 h-8 opacity-0"></div>
+            
+            <h3 class="font-serif font-black text-xl text-[#fdf4eb] text-center tracking-wide leading-none m-0">
+              How to Play
+            </h3>
+            
+            <!-- Close button -->
             <button 
-              v-for="(_, index) in slides" 
-              :key="index"
-              @click="currentSlide = index"
-              class="w-2.5 h-2.5 rounded-full transition-all"
-              :class="currentSlide === index ? 'bg-[#4a6783] scale-110' : 'bg-gray-300 hover:bg-gray-400'"
-              :aria-label="'Go to step ' + (index + 1)"
-            ></button>
+              @click="showInfoModal = false"
+              class="flex items-center justify-center w-8 h-8 rounded-full border border-transparent hover:bg-white/10 text-[#fdf4eb] active:scale-90 transition-all cursor-pointer"
+              aria-label="Close dialog"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
           </div>
 
-          <!-- Next button or "Done" -->
-          <button 
-            @click="currentSlide === slides.length - 1 ? showInfoModal = false : nextSlide()"
-            class="h-8 px-3 flex items-center justify-center border border-[#c4b69d]/40 text-[#54595d] hover:bg-black/5 active:scale-95 transition-all text-xs font-bold uppercase tracking-wider rounded-xs"
-            aria-label="Next step"
-          >
-            <span v-if="currentSlide === slides.length - 1">Done</span>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </button>
+          <!-- Middle: Illustration + Text -->
+          <div class="flex-grow flex flex-col items-center justify-center w-full max-w-sm mx-auto my-auto py-2">
+            <!-- Slide illustration container -->
+            <div class="w-full max-w-[246px] h-[229px] flex items-center justify-center bg-[#eaecf0]/10 border border-[#c4b69d]/20 rounded-md relative overflow-hidden select-none">
+              <!-- Slide 1: Real Card Animation -->
+              <div v-if="currentSlide === 0" class="flex items-center justify-center w-full h-full relative">
+                <div class="mini-card mini-card-real">
+                  <div class="mini-card-header bg-[#4a6783]"></div>
+                  <div class="mini-card-img bg-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M2 3h20v14H2z"/>
+                      <path d="M8 21h8"/>
+                      <path d="M12 17v4"/>
+                    </svg>
+                  </div>
+                  <div class="mini-card-line w-full bg-slate-300"></div>
+                  <div class="mini-card-line w-5/6 bg-slate-300"></div>
+                  <div class="mini-card-line w-2/3 bg-slate-300"></div>
+                  <div class="real-badge font-sans font-black uppercase text-[8px] tracking-wider text-[#177860] border border-[#177860] px-1 py-0.5 rounded bg-[#fdf4eb] shadow-md absolute top-12 left-1/2 -translate-x-1/2 rotate-[-12deg] flex items-center gap-0.5">
+                    ✓ Real
+                  </div>
+                </div>
+                <!-- Swipe arrow pointing right -->
+                <div class="absolute right-3 text-[#177860]/80 animate-pulse flex flex-col items-center select-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
+                  </svg>
+                  <span class="text-[8px] font-bold uppercase tracking-wider mt-0.5">Real</span>
+                </div>
+              </div>
+
+              <!-- Slide 2: Fake Card Animation -->
+              <div v-if="currentSlide === 1" class="flex items-center justify-center w-full h-full relative">
+                <div class="mini-card mini-card-fake">
+                  <div class="mini-card-header bg-[#4a6783]"></div>
+                  <div class="mini-card-img bg-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                  </div>
+                  <div class="mini-card-line w-full bg-slate-300"></div>
+                  <div class="mini-card-line w-5/6 bg-slate-300"></div>
+                  <div class="mini-card-line w-2/3 bg-slate-300"></div>
+                  <div class="fake-badge font-sans font-black uppercase text-[8px] tracking-wider text-[#bf3c2c] border border-[#bf3c2c] px-1 py-0.5 rounded bg-[#fdf4eb] shadow-md absolute top-12 left-1/2 -translate-x-1/2 rotate-[12deg] flex items-center gap-0.5">
+                    ✗ Fake
+                  </div>
+                </div>
+                <!-- Swipe arrow pointing left -->
+                <div class="absolute left-3 text-[#bf3c2c]/80 animate-pulse flex flex-col items-center select-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"/>
+                    <polyline points="12 19 5 12 12 5"/>
+                  </svg>
+                  <span class="text-[8px] font-bold uppercase tracking-wider mt-0.5">Fake</span>
+                </div>
+              </div>
+
+              <!-- Slide 3: Survive 10 Rounds Animation -->
+              <div v-if="currentSlide === 2" class="flex flex-col items-center justify-center w-full h-full gap-3 select-none">
+                <div class="bg-[#fdf4eb] border border-[#c4b69d] rounded-sm shadow-md p-3 flex flex-col items-center w-36 gap-2">
+                  <div class="text-[10px] font-serif font-black text-[#4a6783] tracking-wider uppercase">
+                    Round 7 / 10
+                  </div>
+                  <div class="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                    <div class="h-full bg-[#4a6783] rounded-full" style="width: 70%"></div>
+                  </div>
+                  <div class="text-[8px] text-[#bf3c2c] font-black uppercase tracking-wide flex items-center gap-1 mt-0.5">
+                    ⚡ 1 mistake ends run
+                  </div>
+                </div>
+              </div>
+
+              <!-- Slide 4: Gacha Card Glow Animation -->
+              <div v-if="currentSlide === 3" class="flex items-center justify-center w-full h-full relative">
+                <div class="mini-card mini-card-gacha">
+                  <div class="mini-card-header bg-[#d4a843]"></div>
+                  <div class="mini-card-img bg-[#fdf6e3] text-[#d4a843] flex items-center justify-center font-serif font-black text-[8px]">
+                    ★★★★★
+                  </div>
+                  <div class="mini-card-line w-full bg-[#d4a843]/30"></div>
+                  <div class="mini-card-line w-5/6 bg-[#d4a843]/30"></div>
+                  <div class="mini-card-line w-2/3 bg-[#d4a843]/30"></div>
+                </div>
+                <!-- Star particle decorations -->
+                <div class="star-particle absolute top-8 left-16 text-[#d4a843] animate-ping">★</div>
+                <div class="star-particle absolute bottom-8 right-16 text-[#d4a843] animate-ping" style="animation-delay: 0.5s">★</div>
+              </div>
+            </div>
+
+            <!-- Slide details (Text below the card) -->
+            <div class="text-center w-full max-w-[280px] mt-6 min-h-[120px] flex flex-col justify-start">
+              <h4 class="font-serif font-black text-xl text-[#fdf4eb] leading-tight mb-2">
+                {{ slides[currentSlide].title }}
+              </h4>
+              <p class="text-sm text-[#fdf4eb]/80 leading-relaxed font-sans px-2">
+                {{ slides[currentSlide].description }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Bottom Navigation controller -->
+          <div class="flex items-center justify-between w-full max-w-xs mx-auto px-4 mt-auto flex-shrink-0">
+            <!-- Prev button -->
+            <button 
+              @click="prevSlide"
+              class="w-10 h-10 flex items-center justify-center rounded-full border border-[#fdf4eb]/20 text-[#fdf4eb] hover:bg-white/10 active:scale-90 transition-all cursor-pointer disabled:opacity-20 disabled:pointer-events-none"
+              :disabled="currentSlide === 0"
+              aria-label="Previous step"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+
+            <!-- Step indicator dots -->
+            <div class="flex gap-3">
+              <button 
+                v-for="(_, index) in slides" 
+                :key="index"
+                @click="currentSlide = index"
+                class="w-2.5 h-2.5 rounded-full transition-all cursor-pointer"
+                :class="currentSlide === index ? 'bg-[#fdf4eb] scale-125' : 'bg-[#fdf4eb]/40 hover:bg-[#fdf4eb]/60'"
+                :aria-label="'Go to step ' + (index + 1)"
+              ></button>
+            </div>
+
+            <!-- Next button / Done -->
+            <button 
+              @click="currentSlide === slides.length - 1 ? showInfoModal = false : nextSlide()"
+              class="w-10 h-10 flex items-center justify-center rounded-full border border-[#fdf4eb]/20 text-[#fdf4eb] hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+              aria-label="Next step"
+            >
+              <svg v-if="currentSlide < slides.length - 1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </button>
+          </div>
         </div>
-      </div>
-    </BaseDialog>
+      </Transition>
+    </Teleport>
 
   </header>
 </template>
@@ -550,7 +610,77 @@ defineExpose({
   opacity: 0.8;
 }
 
-/* --- How to Play Slideshow Animations --- */
+/* --- How to Play Slideshow Animations & Custom Dialog --- */
+.dialog-fade-enter-active,
+.dialog-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.dialog-fade-enter-from,
+.dialog-fade-leave-to {
+  opacity: 0;
+}
+
+.mini-card {
+  position: relative;
+  width: 80px;
+  height: 112px;
+  background-color: #fdf4eb;
+  border: 1.5px solid #c4b69d;
+  border-radius: 4px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.mini-card-header {
+  width: 24px;
+  height: 4px;
+  border-radius: 1px;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.mini-card-img {
+  width: 100%;
+  height: 44px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+
+.mini-card-line {
+  height: 3px;
+  border-radius: 1px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.mini-card-line:last-child {
+  margin-bottom: 0;
+}
+
+.mini-card-real {
+  animation: swipeRight 2.2s ease-in-out infinite;
+}
+
+.mini-card-fake {
+  animation: swipeLeft 2.2s ease-in-out infinite;
+}
+
+.mini-card-gacha {
+  background-color: #fdf6e3;
+  border-color: #d4a843;
+  box-shadow: 0 0 15px rgba(212, 168, 67, 0.5);
+  animation: floatGlow 3s ease-in-out infinite;
+}
+
 @keyframes swipeRight {
   0%, 100% {
     transform: translateX(0) rotate(0deg);
@@ -562,10 +692,6 @@ defineExpose({
     border-color: #177860;
     box-shadow: 0 4px 12px rgba(23, 120, 96, 0.4);
   }
-}
-
-.animate-swipe-right {
-  animation: swipeRight 2.2s ease-in-out infinite;
 }
 
 @keyframes swipeLeft {
@@ -581,10 +707,6 @@ defineExpose({
   }
 }
 
-.animate-swipe-left {
-  animation: swipeLeft 2.2s ease-in-out infinite;
-}
-
 @keyframes floatGlow {
   0%, 100% {
     transform: translateY(0);
@@ -594,10 +716,6 @@ defineExpose({
     transform: translateY(-8px);
     box-shadow: 0 0 24px rgba(212, 168, 67, 0.8);
   }
-}
-
-.animate-float-glow {
-  animation: floatGlow 3s ease-in-out infinite;
 }
 
 .star-particle {
