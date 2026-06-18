@@ -645,6 +645,10 @@ body {
 
 
 .category-slider-wrapper {
+  position: relative;
+  width: 100cqw;
+  left: 50%;
+  margin-left: -50cqw;
   margin-top: auto;
   padding: 0.5rem 0 0 0;
   overflow: hidden;
@@ -665,32 +669,13 @@ body {
   display: flex;
   gap: 16px;
   overflow-x: auto;
+  padding-left: max(1rem, calc((100cqw - 28rem) / 2 + 1rem));
+  padding-right: max(1rem, calc((100cqw - 28rem) / 2 + 1rem));
   padding-top: 0;
   padding-bottom: 1rem;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-/* Phone-sized layout (locks to left-position and bleeds to screen edges) */
-@media (max-width: 28rem) {
-  .category-slider-wrapper {
-    position: relative;
-    width: 100cqw;
-    left: 50%;
-    margin-left: -50cqw;
-  }
-}
-
-/* Larger screen layout (centered and confined to page columns) */
-@media (min-width: 28.01rem) {
-  .category-slider-wrapper {
-    width: calc(100% + 2rem);
-    margin-left: -1rem;
-    margin-right: -1rem;
-  }
 }
 
 .category-slider-carousel::-webkit-scrollbar {
