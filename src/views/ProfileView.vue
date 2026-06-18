@@ -202,7 +202,7 @@ const toggleCardShowcase = async (cardId: string) => {
 
 <template>
   <PageLayout is-wide @edit-profile="showEditProfileModal = true">
-    <Loader v-if="isLoadingProfile" />
+    <Loader v-if="isLoadingProfile" message="Loading scholar profile..." />
 
     <div v-else-if="profileUser" class="flex flex-col gap-6 w-full animate-fade-in">
 
@@ -286,7 +286,7 @@ const toggleCardShowcase = async (cardId: string) => {
         </div>
 
         <!-- Grid of Cards or Loader -->
-        <Loader v-if="isLoadingCards" />
+        <Loader v-if="isLoadingCards" message="Loading collection binder..." />
         
         <template v-else>
           <div v-if="sortedBinderCards.length === 0" class="text-xs text-[#888888] italic text-center py-16 bg-[#fdf4eb]/10 border border-[#c4b69d] rounded-[2px]">

@@ -833,10 +833,13 @@ export const useGameStore = defineStore('game', () => {
     return q;
   };
 
-  // Filters for the dedicated fakes table: it has no real/profile_id/flag_score columns,
-  // so only require an image and (when given) match a single category.
+  // Filters for the dedicated fakes table: it has real/flag_score columns,
+  // so require image_url is not null, real is false, and flag_score is below threshold or null.
   const applyFakesTableFilters = (query: any, category?: Category) => {
-    let q = query.not('image_url', 'is', null);
+    let q = query
+      .not('image_url', 'is', null)
+      .eq('real', false)
+      .or(`flag_score.lte.${FLAG_SCORE_MAX},flag_score.is.null`);
     if (category) {
       q = applyCategoryFilter(q, category);
     }

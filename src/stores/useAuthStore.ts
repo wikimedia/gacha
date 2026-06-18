@@ -88,7 +88,7 @@ export const useAuthStore = defineStore('auth', () => {
       const username = profileUsername || metadata.username || 'Scholar';
       const bio = profileBio ?? metadata.bio ?? 'Avid Moonflower scholar and collector.';
       
-      // Fetch user's collected cards directly from the database articles table
+      // Fetch user's collected cards directly from the database articles_v2 table
       let dbCards: any[] = [];
       if (su.id && !su.id.startsWith('usr_')) {
         try {

@@ -44,19 +44,19 @@ watch(() => authStore.isLoggedIn, (loggedIn) => {
 const getCategoryClass = (category: string) => {
   switch (category) {
     case 'Animals':
-      return 'bg-[#fce8e6] text-[#a50e0e] border-[#fad2cf]';
+      return 'bg-category-animals-icon-bg text-category-animals-text border-category-animals-border/40 dark:bg-category-animals-icon-bg-dark dark:text-category-animals-text-dark dark:border-category-animals-border/20';
     case 'Earth':
-      return 'bg-[#fef7e0] text-[#b06000] border-[#fde89e]';
+      return 'bg-category-earth-icon-bg text-category-earth-text border-category-earth-border/40 dark:bg-category-earth-icon-bg-dark dark:text-category-earth-text-dark dark:border-category-earth-border/20';
     case 'Entertainment':
-      return 'bg-[#e6f4ea] text-[#137333] border-[#ceead6]';
+      return 'bg-category-entertainment-icon-bg text-category-entertainment-text border-category-entertainment-border/40 dark:bg-category-entertainment-icon-bg-dark dark:text-category-entertainment-text-dark dark:border-category-entertainment-border/20';
     case 'History':
-      return 'bg-[#ffe6cc] text-[#a34f00] border-[#ffcc99]';
+      return 'bg-category-history-icon-bg text-category-history-text border-category-history-border/40 dark:bg-category-history-icon-bg-dark dark:text-category-history-text-dark dark:border-category-history-border/20';
     case 'Physical Science':
-      return 'bg-[#e4f7fb] text-[#007b83] border-[#a2e2eb]';
+      return 'bg-category-physical-science-icon-bg text-category-physical-science-text border-category-physical-science-border/40 dark:bg-category-physical-science-icon-bg-dark dark:text-category-physical-science-text-dark dark:border-category-physical-science-border/20';
     case 'Society':
-      return 'bg-[#e8f0fe] text-[#174ea6] border-[#aecbfa]';
+      return 'bg-category-society-icon-bg text-category-society-text border-category-society-border/40 dark:bg-category-society-icon-bg-dark dark:text-category-society-text-dark dark:border-category-society-border/20';
     case 'Space':
-      return 'bg-[#fdebe8] text-[#c23b34] border-[#fbcfc9]';
+      return 'bg-category-space-icon-bg text-category-space-text border-category-space-border/40 dark:bg-category-space-icon-bg-dark dark:text-category-space-text-dark dark:border-category-space-border/20';
     default:
       return 'bg-base-200 text-base-content/85 border-base-300';
   }

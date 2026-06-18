@@ -97,6 +97,14 @@
   --color-wiki-text: var(--color-base);
   --color-wiki-muted: var(--color-subtle);
 
+  /* Figma Moonflower Color Swatch (Redesign Color Palette) */
+  --color-figma-charcoal: #3f3f35;
+  --color-figma-cream: #fdf4eb;
+  --color-figma-blue: #4a6783;
+  --color-figma-sand: #f0e5d5;
+  --color-figma-green: #829466;
+  --color-figma-charcoal-muted: rgba(63, 63, 53, 0.8);
+
   /* Rarity Card Color Palette — Wikipedia homepage section inspired */
   --color-rarity-common: #c8ccd1;
   --color-rarity-common-light: #eaecf0;
@@ -118,96 +126,245 @@
   --color-rarity-legendary-dark: #b8912e;
   --color-rarity-legendary-bg: #fdf6e3;
 
-  /* Animals Theme (Red) */
-  --color-category-animals: #d93025;
-  --color-category-animals-bg: #fce8e6;
-  --color-category-animals-bg-hover: #fad2cf;
-  --color-category-animals-dark-bg: #3c1210;
-  --color-category-animals-dark-bg-hover: #4d1815;
-  --color-category-animals-border: #f5c2be;
-  --color-category-animals-border-hover: #f09b95;
-  --color-category-animals-text: #a50e0e;
-  --color-category-animals-text-dark: #fce8e6;
-  --color-category-animals-icon-bg: rgba(217, 48, 37, 0.15);
-  --color-category-animals-icon-bg-dark: rgba(217, 48, 37, 0.3);
+  /* Main Category Tint Colors — Applied with hard-light blend on cards */
+  --color-category-civilization: #948877;
+  --color-category-civilization-bg: #f5f0e8;
+  --color-category-civilization-bg-hover: #ebe4d8;
+  --color-category-civilization-dark-bg: #2d2a27;
+  --color-category-civilization-dark-bg-hover: #3b3733;
+  --color-category-civilization-border: #C8CCD1;
+  --color-category-civilization-border-hover: #A2A9B1;
+  --color-category-civilization-text: #5c5346;
+  --color-category-civilization-text-dark: #e3dacd;
+  --color-category-civilization-icon-bg: rgba(148, 136, 119, 0.15);
+  --color-category-civilization-icon-bg-dark: rgba(148, 136, 119, 0.3);
 
-  /* Earth Theme (Yellow) */
-  --color-category-earth: #f2a600;
-  --color-category-earth-bg: #fef7e0;
-  --color-category-earth-bg-hover: #fdecc8;
-  --color-category-earth-dark-bg: #3e2d00;
-  --color-category-earth-dark-bg-hover: #4e3900;
-  --color-category-earth-border: #fde89e;
-  --color-category-earth-border-hover: #fcd866;
-  --color-category-earth-text: #b06000;
-  --color-category-earth-text-dark: #fef7e0;
-  --color-category-earth-icon-bg: rgba(242, 166, 0, 0.15);
-  --color-category-earth-icon-bg-dark: rgba(242, 166, 0, 0.3);
+  --color-category-nature: #7E8C75;
+  --color-category-nature-bg: #eef3eb;
+  --color-category-nature-bg-hover: #deebd7;
+  --color-category-nature-dark-bg: #262924;
+  --color-category-nature-dark-bg-hover: #31362e;
+  --color-category-nature-border: #b8cbb0;
+  --color-category-nature-border-hover: #8da283;
+  --color-category-nature-text: #4f5b48;
+  --color-category-nature-text-dark: #dbe5d7;
+  --color-category-nature-icon-bg: rgba(126, 140, 117, 0.15);
+  --color-category-nature-icon-bg-dark: rgba(126, 140, 117, 0.3);
 
-  /* Entertainment Theme (Green) */
-  --color-category-entertainment: #137333;
-  --color-category-entertainment-bg: #e6f4ea;
-  --color-category-entertainment-bg-hover: #ceead6;
-  --color-category-entertainment-dark-bg: #0f3418;
-  --color-category-entertainment-dark-bg-hover: #164822;
-  --color-category-entertainment-border: #a8dab5;
-  --color-category-entertainment-border-hover: #7bbf8c;
-  --color-category-entertainment-text: #137333;
-  --color-category-entertainment-text-dark: #e6f4ea;
-  --color-category-entertainment-icon-bg: rgba(19, 115, 51, 0.15);
-  --color-category-entertainment-icon-bg-dark: rgba(19, 115, 51, 0.3);
+  --color-category-science: #787F9B;
+  --color-category-science-bg: #eef1f6;
+  --color-category-science-bg-hover: #dee4ee;
+  --color-category-science-dark-bg: #24262c;
+  --color-category-science-dark-bg-hover: #2e313a;
+  --color-category-science-border: #b4c1db;
+  --color-category-science-border-hover: #8592b1;
+  --color-category-science-text: #49506a;
+  --color-category-science-text-dark: #dbe1ec;
+  --color-category-science-icon-bg: rgba(120, 127, 155, 0.15);
+  --color-category-science-icon-bg-dark: rgba(120, 127, 155, 0.3);
 
-  /* History Theme (Orange) */
-  --color-category-history: #e8710a;
-  --color-category-history-bg: #ffe6cc;
-  --color-category-history-bg-hover: #ffd9b3;
-  --color-category-history-dark-bg: #4d1f00;
-  --color-category-history-dark-bg-hover: #5d2500;
-  --color-category-history-border: #ffcc99;
-  --color-category-history-border-hover: #ffa64d;
-  --color-category-history-text: #a34f00;
-  --color-category-history-text-dark: #ffe6cc;
-  --color-category-history-icon-bg: rgba(232, 113, 10, 0.15);
-  --color-category-history-icon-bg-dark: rgba(232, 113, 10, 0.3);
+  /* Homepage Brighter Category Variations */
+  --color-category-civilization-hp-bg: #fdf3db;
+  --color-category-civilization-hp-bg-hover: #fbe7be;
+  --color-category-civilization-hp-dark-bg: #3a3224;
+  --color-category-civilization-hp-dark-bg-hover: #4c412f;
+  --color-category-civilization-hp-border: #f5d595;
+  --color-category-civilization-hp-border-hover: #e2ba65;
+  --color-category-civilization-hp-text: #825e1c;
+  --color-category-civilization-hp-text-dark: #fcdb9b;
+  --color-category-civilization-hp-icon-bg: rgba(212, 168, 67, 0.2);
+  --color-category-civilization-hp-icon-bg-dark: rgba(212, 168, 67, 0.4);
 
-  /* Physical Science Theme (Cyan) */
-  --color-category-physical-science: #12b5cb;
-  --color-category-physical-science-bg: #e4f7fb;
-  --color-category-physical-science-bg-hover: #c2ecf1;
-  --color-category-physical-science-dark-bg: #00373e;
-  --color-category-physical-science-dark-bg-hover: #00464f;
-  --color-category-physical-science-border: #a2e2eb;
-  --color-category-physical-science-border-hover: #62ceda;
-  --color-category-physical-science-text: #007b83;
-  --color-category-physical-science-text-dark: #e4f7fb;
-  --color-category-physical-science-icon-bg: rgba(18, 181, 203, 0.15);
-  --color-category-physical-science-icon-bg-dark: rgba(18, 181, 203, 0.3);
+  --color-category-nature-hp-bg: #e8f7e2;
+  --color-category-nature-hp-bg-hover: #d3f0c7;
+  --color-category-nature-hp-dark-bg: #243020;
+  --color-category-nature-hp-dark-bg-hover: #2e3e29;
+  --color-category-nature-hp-border: #addd9b;
+  --color-category-nature-hp-border-hover: #81c667;
+  --color-category-nature-hp-text: #2b6d19;
+  --color-category-nature-hp-text-dark: #b6efa3;
+  --color-category-nature-hp-icon-bg: rgba(43, 109, 25, 0.15);
+  --color-category-nature-hp-icon-bg-dark: rgba(43, 109, 25, 0.35);
 
-  /* Society Theme (Blue) */
-  --color-category-society: #1a73e8;
-  --color-category-society-bg: #e8f0fe;
-  --color-category-society-bg-hover: #d2e3fc;
-  --color-category-society-dark-bg: #162a45;
-  --color-category-society-dark-bg-hover: #1c3659;
-  --color-category-society-border: #aecbfa;
-  --color-category-society-border-hover: #7baaf7;
-  --color-category-society-text: #174ea6;
-  --color-category-society-text-dark: #e8f0fe;
-  --color-category-society-icon-bg: rgba(26, 115, 232, 0.15);
-  --color-category-society-icon-bg-dark: rgba(26, 115, 232, 0.3);
+  --color-category-science-hp-bg: #e7f1fd;
+  --color-category-science-hp-bg-hover: #cbe0fa;
+  --color-category-science-hp-dark-bg: #1d2836;
+  --color-category-science-hp-dark-bg-hover: #27364a;
+  --color-category-science-hp-border: #9dc3f7;
+  --color-category-science-hp-border-hover: #6aa2f2;
+  --color-category-science-hp-text: #1d52a2;
+  --color-category-science-hp-text-dark: #a6c9fb;
+  --color-category-science-hp-icon-bg: rgba(29, 82, 162, 0.15);
+  --color-category-science-hp-icon-bg-dark: rgba(29, 82, 162, 0.35);
 
-  /* Space Theme (Light Red/Salmon) */
-  --color-category-space: #f07b75;
-  --color-category-space-bg: #fdebe8;
-  --color-category-space-bg-hover: #fbcfc9;
-  --color-category-space-dark-bg: #401916;
-  --color-category-space-dark-bg-hover: #4e1f1c;
-  --color-category-space-border: #fbcfc9;
-  --color-category-space-border-hover: #f89e94;
-  --color-category-space-text: #c23b34;
-  --color-category-space-text-dark: #fdebe8;
-  --color-category-space-icon-bg: rgba(240, 123, 117, 0.15);
-  --color-category-space-icon-bg-dark: rgba(240, 123, 117, 0.3);
+  /* Animals Theme (Olive/Sage Green - desaturated) */
+  --color-category-animals: var(--color-category-nature);
+  --color-category-animals-bg: var(--color-category-nature-bg);
+  --color-category-animals-bg-hover: var(--color-category-nature-bg-hover);
+  --color-category-animals-dark-bg: var(--color-category-nature-dark-bg);
+  --color-category-animals-dark-bg-hover: var(--color-category-nature-dark-bg-hover);
+  --color-category-animals-border: var(--color-category-nature-border);
+  --color-category-animals-border-hover: var(--color-category-nature-border-hover);
+  --color-category-animals-text: var(--color-category-nature-text);
+  --color-category-animals-text-dark: var(--color-category-nature-text-dark);
+  --color-category-animals-icon-bg: var(--color-category-nature-icon-bg);
+  --color-category-animals-icon-bg-dark: var(--color-category-nature-icon-bg-dark);
+
+  /* Earth Theme (Desaturated Ochre/Gold) */
+  --color-category-earth: #8C826C;
+  --color-category-earth-bg: #f4f0e6;
+  --color-category-earth-bg-hover: #ebe5da;
+  --color-category-earth-dark-bg: #2d2922;
+  --color-category-earth-dark-bg-hover: #3a352c;
+  --color-category-earth-border: #d2c6b4;
+  --color-category-earth-border-hover: #b4a896;
+  --color-category-earth-text: #594f3d;
+  --color-category-earth-text-dark: #e6dec5;
+  --color-category-earth-icon-bg: rgba(140, 130, 108, 0.15);
+  --color-category-earth-icon-bg-dark: rgba(140, 130, 108, 0.3);
+
+  /* Entertainment Theme (Desaturated Plum/Rose) */
+  --color-category-entertainment: #917D8A;
+  --color-category-entertainment-bg: #f3ecf1;
+  --color-category-entertainment-bg-hover: #e7dde5;
+  --color-category-entertainment-dark-bg: #2d262a;
+  --color-category-entertainment-dark-bg-hover: #3a3137;
+  --color-category-entertainment-border: #d4c4d0;
+  --color-category-entertainment-border-hover: #b8a6b4;
+  --color-category-entertainment-text: #5e4c58;
+  --color-category-entertainment-text-dark: #e6dae3;
+  --color-category-entertainment-icon-bg: rgba(145, 125, 138, 0.15);
+  --color-category-entertainment-icon-bg-dark: rgba(145, 125, 138, 0.3);
+
+  /* History Theme (Warm Tan - Civilization alias) */
+  --color-category-history: var(--color-category-civilization);
+  --color-category-history-bg: var(--color-category-civilization-bg);
+  --color-category-history-bg-hover: var(--color-category-civilization-bg-hover);
+  --color-category-history-dark-bg: var(--color-category-civilization-dark-bg);
+  --color-category-history-dark-bg-hover: var(--color-category-civilization-dark-bg-hover);
+  --color-category-history-border: var(--color-category-civilization-border);
+  --color-category-history-border-hover: var(--color-category-civilization-border-hover);
+  --color-category-history-text: var(--color-category-civilization-text);
+  --color-category-history-text-dark: var(--color-category-civilization-text-dark);
+  --color-category-history-icon-bg: var(--color-category-civilization-icon-bg);
+  --color-category-history-icon-bg-dark: var(--color-category-civilization-icon-bg-dark);
+
+  /* Physical Science Theme (Dusty Slate Blue - Science alias) */
+  --color-category-physical-science: var(--color-category-science);
+  --color-category-physical-science-bg: var(--color-category-science-bg);
+  --color-category-physical-science-bg-hover: var(--color-category-science-bg-hover);
+  --color-category-physical-science-dark-bg: var(--color-category-science-dark-bg);
+  --color-category-physical-science-dark-bg-hover: var(--color-category-science-dark-bg-hover);
+  --color-category-physical-science-border: var(--color-category-science-border);
+  --color-category-physical-science-border-hover: var(--color-category-science-border-hover);
+  --color-category-physical-science-text: var(--color-category-science-text);
+  --color-category-physical-science-text-dark: var(--color-category-science-text-dark);
+  --color-category-physical-science-icon-bg: var(--color-category-science-icon-bg);
+  --color-category-physical-science-icon-bg-dark: var(--color-category-science-icon-bg-dark);
+
+  /* Society Theme (Warm Tan - Civilization alias) */
+  --color-category-society: var(--color-category-civilization);
+  --color-category-society-bg: var(--color-category-civilization-bg);
+  --color-category-society-bg-hover: var(--color-category-civilization-bg-hover);
+  --color-category-society-dark-bg: var(--color-category-civilization-dark-bg);
+  --color-category-society-dark-bg-hover: var(--color-category-civilization-dark-bg-hover);
+  --color-category-society-border: var(--color-category-civilization-border);
+  --color-category-society-border-hover: var(--color-category-civilization-border-hover);
+  --color-category-society-text: var(--color-category-civilization-text);
+  --color-category-society-text-dark: var(--color-category-civilization-text-dark);
+  --color-category-society-icon-bg: var(--color-category-civilization-icon-bg);
+  --color-category-society-icon-bg-dark: var(--color-category-civilization-icon-bg-dark);
+
+  /* Space Theme (Slate Indigo/Cosmic Blue) */
+  --color-category-space: #69708A;
+  --color-category-space-bg: #ebedf2;
+  --color-category-space-bg-hover: #dbe0ea;
+  --color-category-space-dark-bg: #202126;
+  --color-category-space-dark-bg-hover: #292a31;
+  --color-category-space-border: #b0b7cc;
+  --color-category-space-border-hover: #838ca8;
+  --color-category-space-text: #3c4257;
+  --color-category-space-text-dark: #d6dbe9;
+  --color-category-space-icon-bg: rgba(105, 112, 138, 0.15);
+  --color-category-space-icon-bg-dark: rgba(105, 112, 138, 0.3);
+
+  /* Homepage Brighter Category Variations for 7 Categories */
+  --color-category-animals-hp-bg: var(--color-category-nature-hp-bg);
+  --color-category-animals-hp-bg-hover: var(--color-category-nature-hp-bg-hover);
+  --color-category-animals-hp-dark-bg: var(--color-category-nature-hp-dark-bg);
+  --color-category-animals-hp-dark-bg-hover: var(--color-category-nature-hp-dark-bg-hover);
+  --color-category-animals-hp-border: var(--color-category-nature-hp-border);
+  --color-category-animals-hp-border-hover: var(--color-category-nature-hp-border-hover);
+  --color-category-animals-hp-text: var(--color-category-nature-hp-text);
+  --color-category-animals-hp-text-dark: var(--color-category-nature-hp-text-dark);
+  --color-category-animals-hp-icon-bg: var(--color-category-nature-hp-icon-bg);
+  --color-category-animals-hp-icon-bg-dark: var(--color-category-nature-hp-icon-bg-dark);
+
+  --color-category-earth-hp-bg: #fdf6e2;
+  --color-category-earth-hp-bg-hover: #faeac1;
+  --color-category-earth-hp-dark-bg: #3a3524;
+  --color-category-earth-hp-dark-bg-hover: #4c462f;
+  --color-category-earth-hp-border: #ecd99a;
+  --color-category-earth-hp-border-hover: #dac16d;
+  --color-category-earth-hp-text: #7b621e;
+  --color-category-earth-hp-text-dark: #fbe6ad;
+  --color-category-earth-hp-icon-bg: rgba(140, 130, 108, 0.2);
+  --color-category-earth-hp-icon-bg-dark: rgba(140, 130, 108, 0.4);
+
+  --color-category-entertainment-hp-bg: #faf0f5;
+  --color-category-entertainment-hp-bg-hover: #f3dbe8;
+  --color-category-entertainment-hp-dark-bg: #362831;
+  --color-category-entertainment-hp-dark-bg-hover: #483541;
+  --color-category-entertainment-hp-border: #e6bbd5;
+  --color-category-entertainment-hp-border-hover: #d195bb;
+  --color-category-entertainment-hp-text: #82476d;
+  --color-category-entertainment-hp-text-dark: #fbd6ed;
+  --color-category-entertainment-hp-icon-bg: rgba(145, 125, 138, 0.2);
+  --color-category-entertainment-hp-icon-bg-dark: rgba(145, 125, 138, 0.4);
+
+  --color-category-history-hp-bg: var(--color-category-civilization-hp-bg);
+  --color-category-history-hp-bg-hover: var(--color-category-civilization-hp-bg-hover);
+  --color-category-history-hp-dark-bg: var(--color-category-civilization-hp-dark-bg);
+  --color-category-history-hp-dark-bg-hover: var(--color-category-civilization-hp-dark-bg-hover);
+  --color-category-history-hp-border: var(--color-category-civilization-hp-border);
+  --color-category-history-hp-border-hover: var(--color-category-civilization-hp-border-hover);
+  --color-category-history-hp-text: var(--color-category-civilization-hp-text);
+  --color-category-history-hp-text-dark: var(--color-category-civilization-hp-text-dark);
+  --color-category-history-hp-icon-bg: var(--color-category-civilization-hp-icon-bg);
+  --color-category-history-hp-icon-bg-dark: var(--color-category-civilization-hp-icon-bg-dark);
+
+  --color-category-physical-science-hp-bg: var(--color-category-science-hp-bg);
+  --color-category-physical-science-hp-bg-hover: var(--color-category-science-hp-bg-hover);
+  --color-category-physical-science-hp-dark-bg: var(--color-category-science-hp-dark-bg);
+  --color-category-physical-science-hp-dark-bg-hover: var(--color-category-science-hp-dark-bg-hover);
+  --color-category-physical-science-hp-border: var(--color-category-science-hp-border);
+  --color-category-physical-science-hp-border-hover: var(--color-category-science-hp-border-hover);
+  --color-category-physical-science-hp-text: var(--color-category-science-hp-text);
+  --color-category-physical-science-hp-text-dark: var(--color-category-science-hp-text-dark);
+  --color-category-physical-science-hp-icon-bg: var(--color-category-science-hp-icon-bg);
+  --color-category-physical-science-hp-icon-bg-dark: var(--color-category-science-hp-icon-bg-dark);
+
+  --color-category-society-hp-bg: var(--color-category-civilization-hp-bg);
+  --color-category-society-hp-bg-hover: var(--color-category-civilization-hp-bg-hover);
+  --color-category-society-hp-dark-bg: var(--color-category-civilization-hp-dark-bg);
+  --color-category-society-hp-dark-bg-hover: var(--color-category-civilization-hp-dark-bg-hover);
+  --color-category-society-hp-border: var(--color-category-civilization-hp-border);
+  --color-category-society-hp-border-hover: var(--color-category-civilization-hp-border-hover);
+  --color-category-society-hp-text: var(--color-category-civilization-hp-text);
+  --color-category-society-hp-text-dark: var(--color-category-civilization-hp-text-dark);
+  --color-category-society-hp-icon-bg: var(--color-category-civilization-hp-icon-bg);
+  --color-category-society-hp-icon-bg-dark: var(--color-category-civilization-hp-icon-bg-dark);
+
+  --color-category-space-hp-bg: #eaf1fb;
+  --color-category-space-hp-bg-hover: #cfdffa;
+  --color-category-space-hp-dark-bg: #1d2536;
+  --color-category-space-hp-dark-bg-hover: #263248;
+  --color-category-space-hp-border: #a1bffa;
+  --color-category-space-hp-border-hover: #6e9bf7;
+  --color-category-space-hp-text: #2151a6;
+  --color-category-space-hp-text-dark: #adc7fc;
+  --color-category-space-hp-icon-bg: rgba(105, 112, 138, 0.2);
+  --color-category-space-hp-icon-bg-dark: rgba(105, 112, 138, 0.4);
 }
 
 /* Custom Base resets */
@@ -540,12 +697,14 @@ body {
   height: 102px;
   border-radius: 1px;
   overflow: hidden;
+  border: 2.184px solid transparent;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: all 0.25s ease;
   background-color: var(--color-base-300);
 }
 
 .category-slider-item.is-active .category-slider-thumbnail-wrapper {
+  border-color: #fdf4eb;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 6px 14px rgba(0, 0, 0, 0.22);
   transform: translateY(-3px);
 }
@@ -554,6 +713,11 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.category-slider-item:hover .category-slider-thumbnail {
+  transform: scale(1.08);
 }
 
 .category-slider-label {
