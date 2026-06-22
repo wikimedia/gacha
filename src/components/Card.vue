@@ -252,6 +252,11 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   --_bg: var(--color-category-space-bg);
 }
 
+.trading-card--sports {
+  --_tint: var(--color-category-sports);
+  --_bg: var(--color-category-sports-bg);
+}
+
 
 .trading-card:hover {
   box-shadow: 

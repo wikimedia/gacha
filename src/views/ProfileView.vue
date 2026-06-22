@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
-import { useGameStore, MOCK_CARDS } from '../stores/useGameStore';
+import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
 import PageLayout from '../components/PageLayout.vue';
@@ -125,7 +125,7 @@ const showcaseCards = computed(() => {
   // Map collected cards IDs to dynamic or mock card data
   const showcaseCollects = profileCards.value.filter(c => c.isShowcase);
   return showcaseCollects.map(sc => {
-    const cardData = sc.cardDetails || gameStore.gameCards.find((mc: any) => mc.id === sc.id) || MOCK_CARDS.find((mc: any) => mc.id === sc.id);
+    const cardData = sc.cardDetails || gameStore.gameCards.find((mc: any) => mc.id === sc.id) || [];
     if (!cardData) return null;
     return {
       ...cardData,
@@ -167,7 +167,7 @@ const isAvatarCSSImage = computed(() => {
 const sortedBinderCards = computed(() => {
   console.log(`sortedBinderCards re-evaluating: profileCards count = ${profileCards.value.length}, gameCards count = ${gameStore.gameCards.length}`);
   const result = profileCards.value.map(c => {
-    const cardData = c.cardDetails || gameStore.gameCards.find((mc: any) => mc.id === c.id) || MOCK_CARDS.find((mc: any) => mc.id === c.id);
+    const cardData = c.cardDetails || gameStore.gameCards.find((mc: any) => mc.id === c.id) || [];
     if (!cardData) {
       console.warn(`Card data not found for collected card ID: "${c.id}"`);
       return null;

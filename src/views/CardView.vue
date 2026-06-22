@@ -16,7 +16,7 @@ const defaultMockCards: CardType[] = [
     id: 'preview_common',
     title: 'The Cube-Shaped Feces',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Wombat',
-    category: 'Animals',
+    category: 'Earth',
     rarity: 'Common',
     description: 'Wombats are the only known animals in the world that produce cube-shaped poop, which they stack to mark their territory and prevent the feces from rolling away.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Vombatus_ursinus_-Maria_Island_National_Park.jpg',
@@ -27,7 +27,7 @@ const defaultMockCards: CardType[] = [
     id: 'preview_rare',
     title: 'The Whiskey War',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Whisky_War',
-    category: 'History',
+    category: 'History / Society',
     rarity: 'Rare',
     description: 'Canada and Denmark engaged in a peaceful conflict over Hans Island, where they took turns planting flags and leaving bottles of Canadian Club whiskey or Danish Schnapps.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Hans_Island_from_Canadian_side.jpg',
@@ -38,7 +38,7 @@ const defaultMockCards: CardType[] = [
     id: 'preview_epic',
     title: 'The Great Emu War',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Emu_War',
-    category: 'History',
+    category: 'History / Society',
     rarity: 'Epic',
     description: 'In 1932, the Australian military deployed soldiers armed with machine guns to combat a massive population of emus destroying crops, but the emus actually won.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Dromaius_novaehollandiae_-_cemetery.jpg',
@@ -49,7 +49,7 @@ const defaultMockCards: CardType[] = [
     id: 'preview_legendary',
     title: 'The Dancing Plague of 1518',
     wikipediaLink: 'https://en.wikipedia.org/wiki/Dancing_plague_of_1518',
-    category: 'History',
+    category: 'History / Society',
     rarity: 'Legendary',
     description: 'A mysterious mania occurred in Strasbourg where hundreds of citizens danced uncontrollably for weeks without rest, leading to several deaths from pure physical exhaustion.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/St_John%27s_dancers.jpg',
@@ -70,20 +70,19 @@ onMounted(async () => {
     // We only want real cards
     const realCards = allCards.filter(c => c.isReal);
     
-    // Sort logic mapping for 7 categories
+    // Sort logic mapping for the 6 categories
     const categoryOrder: Record<Category, number> = {
-      'Animals': 0,
-      'Earth': 1,
-      'Entertainment': 2,
-      'History': 3,
-      'Physical Science': 4,
-      'Society': 5,
-      'Space': 6
+      'Sports': 0,
+      'People / Culture': 1,
+      'Media': 2,
+      'Earth': 3,
+      'History / Society': 4,
+      'Physical Science': 5
     };
 
     if (realCards.length > 0) {
       // Let's pick 5 cards of different categories
-      const categories: Category[] = ['Animals', 'Earth', 'Entertainment', 'History', 'Physical Science'];
+      const categories: Category[] = ['Sports', 'People / Culture', 'Media', 'Earth', 'History / Society'];
       const selected: CardType[] = [];
       
       categories.forEach(cat => {
@@ -116,7 +115,7 @@ onMounted(async () => {
       selected.sort((a, b) => categoryOrder[a.category] - categoryOrder[b.category]);
       
       // Force each card to have a different category and rarity level for design testing
-      const categoriesList: Category[] = ['Animals', 'Earth', 'Entertainment', 'History', 'Physical Science'];
+      const categoriesList: Category[] = ['Sports', 'People / Culture', 'Media', 'Earth', 'History / Society'];
       const rarities: ('Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary')[] = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
       selected.forEach((card, idx) => {
         if (idx < categoriesList.length) {
@@ -138,7 +137,7 @@ onMounted(async () => {
           ...mockList[0],
           id: 'preview_uncommon',
           title: 'The Uncommon Platypus',
-          category: 'Animals'
+          category: 'Earth'
         });
       }
       mockList.forEach((card, idx) => {

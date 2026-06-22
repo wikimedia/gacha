@@ -275,6 +275,19 @@
   --color-category-society-icon-bg: var(--color-category-civilization-icon-bg);
   --color-category-society-icon-bg-dark: var(--color-category-civilization-icon-bg-dark);
 
+  /* Sports Theme (Desaturated Teal) */
+  --color-category-sports: #5F8A82;
+  --color-category-sports-bg: #e9f1ef;
+  --color-category-sports-bg-hover: #d7e7e3;
+  --color-category-sports-dark-bg: #1f2a28;
+  --color-category-sports-dark-bg-hover: #293734;
+  --color-category-sports-border: #aecbc5;
+  --color-category-sports-border-hover: #7fa9a1;
+  --color-category-sports-text: #3a5751;
+  --color-category-sports-text-dark: #cfe3df;
+  --color-category-sports-icon-bg: rgba(95, 138, 130, 0.15);
+  --color-category-sports-icon-bg-dark: rgba(95, 138, 130, 0.3);
+
   /* Space Theme (Slate Indigo/Cosmic Blue) */
   --color-category-space: #69708A;
   --color-category-space-bg: #ebedf2;
@@ -354,6 +367,17 @@
   --color-category-society-hp-text-dark: var(--color-category-civilization-hp-text-dark);
   --color-category-society-hp-icon-bg: var(--color-category-civilization-hp-icon-bg);
   --color-category-society-hp-icon-bg-dark: var(--color-category-civilization-hp-icon-bg-dark);
+
+  --color-category-sports-hp-bg: #e3f4ef;
+  --color-category-sports-hp-bg-hover: #c8ebe2;
+  --color-category-sports-hp-dark-bg: #1d302b;
+  --color-category-sports-hp-dark-bg-hover: #274038;
+  --color-category-sports-hp-border: #97d9c7;
+  --color-category-sports-hp-border-hover: #66c2ab;
+  --color-category-sports-hp-text: #1f6d57;
+  --color-category-sports-hp-text-dark: #a3efd9;
+  --color-category-sports-hp-icon-bg: rgba(95, 138, 130, 0.2);
+  --color-category-sports-hp-icon-bg-dark: rgba(95, 138, 130, 0.4);
 
   --color-category-space-hp-bg: #eaf1fb;
   --color-category-space-hp-bg-hover: #cfdffa;

@@ -3,19 +3,18 @@ import { ref, watch } from 'vue';
 import { useAuthStore } from './useAuthStore';
 import { supabase } from '../supabase';
 
-// The seven categories, matching the design guidelines.
-export type Category = 'Animals' | 'Earth' | 'Entertainment' | 'History' | 'Physical Science' | 'Society' | 'Space';
-export const CATEGORIES: Category[] = ['Animals', 'Earth', 'Entertainment', 'History', 'Physical Science', 'Society', 'Space'];
+// The six categories, matching the design guidelines.
+export type Category = 'Sports' | 'People / Culture' | 'Media' | 'Earth' | 'History / Society' | 'Physical Science';
+export const CATEGORIES: Category[] = ['Sports', 'People / Culture', 'Media', 'Earth', 'History / Society', 'Physical Science'];
 
 // Each category maps to a color-palette slug used in CSS/Tailwind class names.
 export const CATEGORY_SLUG: Record<Category, string> = {
-  'Animals': 'animals',
+  'Sports': 'sports',
+  'People / Culture': 'society',
+  'Media': 'entertainment',
   'Earth': 'earth',
-  'Entertainment': 'entertainment',
-  'History': 'history',
-  'Physical Science': 'physical-science',
-  'Society': 'society',
-  'Space': 'space'
+  'History / Society': 'history',
+  'Physical Science': 'physical-science'
 };
 
 export interface Card {
@@ -23,7 +22,7 @@ export interface Card {
   title: string;
   wikipediaLink: string;
   category: Category;
-  subCategory?: string; // e.g. "History", "Animals", "Space" — from articles_v2.sub_category
+  subCategory?: string; // e.g. "Sports", "Media", "Earth" — from articles_v2.sub_category
   rarity: 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
   description: string;
   image: string;
@@ -39,462 +38,12 @@ export interface CollectedCard {
   cardDetails?: Card;
 }
 
-export const MOCK_CARDS: Card[] = [
-  // HISTORY
-  {
-    id: 'hist_bucket',
-    title: 'The War of the Bucket',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/War_of_the_Bucket',
-    category: 'History',
-    rarity: 'Rare',
-    description: 'In 1325, a war was fought between Bologna and Modena because Modenese soldiers sneaked into Bologna and stole a wooden bucket from a well.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Secchia_rapita_Modena.jpg',
-    isReal: true,
-    explanation: 'Real! Bologna declared war on Modena, and the stolen bucket remains on display in Modena to this day.'
-  },
-  {
-    id: 'hist_emu',
-    title: 'The Great Emu War',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Emu_War',
-    category: 'History',
-    rarity: 'Epic',
-    description: 'In 1932, the Australian military deployed soldiers armed with machine guns to combat a massive population of emus destroying crops, but the emus actually won.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Dromaius_novaehollandiae_-_cemetery.jpg',
-    isReal: true,
-    explanation: 'Real! The emus proved highly resilient and clever, dodging bullets, which led the Australian government to withdraw military forces.'
-  },
-  {
-    id: 'hist_kangaroo',
-    title: 'The Kangaroo Coup of 1904',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Australia',
-    category: 'History',
-    rarity: 'Common',
-    description: 'A cohort of highly trained red kangaroos stormed the Parliament building in Melbourne, forcing the Prime Minister to temporarily run the country from a local farm.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/e/e1/Red_kangaroo_zoonew.jpg',
-    isReal: false,
-    explanation: 'Fake! No such coup ever occurred, though kangaroos do outnumber Australians 2 to 1.'
-  },
-  {
-    id: 'hist_naps',
-    title: 'Napoleon\'s Bunny Escape',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Napoleon',
-    category: 'History',
-    rarity: 'Legendary',
-    description: 'Napoleon Bonaparte was once attacked and driven to flee by a swarm of thousands of domesticated rabbits during a hunting outing.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/3/37/Flemish_Giant_Rabbit_2.jpg',
-    isReal: true,
-    explanation: 'Real! The hunting party bought tame rabbits instead of wild ones. When released, they rushed Napoleon thinking it was feeding time.'
-  },
-  {
-    id: 'hist_beer_flood',
-    title: 'The London Beer Flood',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/London_Beer_Flood',
-    category: 'History',
-    rarity: 'Epic',
-    description: 'In 1814, a massive vat at a London brewery ruptured, releasing over 323,000 gallons of fermenting beer into the streets, destroying homes and flooding basements.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Beer_fermenting_wood.jpg',
-    isReal: true,
-    explanation: 'Real! Eight people tragically drowned or died from alcohol fumes, and the event was eventually ruled an unavoidable Act of God.'
-  },
-  {
-    id: 'hist_dancing_plague',
-    title: 'The Dancing Plague of 1518',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Dancing_plague_of_1518',
-    category: 'History',
-    rarity: 'Legendary',
-    description: 'A mysterious mania occurred in Strasbourg where hundreds of citizens danced uncontrollably for weeks without rest, leading to several deaths from pure physical exhaustion.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/St_John%27s_dancers.jpg',
-    isReal: true,
-    explanation: 'Real! The city council even hired musicians and constructed a wooden stage to encourage them to keep dancing, believing they had to dance the fever out.'
-  },
-  {
-    id: 'hist_caligula_sea',
-    title: 'Caligula\'s War on Neptune',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Caligula',
-    category: 'History',
-    rarity: 'Rare',
-    description: 'Disgruntled by a mutinous army, Roman Emperor Caligula marched his soldiers to the ocean shore and ordered them to throw spears into the water to declare war on the sea god Neptune.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Bust_Caligula_Met_14.37.jpg',
-    isReal: true,
-    explanation: 'Real! He ordered soldiers to gather sea shells as "spoils of war" from a vanquished ocean deity and brought them back to Rome.'
-  },
-  {
-    id: 'hist_caesar_pirates',
-    title: 'Caesar\'s Ransom Negotiation',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Julius_Caesar',
-    category: 'History',
-    rarity: 'Common',
-    description: 'Captured by pirates, Julius Caesar was highly insulted by their low ransom demand of 20 talents. He insisted they demand 50 talents instead, and joked that he would hunt them down and crucify them all.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/6/62/Julius_Caesar_statue_Rome.jpg',
-    isReal: true,
-    explanation: 'Real! Once ransomed, Caesar immediately raised a private fleet, captured the pirates, and executed them exactly as he had jokingly warned.'
-  },
-  {
-    id: 'hist_clockwork_soldier',
-    title: 'The Clockwork Crossbowman',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Qing_dynasty',
-    category: 'History',
-    rarity: 'Rare',
-    description: 'In 1782, Emperor Qianlong commissioned a steam-powered automaton dressed in silk armor that could walk 100 paces and fire a crossbow with mechanical accuracy.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/1/14/Qing_Dynasty_Soldier.jpg',
-    isReal: false,
-    explanation: 'Fake! While the Qing court possessed intricate mechanical gadgets, they never developed a steam-powered military automaton.'
-  },
-  {
-    id: 'hist_liechtenstein_army',
-    title: 'Liechtenstein\'s Warm Friend',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Military_of_Liechtenstein',
-    category: 'History',
-    rarity: 'Epic',
-    description: 'In 1866, Liechtenstein sent an army of 80 soldiers to guard an alpine pass. They returned unharmed with 81 men, having suffered zero casualties and made a new Italian friend.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/5/5f/Schloss_Vaduz_Liechtenstein_2.jpg',
-    isReal: true,
-    explanation: 'Real! The country permanently disbanded its military shortly after this incredibly successful and friendly expedition.'
-  },
-
-  // SCIENCE
-  {
-    id: 'sci_tardigrade',
-    title: 'The Indestructible Tardigrade',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Tardigrade',
-    category: 'Animals',
-    rarity: 'Epic',
-    description: 'Microscopic "water bears" can survive in the vacuum of outer space, withstand extreme radiation, and go without food or water for 30 years.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/3/3d/Waterbear.jpg',
-    isReal: true,
-    explanation: 'Real! Tardigrades enter a cryptobiotic state where their metabolism stops, allowing them to endure nearly any environment.'
-  },
-  {
-    id: 'sci_banana',
-    title: 'Radioactive Bananas',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Banana_equivalent_dose',
-    category: 'Physical Science',
-    rarity: 'Common',
-    description: 'Bananas are naturally radioactive due to high levels of Potassium-40. Eating just three bananas can set off nuclear radiation detectors in airports.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/8/8a/Banana-Single.jpg',
-    isReal: false,
-    explanation: 'Fake! While bananas do have tiny traces of radioactive potassium (measured in Banana Equivalent Doses), eating three will not trigger airport sensors.'
-  },
-  {
-    id: 'sci_penguin',
-    title: 'Equatorial Penguins',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Galapagos_penguin',
-    category: 'Animals',
-    rarity: 'Rare',
-    description: 'The Galapagos penguin is the only penguin species that naturally lives and breeds north of the Equator.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/2/22/Spheniscus_mendiculus_passing_by.jpg',
-    isReal: true,
-    explanation: 'Real! Thanks to the cool waters of the Humboldt Current, Galapagos penguins thrive in their tropical surroundings.'
-  },
-  {
-    id: 'sci_lava_eagle',
-    title: 'The Volcanic Lava Eagle',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Bird',
-    category: 'Animals',
-    rarity: 'Legendary',
-    description: 'A species of raptor in Hawaii nests inside active volcanic vents, using its graphite-coated feathers to withstand heat up to 1,200 degrees Celsius.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/f/f7/Kilauea_Lava_Flow.jpg',
-    isReal: false,
-    explanation: 'Fake! No animal can nest in molten volcanic vents, nor are there graphite-feathered eagles.'
-  },
-  {
-    id: 'sci_singing_iceberg',
-    title: 'The Singing Iceberg',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Acoustic_ecology',
-    category: 'Earth',
-    rarity: 'Rare',
-    description: 'Scientists in the Antarctic once detected a high-pitched acoustic vibration, similar to a massive swarm of bees or a singing choir, emitting directly from a moving iceberg.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/0/08/South_Atlantic_Ocean_iceberg.jpg',
-    isReal: true,
-    explanation: 'Real! The "singing" is caused by high-pressure water flowing through internal thermal tunnels within the ice mass.'
-  },
-  {
-    id: 'sci_moon_smell',
-    title: 'The Smell of Moon Dust',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Moon_dust',
-    category: 'Space',
-    rarity: 'Epic',
-    description: 'Apollo astronauts reported that when they returned from spacewalks and took off their helmets, the lunar dust clinging to their suits smelled strongly of spent gunpowder.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/Apollo_11_bootprint.jpg',
-    isReal: true,
-    explanation: 'Real! The scent is believed to be caused by highly reactive space compounds deactivating in the moist atmosphere of the lunar lander.'
-  },
-  {
-    id: 'sci_sonic_bloom',
-    title: 'Sonic Bloom Metal',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Plant_neurobiology',
-    category: 'Physical Science',
-    rarity: 'Common',
-    description: 'Playing heavy metal music at 432 Hz to orchids stimulates a 400% increase in nutrient absorption, causing their roots to grow steel-gray protective casings.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/3/38/Phalaenopsis_amabilis_Orchid.jpg',
-    isReal: false,
-    explanation: 'Fake! While vibrations can slightly affect stomata behavior, heavy metal music does not stimulate a 400% increase in growth or make roots metallic.'
-  },
-  {
-    id: 'sci_bioluminescent_trees',
-    title: 'Bioluminescent Birches',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Bioluminescence',
-    category: 'Earth',
-    rarity: 'Legendary',
-    description: 'A genetically mutated species of birch trees in northern Maine absorbs phosphorus from deep soil, causing their leaves to glow in a bright emerald green during autumn nights.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Forest_of_Birch_Trees.jpg',
-    isReal: false,
-    explanation: 'Fake! While bioluminescent fungi and fireflies exist, there are no naturally occurring or mutated glowing birch forests.'
-  },
-  {
-    id: 'sci_frog_rain',
-    title: 'Rain of Frogs',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Rain_of_animals',
-    category: 'Animals',
-    rarity: 'Rare',
-    description: 'Waterspouts or tornadic winds can sweep up small aquatic animals like frogs or fish and carry them miles away before depositing them during heavy rainstorms.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/d/db/A_red_eyed_tree_frog.jpg',
-    isReal: true,
-    explanation: 'Real! The meteorological phenomenon has been documented globally, including the famous Lluvia de Peces in Honduras.'
-  },
-  {
-    id: 'sci_wombat_cube',
-    title: 'The Cube-Shaped Feces',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Wombat',
-    category: 'Animals',
-    rarity: 'Common',
-    description: 'Wombats are the only known animals in the world that produce cube-shaped poop, which they stack to mark their territory and prevent the feces from rolling away.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Vombatus_ursinus_-Maria_Island_National_Park.jpg',
-    isReal: true,
-    explanation: 'Real! Their highly elastic intestinal walls squeeze the waste into flat-faced cubes.'
-  },
-
-  // POP CULTURE
-  {
-    id: 'pop_wikipedia_spaghetti',
-    title: 'The Spaghetti Tree Hoax',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Spaghetti-tree_hoax',
-    category: 'Entertainment',
-    rarity: 'Epic',
-    description: 'In 1957, the BBC broadcasted a three-minute hoax report showing Swiss farmers picking spaghetti off trees, causing hundreds of people to contact the BBC asking how to grow them.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Cooked_spaghetti.jpg',
-    isReal: true,
-    explanation: 'Real! This is famous as one of the earliest and greatest April Fools\' Day media jokes in history.'
-  },
-  {
-    id: 'pop_rickroll',
-    title: 'The Rickroll Orbit',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Rickrolling',
-    category: 'Entertainment',
-    rarity: 'Common',
-    description: 'NASA astronauts once rickrolled the Russian space crew on the ISS by hijacking their intercom and playing "Never Gonna Give You Up" for 24 hours.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Rick_Astley_in_2016_%28cropped%29.jpg',
-    isReal: false,
-    explanation: 'Fake! While astronauts have sent jokes, a 24-hour non-stop rickroll would be considered space sabotage.'
-  },
-  {
-    id: 'pop_street_view',
-    title: 'Street View Donkey Incident',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Google_Street_View',
-    category: 'Entertainment',
-    rarity: 'Rare',
-    description: 'In 2013, Google was accused of running over a donkey in Botswana with a Google Street View car, prompting an official press release defending their driver.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Donkey_in_in_Santiago_do_Cac%C3%A9m.jpg',
-    isReal: true,
-    explanation: 'Real! Google showed that the donkey was simply rolling in the dirt and stood up unharmed as the car passed by.'
-  },
-  {
-    id: 'pop_pepsi_navy',
-    title: 'Pepsi\'s Military Fleet',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/PepsiCo',
-    category: 'Society',
-    rarity: 'Epic',
-    description: 'In 1989, the Soviet Union traded a fleet of 17 submarines, a cruiser, a frigate, and a destroyer to Pepsi in exchange for soda, briefly giving Pepsi the 6th largest navy in the world.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/c/cc/Submarine_at_sea.jpg',
-    isReal: true,
-    explanation: 'Real! The Soviet currency wasn\'t accepted globally, so they traded decommissioned vessels which Pepsi later sold for scrap metal.'
-  },
-  {
-    id: 'pop_nic_cage_skull',
-    title: 'Cage\'s Dinosaur Auction',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Nicolas_Cage',
-    category: 'Entertainment',
-    rarity: 'Epic',
-    description: 'Nicolas Cage once entered a bidding war with Leonardo DiCaprio for a rare, smuggled Tyrannosaurus bataar skull, winning it for $276,000 before having to return it to the Mongolian government.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/3/33/Nicolas_Cage_-_Giffoni_Film_Festival_2013_%28cropped%29.jpg',
-    isReal: true,
-    explanation: 'Real! When Cage discovered the skull had been smuggled illegally, he cooperatively returned it to its rightful place of origin.'
-  },
-  {
-    id: 'pop_potato_asteroid',
-    title: 'The Potato Asteroid',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/The_Empire_Strikes_Back',
-    category: 'Entertainment',
-    rarity: 'Rare',
-    description: 'In "Star Wars: The Empire Strikes Back", special effects artists were so frustrated by constant adjustments that they threw a real baked potato into the background of an asteroid belt scene.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Patata_novella_di_Galatina.jpg',
-    isReal: true,
-    explanation: 'Real! If you look closely at the scene where the Millennium Falcon flies through the asteroids, one of the flying debris pieces is indeed a baked potato.'
-  },
-  {
-    id: 'pop_wooden_insulter',
-    title: 'Shakespeare\'s Insult Dial',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/William_Shakespeare',
-    category: 'Entertainment',
-    rarity: 'Common',
-    description: 'William Shakespeare patented an early wooden dial device in 1599 containing three concentric rings of insults, which theatergoers could spin to insult rival patrons.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Shakespeare.jpg',
-    isReal: false,
-    explanation: 'Fake! Shakespeare never patented a mechanical insult generator; his insult generator was his plays!'
-  },
-  {
-    id: 'pop_monopoly_escape',
-    title: 'The Monopoly Escape Board',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/History_of_the_board_game_Monopoly',
-    category: 'Entertainment',
-    rarity: 'Rare',
-    description: 'In 1974, the winner of the European Monopoly Championship successfully escaped a Swiss prison by hiding a real Swiss passport inside a giant replica Monopoly board.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/Monopoly_board_in_play.jpg',
-    isReal: false,
-    explanation: 'Fake! While Monopoly boards during WWII did contain escape tools for POWs, the 1974 championship escape is an urban legend.'
-  },
-  {
-    id: 'pop_toy_story_save',
-    title: 'The Toy Story 2 Save',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Toy_Story_2',
-    category: 'Entertainment',
-    rarity: 'Legendary',
-    description: 'The entire movie of "Toy Story 2" was accidentally deleted from Pixar\'s servers, but was saved because a remote working employee had kept a backup copy on her personal computer.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/0/0a/Toy_Story_Logo.svg',
-    isReal: true,
-    explanation: 'Real! A rogue terminal command deleted the files, and the primary backups had silently failed. The employee\'s home backup was the only surviving copy.'
-  },
-  {
-    id: 'pop_wikipedia_editing',
-    title: 'The Alan MacMasters Hoax',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Alan_MacMasters',
-    category: 'Entertainment',
-    rarity: 'Legendary',
-    description: 'A student successfully created a fake Wikipedia entry for "Alan MacMasters," inventing him as the inventor of the electric toaster, which fooled newspapers and museums for 15 years.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/a/a0/Toaster_Dualit_1.jpg',
-    isReal: true,
-    explanation: 'Real! The hoax was finally uncovered in 2022 when Wikipedia editors investigated the article\'s citations.'
-  },
-
-  // GEOGRAPHY
-  {
-    id: 'geo_diomede',
-    title: 'The Date Line Islands',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Diomede_Islands',
-    category: 'Earth',
-    rarity: 'Epic',
-    description: 'The Diomede Islands are just 2.4 miles apart, but because the International Date Line runs between them, one island is 21 hours ahead of the other.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/7/70/Diomede_Islands_Siberia_Alaska_1.jpg',
-    isReal: true,
-    explanation: 'Real! Tomorrow Island (Big Diomede, Russia) and Yesterday Island (Little Diomede, US) allow you to literally look into the future.'
-  },
-  {
-    id: 'geo_canada_whiskey',
-    title: 'The Whiskey War',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Whisky_War',
-    category: 'History',
-    rarity: 'Rare',
-    description: 'Canada and Denmark engaged in a peaceful conflict over Hans Island, where they took turns planting flags and leaving bottles of Canadian Club whiskey or Danish Schnapps.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Hans_Island_from_Canadian_side.jpg',
-    isReal: true,
-    explanation: 'Real! Known as the "Whisky War," it was resolved in 2022 by dividing the small island between both nations.'
-  },
-  {
-    id: 'geo_paris_copy',
-    title: 'Paris, China',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Tianducheng',
-    category: 'Earth',
-    rarity: 'Common',
-    description: 'The city of Tianducheng, China is a complete replica of Paris, featuring an Eiffel Tower copy, Parisian architecture, and French fountains.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Tianducheng_01.jpg',
-    isReal: true,
-    explanation: 'Real! It is a replica town built to house 10,000 residents, but initially remained a mostly quiet ghost town.'
-  },
-  {
-    id: 'geo_everest_height',
-    title: 'The Shrinking Mount Everest',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Mount_Everest',
-    category: 'Earth',
-    rarity: 'Legendary',
-    description: 'Due to gravitational pull in the Southern Hemisphere, Mount Everest shrinks by 12 meters every winter and regrows during summer.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Everest_North_Face_toward_Base_Camp_Tibet_Rotated.jpg',
-    isReal: false,
-    explanation: 'Fake! Mount Everest is tectonic, moving slowly over time, but winter weather does not cause it to shrink by meters.'
-  },
-  {
-    id: 'geo_exploding_whale',
-    title: 'The Exploding Whale',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Exploding_whale',
-    category: 'Animals',
-    rarity: 'Epic',
-    description: 'In 1970, Oregon officials cleared a rotting 8-ton sperm whale carcass using 20 cases of dynamite, causing blubber to rain down on cars a quarter-mile away.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Sperm_whale_fluke.jpg',
-    isReal: true,
-    explanation: 'Real! The explosion was too powerful, destroying a parked car and covering spectators in putrid whale fat.'
-  },
-  {
-    id: 'geo_landmark_directions',
-    title: 'San José Landmarks',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/San_Jos%C3%A9,_Costa_Rica',
-    category: 'Earth',
-    rarity: 'Rare',
-    description: 'Costa Rica\'s capital, San José, has almost no street signs. Residents give directions using landmarks like "200 meters south of the old fig tree."',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/8/87/Teatro_Nacional_Costa_Rica.jpg',
-    isReal: true,
-    explanation: 'Real! While streets have numbers on maps, they are rarely signed, and postal delivery relies on local landmarks.'
-  },
-  {
-    id: 'geo_underwater_post',
-    title: 'The Underwater Post Office',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Vanuatu',
-    category: 'Earth',
-    rarity: 'Rare',
-    description: 'Vanuatu features the world\'s only underwater post office, situated 3 meters below the surface, where visitors in scuba gear can mail waterproof postcards.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/5/52/Underwater_post_office.JPG',
-    isReal: true,
-    explanation: 'Real! A special flag is raised on a beach buoy when staff are underwater ready to stamp your letters.'
-  },
-  {
-    id: 'geo_centralia',
-    title: 'The Town That Burns',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Centralia,_Pennsylvania',
-    category: 'Earth',
-    rarity: 'Epic',
-    description: 'The town of Centralia, Pennsylvania, was abandoned after a massive coal mine fire ignited underground in 1962 and has been burning continuously ever since.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Centralia_Pennsylvania_underground_mine_fire_steam.jpg',
-    isReal: true,
-    explanation: 'Real! Fumes and sinkholes made the town unlivable, and scientists estimate the coal will burn for another 250 years.'
-  },
-  {
-    id: 'geo_floating_pumice',
-    title: 'Floating Pumice Kingdom',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Micronation',
-    category: 'Earth',
-    rarity: 'Legendary',
-    description: 'A fully recognized sovereign micronation in the South Pacific constructed of floating volcanic pumice and coconut fibers, featuring its own floating post office.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/d/d4/Pumice_Fuji.jpg',
-    isReal: false,
-    explanation: 'Fake! While floating islands exist, there is no sovereign nation built on volcanic pumice and coconut fibers.'
-  },
-  {
-    id: 'geo_nyos_eruption',
-    title: 'The Toxic Lake Nyos',
-    wikipediaLink: 'https://en.wikipedia.org/wiki/Lake_Nyos',
-    category: 'Earth',
-    rarity: 'Legendary',
-    description: 'In 1986, Lake Nyos in Cameroon released a massive cloud of carbon dioxide, suffocating over 1,700 people and 3,000 livestock in nearby villages within minutes.',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/1/1a/Lake_Nyos_1.jpg',
-    isReal: true,
-    explanation: 'Real! It was a rare "limnic eruption," where gas saturated in deep lake water suddenly bubbles up.'
-  }
-];
-
 export const useGameStore = defineStore('game', () => {
   const gdPoints = ref<number>(0);
   const collectedCards = ref<CollectedCard[]>([]);
   const categoryCooldowns = ref<Record<string, number>>({});
   const customSections = ref<string[]>(['Showcase', 'Real Rarities', 'Historical Gems']);
-  const gameCards = ref<Card[]>(MOCK_CARDS);
+  const gameCards = ref<Card[]>([]);
 
   // Load guest data
   const loadGuestState = () => {
@@ -690,51 +239,50 @@ export const useGameStore = defineStore('game', () => {
     return true;
   };
 
-  // Helper to map a database row to one of the 7 new categories
+  // Helper to map a database row to one of the 6 new categories
   const mapRowToHomeCategory = (row: any): Category => {
     const cat = (row.category || '').trim().toLowerCase();
     const sub = (row.sub_category || '').trim().toLowerCase();
     const topic = (row.topic || '').trim().toLowerCase();
 
-    // 1. Space
-    if (sub === 'space' || topic === 'stem.space') {
-      return 'Space';
+    // If the DB sub_category already names one of our categories, trust it.
+    const direct = CATEGORIES.find(c => c.toLowerCase() === sub);
+    if (direct) return direct;
+
+    // 1. Sports
+    if (sub === 'sports' || topic === 'culture.sports') {
+      return 'Sports';
     }
 
-    // 2. Animals
-    if (sub === 'animals' || sub === 'life science' || topic === 'stem.biology') {
-      return 'Animals';
+    // 2. Media
+    if (sub === 'entertainment' || sub === 'media' || topic.startsWith('culture.media') || topic === 'culture.performing_arts') {
+      return 'Media';
     }
 
-    // 3. Earth
-    if (sub === 'earth' || topic.startsWith('geography') || topic === 'stem.earth_and_environment') {
+    // 3. Earth (also absorbs former Animals / life science)
+    if (sub === 'earth' || sub === 'animals' || sub === 'life science' || topic.startsWith('geography') || topic === 'stem.earth_and_environment' || topic === 'stem.biology') {
       return 'Earth';
     }
 
-    // 4. Entertainment
-    if (sub === 'entertainment' || sub === 'media' || sub === 'sports' || topic.startsWith('culture.media') || topic === 'culture.sports' || topic === 'culture.performing_arts') {
-      return 'Entertainment';
-    }
-
-    // 5. History
+    // 4. History / Society
     if (sub === 'history' || sub === 'history / society' || topic.startsWith('history_and_society.history') || topic === 'history_and_society.military_and_warfare') {
-      return 'History';
+      return 'History / Society';
     }
 
-    // 6. Physical Science
-    if (sub === 'physical science' || topic === 'stem.stem*' || topic === 'stem.technology' || topic === 'stem.engineering' || topic === 'stem.medicine_&_health') {
+    // 5. Physical Science (also absorbs former Space)
+    if (sub === 'physical science' || sub === 'space' || topic === 'stem.space' || topic === 'stem.technology' || topic === 'stem.engineering' || topic === 'stem.medicine_&_health') {
       return 'Physical Science';
     }
 
-    // 7. Society (default for The Human / any remaining)
+    // 6. People / Culture (default for The Human / any remaining)
     if (cat === 'the human' || sub === 'society' || sub === 'people / culture' || topic.startsWith('history_and_society') || topic.startsWith('culture')) {
-      return 'Society';
+      return 'People / Culture';
     }
 
     // Fallback defaults based on the top-level database category
     if (cat === 'the sciences') return 'Physical Science';
     if (cat === 'the world') return 'Earth';
-    return 'Society';
+    return 'People / Culture';
   };
 
   // sub_category values in the DB match the app's Category type directly,
@@ -914,13 +462,13 @@ export const useGameStore = defineStore('game', () => {
           console.log(`Successfully mapped ${mapped.length} playable cards from the Supabase articles_v2 table!`);
         } else {
           console.warn('Supabase articles_v2 returned no rows. Falling back to default MOCK_CARDS.');
-          gameCards.value = MOCK_CARDS;
+          gameCards.value = [];
         }
         cardsLoaded.value = true;
       } catch (err: any) {
         console.error('Failed to load articles from Supabase:', err.message);
         console.log('Operating in offline/mock mode. Falling back to default MOCK_CARDS.');
-        gameCards.value = MOCK_CARDS;
+        gameCards.value = [];
         // Treat the fallback as loaded so a transient failure doesn't make every
         // view retry on each navigation; callers can force a refresh later.
         cardsLoaded.value = true;

@@ -33,11 +33,25 @@ interface SubCategoryDef {
 
 const subCategories: SubCategoryDef[] = [
   {
-    id: 'animals',
-    name: 'Animals',
-    mainCategory: 'Animals',
-    thumbnail: '/animals.png',
-    bgCollage: '/Earth-mainImg.png'
+    id: 'sports',
+    name: 'Sports',
+    mainCategory: 'Sports',
+    thumbnail: '/sports.png',
+    bgCollage: '/History-mainImg.png'
+  },
+  {
+    id: 'society',
+    name: 'People / Culture',
+    mainCategory: 'People / Culture',
+    thumbnail: '/society.png',
+    bgCollage: '/History-mainImg.png'
+  },
+  {
+    id: 'entertainment',
+    name: 'Media',
+    mainCategory: 'Media',
+    thumbnail: '/entertainment.png',
+    bgCollage: '/History-mainImg.png'
   },
   {
     id: 'earth',
@@ -47,16 +61,9 @@ const subCategories: SubCategoryDef[] = [
     bgCollage: '/Earth-mainImg.png'
   },
   {
-    id: 'entertainment',
-    name: 'Entertainment',
-    mainCategory: 'Entertainment',
-    thumbnail: '/entertainment.png',
-    bgCollage: '/History-mainImg.png'
-  },
-  {
     id: 'history',
-    name: 'History',
-    mainCategory: 'History',
+    name: 'History / Society',
+    mainCategory: 'History / Society',
     thumbnail: '/history.png',
     bgCollage: '/History-mainImg.png'
   },
@@ -66,24 +73,10 @@ const subCategories: SubCategoryDef[] = [
     mainCategory: 'Physical Science',
     thumbnail: '/physical-science.png',
     bgCollage: '/Earth-mainImg.png'
-  },
-  {
-    id: 'society',
-    name: 'Society',
-    mainCategory: 'Society',
-    thumbnail: '/society.png',
-    bgCollage: '/History-mainImg.png'
-  },
-  {
-    id: 'space',
-    name: 'Space',
-    mainCategory: 'Space',
-    thumbnail: '/space.png',
-    bgCollage: '/Earth-mainImg.png'
   }
 ];
 
-// Active subcategory on the home screen (Animals by default)
+// Active subcategory on the home screen (Sports by default)
 const activeSubCategory = ref<SubCategoryDef>(subCategories[0]);
 
 
