@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 import { useAuthStore } from './useAuthStore';
 import { supabase } from '../supabase';
+import { BloomFilter, createSeenFakesFilter, loadSeenFakesFilter, saveSeenFakesFilter } from '../utils/seenFakesFilter';
 
 // The six categories, matching the design guidelines.
 export type Category = 'Sports' | 'People / Culture' | 'Media' | 'Earth' | 'History / Society' | 'Physical Science';
@@ -44,6 +45,17 @@ export const useGameStore = defineStore('game', () => {
   const categoryCooldowns = ref<Record<string, number>>({});
   const customSections = ref<string[]>(['Showcase', 'Real Rarities', 'Historical Gems']);
   const gameCards = ref<Card[]>([]);
+
+  // Bloom filter of fake-article qids the player has recently seen, so we can
+  // avoid repeating fakes across games. Persisted to localStorage.
+  let seenFakes: BloomFilter = loadSeenFakesFilter();
+
+  // Record the fakes a player actually saw in a game so future pools skip them.
+  const markFakesSeen = (qids: string[]) => {
+    if (qids.length === 0) return;
+    for (const qid of qids) seenFakes.add(qid);
+    saveSeenFakesFilter(seenFakes);
+  };
 
   // Load guest data
   const loadGuestState = () => {
@@ -407,21 +419,42 @@ export const useGameStore = defineStore('game', () => {
   // Fetch a fresh, randomized pool of playable cards for a single category — a
   // balanced mix of real and fake. Called per game so consecutive games draw new
   // cards from across the whole category instead of a fixed cached slice.
+  // Overfetch fakes by this factor so that, after dropping ones the player has
+  // already seen (tracked in the Bloom filter), enough fresh fakes remain.
+  const FAKE_OVERFETCH = 4;
+
   const fetchCategoryPool = async (category: Category, perClass = 15): Promise<Card[]> => {
     try {
-      const [realRows, fakeRows] = await Promise.all([
+      const [realRows, fakeRowsRaw] = await Promise.all([
         fetchRealSample(perClass, category),
-        fetchFakeSample(perClass, category)
+        fetchFakeSample(perClass * FAKE_OVERFETCH, category)
       ]);
+
+      // Only consider playable fakes (have an image, appropriate).
+      const usableFakes = fakeRowsRaw.filter((row: any) => row.image_url && isAppropriateArticle(row));
+
+      // Prefer fakes the player hasn't seen recently. If filtering leaves too few
+      // to fill the pool, they've likely seen most of this category's fakes —
+      // reset the filter and reuse the full overfetched set.
+      let fakeRows = usableFakes.filter((row: any) => row.qid && !seenFakes.has(row.qid));
+      if (fakeRows.length < perClass) {
+        seenFakes = createSeenFakesFilter();
+        saveSeenFakesFilter(seenFakes);
+        fakeRows = usableFakes;
+      }
+      fakeRows = fakeRows.slice(0, perClass);
 
       // Tag each row with its source so mapArticleRowToCard knows real vs fake
       // (the v2 tables no longer have a 'real' column — the table itself is the signal).
       realRows.forEach((row: any) => { row._isReal = true; });
       fakeRows.forEach((row: any) => { row._isReal = false; });
 
-      return [...realRows, ...fakeRows]
+      const realCards = realRows
         .filter((row: any) => row.image_url && isAppropriateArticle(row))
         .map((row: any) => mapArticleRowToCard(row));
+      const fakeCards = fakeRows.map((row: any) => mapArticleRowToCard(row));
+
+      return [...realCards, ...fakeCards];
     } catch (err: any) {
       console.error('Failed to fetch category pool from Supabase:', err.message);
       return [];
@@ -837,6 +870,7 @@ export const useGameStore = defineStore('game', () => {
     syncWithUser,
     loadCardsFromDatabase,
     fetchCategoryPool,
+    markFakesSeen,
     addPoints,
     persistState,
     spendPoints,

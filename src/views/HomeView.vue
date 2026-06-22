@@ -262,7 +262,11 @@ const startFakeoutGame = async (category: Category) => {
     numReal = Math.min(reals.length, DECK_SIZE - numFake);
 
     // Combine and shuffle again so reals and fakes are interleaved
-    const deck = shuffle([...reals.slice(0, numReal), ...fakes.slice(0, numFake)]);
+    const deckFakes = fakes.slice(0, numFake);
+    const deck = shuffle([...reals.slice(0, numReal), ...deckFakes]);
+
+    // Remember the fakes shown this game so future pools avoid repeating them.
+    gameStore.markFakesSeen(deckFakes.map((c: Card) => c.id));
 
     gameStartTime.value = performance.now();
     trackEvent('start_fakeout_game', {

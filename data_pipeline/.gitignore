@@ -6,3 +6,8 @@ models/
 *.pyc
 __pycache__/
 *-checkpoint.py
+*.jpg
+*.jpeg
+*.png
+*.gif
+downloaded_common_images/
