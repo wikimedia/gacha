@@ -354,7 +354,7 @@ export const useGameStore = defineStore('game', () => {
   const FLAG_SCORE_MAX = 0.9;
 
   // Real cards come from articles_v2, fake cards from fake_articles_v2.
-  const FAKES_TABLE = 'fake_articles_v2';
+  const FAKES_TABLE = 'fake_articles_v3';
 
   // Filters for real articles in articles_v2: unclaimed, has an image,
   // not flagged above threshold, and (when given) one category.
