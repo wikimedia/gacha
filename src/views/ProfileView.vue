@@ -7,6 +7,14 @@ import type { Card } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
 import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
+import { 
+  PhPencilSimple,
+  PhExport, 
+  PhSquare, 
+  PhColumns, 
+  PhGridNine, 
+  PhPushPin 
+} from '@phosphor-icons/vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -41,14 +49,7 @@ const editingField = ref<'username' | 'bio' | null>(null);
 const editInputValue = ref('');
 const showShareToast = ref(false);
 
-const binderColorsList = [
-  { name: 'Classic Blue', hex: '#4a6783' },
-  { name: 'Sage Green', hex: '#829466' },
-  { name: 'Terracotta', hex: '#d9754b' },
-  { name: 'Plum Rose', hex: '#917D8A' },
-  { name: 'Charcoal', hex: '#3f3f35' },
-  { name: 'Warm Sand', hex: '#bda380' }
-];
+
 
 // Binder filtering & organization
 const searchFilter = ref('');
@@ -153,6 +154,14 @@ const startEditing = (field: 'username' | 'bio') => {
   editingField.value = field;
   editInputValue.value = field === 'username' ? editDisplayName.value : editBio.value;
   showEditDropdown.value = false;
+};
+
+const handleEditProfileField = (field: 'username' | 'bio' | 'showcase') => {
+  if (field === 'username' || field === 'bio') {
+    startEditing(field);
+  } else if (field === 'showcase') {
+    isShowcaseMode.value = true;
+  }
 };
 
 const cancelEditing = () => {
@@ -288,7 +297,12 @@ const toggleCardShowcase = async (cardId: string) => {
 </script>
 
 <template>
-  <PageLayout hide-header is-wide>
+  <PageLayout 
+    is-wide 
+    :binder-color="binderColor"
+    @edit-profile-field="handleEditProfileField"
+    @update-binder-color="updateBinderColor"
+  >
     <Loader v-if="isLoadingProfile" message="Loading scholar profile..." />
 
     <div v-else-if="profileUser" class="flex flex-col w-full animate-fade-in text-left">
@@ -298,78 +312,13 @@ const toggleCardShowcase = async (cardId: string) => {
       </div>
 
       <!-- SHOWCASE MODE HEADER BANNER -->
-      <div v-if="isPrivateMode && isShowcaseMode" class="showcase-edit-banner flex justify-between items-center bg-[#d9754b] text-[#fdf4eb] px-4 py-2.5 text-xs font-serif font-black shadow-md rounded-[2px] mb-4">
+      <div v-if="isPrivateMode && isShowcaseMode" class="showcase-edit-banner flex justify-between items-center bg-[#d9754b] text-[#fdf4eb] px-4 py-2.5 text-xs font-serif font-black shadow-md rounded-[2px] mb-4 mx-4 sm:mx-0">
         <span class="flex items-center gap-1.5">
-          <svg class="animate-pulse" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+          <PhPencilSimple :size="12" weight="bold" class="animate-pulse" />
           SHOWCASE MODE: TAP A CARD PIN TO HIGHLIGHT IT AS YOUR MAIN AVATAR
         </span>
         <button @click="isShowcaseMode = false" class="btn btn-xs bg-[#fdf4eb] hover:bg-white text-[#d9754b] border-none font-bold tracking-wider">Done</button>
       </div>
-
-      <!-- STICKY PROFILE HEADER -->
-      <header class="profile-sticky-header">
-        <div class="header-inner flex items-center justify-between w-full max-w-4xl mx-auto px-4 py-3">
-          <!-- Back button [X] -->
-          <button 
-            class="header-icon-btn-dark"
-            @click="router.push('/')"
-            aria-label="Back to home"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-
-          <!-- Centered Title -->
-          <span class="font-serif font-black text-[#4a6783] text-lg select-none">Scholar Collection</span>
-
-          <!-- Edit Profile button [pencil] -->
-          <div class="relative">
-            <button 
-              v-if="isPrivateMode"
-              class="header-icon-btn-dark"
-              @click="showEditDropdown = !showEditDropdown"
-              aria-label="Edit Profile Options"
-              :class="{ 'header-icon-btn-dark--active': showEditDropdown }"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-              </svg>
-            </button>
-
-            <!-- EDIT DROPDOWN MENU -->
-            <transition name="dropdown-fade">
-              <div v-if="showEditDropdown" class="edit-dropdown-menu" :style="{ '--binder-dropdown-bg': binderColor }">
-                <div class="edit-dropdown-item" @click="startEditing('username')">
-                  Edit Name
-                </div>
-                <div class="edit-dropdown-item" @click="startEditing('bio')">
-                  Edit Description
-                </div>
-                <div class="edit-dropdown-item" @click="isShowcaseMode = true; showEditDropdown = false">
-                  Change Showcase
-                </div>
-                <div class="edit-dropdown-item color-selection-item">
-                  <div class="text-[10px] uppercase font-bold tracking-wider mb-2 text-[#fdf4eb]/80">Change Binder Color</div>
-                  <div class="flex gap-2 flex-wrap">
-                    <button 
-                      v-for="color in binderColorsList" 
-                      :key="color.hex"
-                      @click="updateBinderColor(color.hex)"
-                      class="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 cursor-pointer"
-                      :class="[binderColor === color.hex ? 'border-[#fdf4eb] scale-105' : 'border-transparent']"
-                      :style="{ backgroundColor: color.hex }"
-                      :title="color.name"
-                    ></button>
-                  </div>
-                </div>
-              </div>
-            </transition>
-          </div>
-        </div>
-      </header>
 
       <!-- SCHOLAR INFO BLOCK -->
       <section class="max-w-4xl w-full mx-auto px-4 py-6 border-b border-[#c4b69d]/40">
@@ -405,9 +354,11 @@ const toggleCardShowcase = async (cardId: string) => {
 
           <!-- Info Details -->
           <div class="flex-grow flex flex-col justify-center min-w-0 max-w-xl">
-            <h2 class="font-serif text-3xl text-[#4a6783] font-black m-0 leading-none truncate">
-              {{ profileUser.username }}
-            </h2>
+            <div class="flex items-center gap-3">
+              <h2 class="font-serif text-3xl text-[#4a6783] font-black m-0 leading-none truncate">
+                {{ profileUser.username }}
+              </h2>
+            </div>
             <p class="text-xs text-[#3f3f35]/90 leading-relaxed font-light mt-3">
               {{ profileUser.bio }}
             </p>
@@ -421,14 +372,14 @@ const toggleCardShowcase = async (cardId: string) => {
       </section>
 
       <!-- BINDER CONTAINER & FOLDER SHEET -->
-      <section class="max-w-4xl w-full mx-auto px-4 py-8 relative">
+      <section class="max-w-4xl w-full mx-auto px-0 sm:px-4 py-8 relative">
         
         <!-- FOLDER TAB ROW -->
         <div class="flex justify-between items-end w-full relative z-10 -mb-[1px]">
           <!-- Left: Folder tab shape -->
           <div class="folder-tabs-group flex items-end">
             <div 
-              class="folder-tab-active flex items-center justify-center font-serif font-bold text-xs uppercase tracking-wider text-[#fdf4eb] px-6 py-2.5 rounded-t-[6px]"
+              class="folder-tab-active flex items-center justify-center font-serif font-bold text-xs uppercase tracking-wider text-black px-6 py-2.5 rounded-t-[6px]"
               :style="{ backgroundColor: binderColor }"
             >
               Facts
@@ -438,14 +389,10 @@ const toggleCardShowcase = async (cardId: string) => {
           <!-- Right: Clipboard Share button -->
           <button 
             @click="handleShareProfile" 
-            class="share-round-btn flex items-center justify-center w-8 h-8 rounded-full border border-[#c4b69d] hover:bg-[#c4b69d]/10 text-[#4a6783] transition-colors"
+            class="share-round-btn flex items-center justify-center w-8 h-8 rounded-full border border-[#c4b69d] hover:bg-[#c4b69d]/10 text-[#4a6783] transition-colors mb-1.5 mr-2 sm:mr-0"
             title="Share Profile Link"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-              <polyline points="16 6 12 2 8 6"/>
-              <line x1="12" y1="2" x2="12" y2="15"/>
-            </svg>
+            <PhExport :size="14" weight="bold" />
           </button>
         </div>
 
@@ -462,7 +409,7 @@ const toggleCardShowcase = async (cardId: string) => {
           </div>
 
           <!-- BINDER PAPER PAGE SHEET -->
-          <div class="binder-page-sheet bg-[#fdf4eb] text-[#3f3f35] p-5 md:p-8 min-h-[500px]">
+          <div class="binder-page-sheet bg-[#fdf4eb] text-[#3f3f35] p-3 md:p-5 min-h-[500px]">
             
             <!-- Page Header Settings -->
             <div class="flex justify-between items-center gap-4 mb-8 border-b border-[#c4b69d]/30 pb-4">
@@ -483,9 +430,7 @@ const toggleCardShowcase = async (cardId: string) => {
                   class="column-switcher-btn"
                   title="1 Column View"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                  </svg>
+                  <PhSquare :size="14" weight="bold" />
                 </button>
                 <button 
                   @click="gridColumns = 2" 
@@ -493,10 +438,7 @@ const toggleCardShowcase = async (cardId: string) => {
                   class="column-switcher-btn"
                   title="2 Columns View"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="8" height="18" rx="1"/>
-                    <rect x="13" y="3" width="8" height="18" rx="1"/>
-                  </svg>
+                  <PhColumns :size="14" weight="bold" />
                 </button>
                 <button 
                   @click="gridColumns = 3" 
@@ -504,11 +446,7 @@ const toggleCardShowcase = async (cardId: string) => {
                   class="column-switcher-btn"
                   title="3 Columns View"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="3" width="5" height="18" rx="0.5"/>
-                    <rect x="9.5" y="3" width="5" height="18" rx="0.5"/>
-                    <rect x="17" y="3" width="5" height="18" rx="0.5"/>
-                  </svg>
+                  <PhGridNine :size="14" weight="bold" />
                 </button>
               </div>
             </div>
@@ -556,19 +494,7 @@ const toggleCardShowcase = async (cardId: string) => {
                           ]"
                           :title="card.isShowcase ? 'Remove from Showcase' : 'Set as Showcase Pinned Card'"
                         >
-                          <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            viewBox="0 0 24 24" 
-                            :fill="card.isShowcase ? 'currentColor' : 'none'" 
-                            stroke="currentColor" 
-                            stroke-width="2.5" 
-                            stroke-linecap="round" 
-                            stroke-linejoin="round" 
-                            class="w-4 h-4"
-                          >
-                            <line x1="12" y1="17" x2="12" y2="22"></line>
-                            <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.71A2 2 0 0 1 15 9.05V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v5.05a2 2 0 0 1-.78 1.56l-2.78 3.74a2 2 0 0 0-.44 1.25Z"></path>
-                          </svg>
+                          <PhPushPin :size="14" :weight="card.isShowcase ? 'fill' : 'bold'" />
                         </button>
                       </div>
                     </div>
@@ -646,39 +572,7 @@ const toggleCardShowcase = async (cardId: string) => {
    Profile Redesign - Spiral Folder Binder System
    ============================================================ */
 
-.profile-sticky-header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  width: 100%;
-  background-color: rgba(240, 229, 213, 0.85);
-  backdrop-filter: blur(10px);
-  border-b: 1px solid rgba(196, 182, 157, 0.4);
-}
-
-.header-icon-btn-dark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  background-color: transparent;
-  border: 1.5px solid #4a6783;
-  border-radius: 2px;
-  color: #4a6783;
-  cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-}
-
-.header-icon-btn-dark:hover {
-  background-color: rgba(74, 103, 131, 0.1);
-}
-
-.header-icon-btn-dark--active {
-  background-color: #4a6783 !important;
-  color: #fdf4eb !important;
-}
+/* Sticky profile header classes removed */
 
 /* Avatar frame: rounded square double border */
 .avatar-frame {
@@ -740,14 +634,21 @@ const toggleCardShowcase = async (cardId: string) => {
 /* Outer Binder Cover Box */
 .binder-cover-box {
   position: relative;
-  border-radius: 8px;
+  border-radius: 0; /* edge-to-edge on mobile */
   border-top-left-radius: 0; /* folder tab joins flat */
-  padding: 16px 16px 16px 42px; /* Spacer left for the rings spine */
+  padding: 8px 8px 8px 36px; /* Spacer left for the rings spine - reduced padding */
   box-shadow: 
     0 8px 24px rgba(0, 0, 0, 0.16),
     0 2px 4px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(0, 0, 0, 0.1);
   transition: background-color 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .binder-cover-box {
+    border-radius: 8px;
+    border-top-left-radius: 0;
+  }
 }
 
 /* Binder Spine & Loop Rings CSS */
@@ -818,9 +719,6 @@ const toggleCardShowcase = async (cardId: string) => {
   background-size: 100% 28px;
   position: relative;
   z-index: 5;
-  /* Setup Container for scaling calculation */
-  container-name: binderpage;
-  container-type: inline-size;
 }
 
 /* Column grid layout selector button styles */
@@ -855,95 +753,117 @@ const toggleCardShowcase = async (cardId: string) => {
   letter-spacing: -0.01em;
 }
 
-/* Dynamic Aspect Ratio Grids */
+/* Dynamic Wrapping Grids with Hardcoded Dimensions */
 .binder-grid {
   display: grid;
   justify-content: center;
-  align-items: start;
   width: 100%;
 }
 
+/* 1 Column View */
 .binder-grid--1col {
-  grid-template-columns: minmax(0, 315px);
+  grid-template-columns: repeat(auto-fit, 267.75px);
   gap: 24px;
 }
 .binder-grid--1col .card-scale-wrapper {
-  width: 315px;
-  height: 440px;
+  width: 267.75px;
+  height: 374px;
+  position: relative;
 }
 .binder-grid--1col .card-scaled-content {
-  position: relative;
   width: 315px;
   height: 440px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scale(0.85);
+  transform-origin: top left;
 }
 
+/* 2 Columns View */
 .binder-grid--2col {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, 132.3px);
   gap: 16px;
 }
 .binder-grid--2col .card-scale-wrapper {
+  width: 132.3px;
+  height: 184.8px;
   position: relative;
-  width: 100%;
-  padding-top: calc(100% * (440 / 315));
-  height: 0;
+}
+.binder-grid--2col .card-scaled-content {
+  width: 315px;
+  height: 440px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scale(0.42);
+  transform-origin: top left;
 }
 
+/* 3 Columns View */
 .binder-grid--3col {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 88.2px);
   gap: 10px;
 }
 .binder-grid--3col .card-scale-wrapper {
+  width: 88.2px;
+  height: 123.2px;
   position: relative;
-  width: 100%;
-  padding-top: calc(100% * (440 / 315));
-  height: 0;
+}
+.binder-grid--3col .card-scaled-content {
+  width: 315px;
+  height: 440px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scale(0.28);
+  transform-origin: top left;
 }
 
-/* Math-perfect CSS Scale using Container Queries */
-@container binderpage (min-width: 0px) {
-  .binder-grid--2col .card-scaled-content {
-    position: absolute;
-    top: 0;
-    left: 50%;
+/* Desktop sizing overrides */
+@media (min-width: 640px) {
+  /* 1 Column View - Native Size */
+  .binder-grid--1col {
+    grid-template-columns: repeat(auto-fit, 315px);
+  }
+  .binder-grid--1col .card-scale-wrapper {
     width: 315px;
     height: 440px;
-    transform: translateX(-50%) scale(calc(((100cqw - 16px) / 2) / 315));
-    transform-origin: top center;
   }
-  .binder-grid--3col .card-scaled-content {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 315px;
-    height: 440px;
-    transform: translateX(-50%) scale(calc(((100cqw - 20px) / 3) / 315));
-    transform-origin: top center;
+  .binder-grid--1col .card-scaled-content {
+    transform: scale(1);
   }
-}
 
-@container binderpage (min-width: 680px) {
+  /* 2 Columns View - Larger Scales */
+  .binder-grid--2col {
+    grid-template-columns: repeat(2, 267.75px);
+  }
+  .binder-grid--2col .card-scale-wrapper {
+    width: 267.75px;
+    height: 374px;
+  }
   .binder-grid--2col .card-scaled-content {
-    transform: translateX(-50%) scale(0.95);
+    transform: scale(0.85);
   }
-  .binder-grid--3col .card-scaled-content {
-    transform: translateX(-50%) scale(0.66);
-  }
-}
 
-@container binderpage (min-width: 900px) {
-  .binder-grid--2col .card-scaled-content {
-    transform: translateX(-50%) scale(1.0);
+  /* 3 Columns View - Larger Scales */
+  .binder-grid--3col {
+    grid-template-columns: repeat(3, 189px);
+  }
+  .binder-grid--3col .card-scale-wrapper {
+    width: 189px;
+    height: 264px;
   }
   .binder-grid--3col .card-scaled-content {
-    transform: translateX(-50%) scale(0.85);
+    transform: scale(0.6);
   }
 }
 
 /* Edit Menu Dropdown Options Panel */
 .edit-dropdown-menu {
   position: absolute;
-  top: 42px;
-  right: 0;
+  top: 36px;
+  left: 0;
   background-color: var(--binder-dropdown-bg, #4a6783);
   border: 1.5px solid #fdf4eb;
   border-radius: 4px;
@@ -1015,5 +935,16 @@ const toggleCardShowcase = async (cardId: string) => {
 .dropdown-fade-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+</style>
+
+<style>
+/* Global layout overrides for the profile binder page on mobile viewports */
+@media (max-width: 639px) {
+  .app-page-wrapper:has(.binder-cover-box) .app-page-main {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
 }
 </style>

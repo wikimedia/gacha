@@ -11,12 +11,15 @@ defineProps<{
   hideHeader?: boolean;
   activeMainCategory?: Category;
   gameActive?: boolean;
+  binderColor?: string;
 }>();
 
 const emit = defineEmits<{
   (e: 'activate'): void;
   (e: 'edit-profile'): void;
   (e: 'quit-game'): void;
+  (e: 'edit-profile-field', field: 'username' | 'bio' | 'showcase'): void;
+  (e: 'update-binder-color', color: string): void;
 }>();
 
 const headerRef = ref<any>(null);
@@ -40,9 +43,12 @@ defineExpose({
       :is-animating="isAnimating"
       :active-main-category="activeMainCategory"
       :game-active="gameActive"
+      :binder-color="binderColor"
       @activate="emit('activate')"
       @edit-profile="emit('edit-profile')"
       @quit-game="emit('quit-game')"
+      @edit-profile-field="(field) => emit('edit-profile-field', field)"
+      @update-binder-color="(color) => emit('update-binder-color', color)"
     />
     <main class="app-page-main" :class="{ 'app-page-main-wide': isWide }">
       <slot />

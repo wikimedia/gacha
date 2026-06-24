@@ -5,6 +5,19 @@ import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Category } from '../stores/useGameStore';
 import { supabase } from '../supabase';
+import { 
+  PhX, 
+  PhUser, 
+  PhInfo, 
+  PhMonitor, 
+  PhArrowRight, 
+  PhWarningCircle, 
+  PhArrowLeft, 
+  PhCaretLeft, 
+  PhCaretRight, 
+  PhCheck,
+  PhPencilSimple
+} from '@phosphor-icons/vue';
 
 const props = withDefaults(defineProps<{
   displayedPoints?: number;
@@ -12,10 +25,12 @@ const props = withDefaults(defineProps<{
   isAnimating?: boolean;
   activeMainCategory?: Category;
   gameActive?: boolean;
+  binderColor?: string;
 }>(), {
   gachaActive: false,
   isAnimating: false,
-  gameActive: false
+  gameActive: false,
+  binderColor: '#4a6783'
 });
 
 const emit = defineEmits<{
@@ -24,6 +39,8 @@ const emit = defineEmits<{
   (e: 'logout'): void;
   (e: 'edit-profile'): void;
   (e: 'quit-game'): void;
+  (e: 'edit-profile-field', field: 'username' | 'bio' | 'showcase'): void;
+  (e: 'update-binder-color', color: string): void;
 }>();
 
 const authStore = useAuthStore();
@@ -172,6 +189,37 @@ const confirmQuitGame = () => {
   }
 };
 
+const showHeaderEditDropdown = ref(false);
+
+const binderColorsList = [
+  { name: 'Classic Blue', hex: '#4a6783' },
+  { name: 'Sage Green', hex: '#829466' },
+  { name: 'Terracotta', hex: '#d9754b' },
+  { name: 'Plum Rose', hex: '#917D8A' },
+  { name: 'Charcoal', hex: '#3f3f35' },
+  { name: 'Warm Sand', hex: '#bda380' }
+];
+
+const handleEditClick = (field: 'username' | 'bio' | 'showcase') => {
+  showHeaderEditDropdown.value = false;
+  emit('edit-profile-field', field);
+};
+
+const handleColorClick = (color: string) => {
+  emit('update-binder-color', color);
+};
+
+const getContrastTextColor = (hexColor?: string) => {
+  if (!hexColor) return '#fdf4eb';
+  const color = hexColor.startsWith('#') ? hexColor.slice(1) : hexColor;
+  if (color.length !== 6) return '#fdf4eb';
+  const r = parseInt(color.substring(0, 2), 16);
+  const g = parseInt(color.substring(2, 4), 16);
+  const b = parseInt(color.substring(4, 6), 16);
+  const y = 0.299 * r + 0.587 * g + 0.114 * b;
+  return y > 150 ? '#24221f' : '#fdf4eb';
+};
+
 defineExpose({
   openAuthModal() {
     showAuthModal.value = true;
@@ -191,11 +239,8 @@ defineExpose({
           @click="confirmQuitGame"
           aria-label="Quit Game"
         >
-          <!-- 'X' close SVG icon -->
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+          <!-- 'X' close Phosphor icon -->
+          <PhX :size="18" weight="bold" />
         </button>
       </div>
       <div v-else class="dropdown dropdown-bottom dropdown-start z-50">
@@ -204,10 +249,7 @@ defineExpose({
           class="header-icon-btn"
         >
           <!-- User Profile Silhouette icon -->
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
+          <PhUser :size="18" weight="bold" />
         </label>
         
         <ul 
@@ -290,17 +332,60 @@ defineExpose({
         GOTCHA!
       </router-link>
 
-      <!-- Right: Info Dialog Trigger -->
+      <!-- Right: Info Dialog Trigger OR Edit pencil dropdown -->
+      <div v-if="route.name === 'profile' && isOwnProfile" class="relative z-50">
+        <button 
+          class="header-icon-btn"
+          @click="showHeaderEditDropdown = !showHeaderEditDropdown"
+          aria-label="Edit Profile Options"
+          :class="{ 'header-icon-btn--active': showHeaderEditDropdown }"
+        >
+          <PhPencilSimple :size="18" weight="bold" />
+        </button>
+
+        <!-- EDIT DROPDOWN MENU -->
+        <transition name="dropdown-fade">
+          <div 
+            v-if="showHeaderEditDropdown" 
+            class="edit-dropdown-menu" 
+            :style="{ 
+              '--binder-dropdown-bg': binderColor,
+              '--binder-dropdown-text': getContrastTextColor(binderColor)
+            }"
+          >
+            <div class="edit-dropdown-item" @click="handleEditClick('username')">
+              Edit Name
+            </div>
+            <div class="edit-dropdown-item" @click="handleEditClick('bio')">
+              Edit Description
+            </div>
+            <div class="edit-dropdown-item" @click="handleEditClick('showcase')">
+              Change Showcase
+            </div>
+            <div class="edit-dropdown-item color-selection-item">
+              <div class="text-[10px] uppercase font-bold tracking-wider mb-2 opacity-80">Change Binder Color</div>
+              <div class="flex gap-2 flex-wrap">
+                <button 
+                  v-for="color in binderColorsList" 
+                  :key="color.hex"
+                  @click="handleColorClick(color.hex)"
+                  class="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 cursor-pointer"
+                  :class="[binderColor === color.hex ? 'border-[#fdf4eb] scale-105' : 'border-transparent']"
+                  :style="{ backgroundColor: color.hex }"
+                  :title="color.name"
+                ></button>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
       <button 
+        v-else
         class="header-icon-btn"
         @click="showInfoModal = true"
       >
-        <!-- 'i' info SVG icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="16" x2="12" y2="12"/>
-          <line x1="12" y1="8" x2="12.01" y2="8"/>
-        </svg>
+        <!-- 'i' info Phosphor icon -->
+        <PhInfo :size="18" weight="bold" />
       </button>
 
     </div>
@@ -421,10 +506,7 @@ defineExpose({
               class="flex items-center justify-center w-8 h-8 rounded-full border border-transparent hover:bg-white/10 text-[#fdf4eb] active:scale-90 transition-all cursor-pointer"
               aria-label="Close dialog"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
+              <PhX :size="20" weight="bold" />
             </button>
           </div>
 
@@ -437,11 +519,7 @@ defineExpose({
                 <div class="mini-card mini-card-real">
                   <div class="mini-card-header bg-[#4a6783]"></div>
                   <div class="mini-card-img bg-slate-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M2 3h20v14H2z"/>
-                      <path d="M8 21h8"/>
-                      <path d="M12 17v4"/>
-                    </svg>
+                    <PhMonitor :size="20" weight="regular" color="#718096" />
                   </div>
                   <div class="mini-card-line w-full bg-slate-300"></div>
                   <div class="mini-card-line w-5/6 bg-slate-300"></div>
@@ -452,10 +530,7 @@ defineExpose({
                 </div>
                 <!-- Swipe arrow pointing right -->
                 <div class="absolute right-3 text-[#177860]/80 animate-pulse flex flex-col items-center select-none">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                    <polyline points="12 5 19 12 12 19"/>
-                  </svg>
+                  <PhArrowRight :size="24" weight="bold" />
                   <span class="text-[8px] font-bold uppercase tracking-wider mt-0.5">Real</span>
                 </div>
               </div>
@@ -465,11 +540,7 @@ defineExpose({
                 <div class="mini-card mini-card-fake">
                   <div class="mini-card-header bg-[#4a6783]"></div>
                   <div class="mini-card-img bg-slate-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
+                    <PhWarningCircle :size="20" weight="regular" color="#718096" />
                   </div>
                   <div class="mini-card-line w-full bg-slate-300"></div>
                   <div class="mini-card-line w-5/6 bg-slate-300"></div>
@@ -480,10 +551,7 @@ defineExpose({
                 </div>
                 <!-- Swipe arrow pointing left -->
                 <div class="absolute left-3 text-[#bf3c2c]/80 animate-pulse flex flex-col items-center select-none">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"/>
-                    <polyline points="12 19 5 12 12 5"/>
-                  </svg>
+                  <PhArrowLeft :size="24" weight="bold" />
                   <span class="text-[8px] font-bold uppercase tracking-wider mt-0.5">Fake</span>
                 </div>
               </div>
@@ -540,9 +608,7 @@ defineExpose({
               :disabled="currentSlide === 0"
               aria-label="Previous step"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="15 18 9 12 15 6"/>
-              </svg>
+              <PhCaretLeft :size="20" weight="bold" />
             </button>
 
             <!-- Step indicator dots -->
@@ -563,12 +629,8 @@ defineExpose({
               class="w-10 h-10 flex items-center justify-center rounded-full border border-[#fdf4eb]/20 text-[#fdf4eb] hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
               aria-label="Next step"
             >
-              <svg v-if="currentSlide < slides.length - 1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
+              <PhCaretRight v-if="currentSlide < slides.length - 1" :size="20" weight="bold" />
+              <PhCheck v-else :size="20" weight="bold" />
             </button>
           </div>
         </div>
@@ -721,6 +783,69 @@ defineExpose({
 .star-particle {
   pointer-events: none;
   font-size: 14px;
+}
+
+/* Edit Menu Dropdown Options Panel */
+.edit-dropdown-menu {
+  position: absolute;
+  top: 38px;
+  right: 0;
+  background-color: var(--binder-dropdown-bg, #4a6783);
+  border: 1.5px solid var(--binder-dropdown-text, #fdf4eb);
+  border-radius: 4px;
+  width: 210px;
+  z-index: 50;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+.edit-dropdown-item {
+  padding: 11px 16px;
+  color: var(--binder-dropdown-text, #fdf4eb);
+  font-family: var(--font-family-serif, Georgia, serif);
+  font-size: 13px;
+  font-weight: bold;
+  text-align: left;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+  transition: all 0.2s ease;
+}
+
+.edit-dropdown-item:hover:not(.color-selection-item) {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* If the text color is dark, override hover background and button border */
+.edit-dropdown-menu[style*="--binder-dropdown-text:#24221f"] .edit-dropdown-item:hover:not(.color-selection-item),
+.edit-dropdown-menu[style*="--binder-dropdown-text: #24221f"] .edit-dropdown-item:hover:not(.color-selection-item) {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+.color-selection-item {
+  cursor: default;
+  border-bottom: none;
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 12px 16px;
+}
+
+.header-icon-btn--active {
+  background-color: var(--binder-dropdown-text, #fdf4eb) !important;
+  color: var(--binder-dropdown-bg, #4a6783) !important;
+  border-color: var(--binder-dropdown-text, #fdf4eb) !important;
+}
+
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition: all 0.2s ease;
+}
+
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>
 

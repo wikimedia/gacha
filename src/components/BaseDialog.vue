@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from 'vue';
+import { PhX } from '@phosphor-icons/vue';
 
 const props = withDefaults(defineProps<{
   show: boolean;
@@ -78,11 +79,8 @@ watch(() => props.show, (newShow) => {
                 class="btn-close flex items-center justify-center w-8 h-8 rounded-full border border-transparent hover:bg-black/5 hover:border-[#c4b69d]/40 text-[#54595d] transition-all"
                 aria-label="Close dialog"
               >
-                <!-- Custom close 'X' icon from Figma design -->
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/>
-                  <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
+                <!-- Custom close 'X' Phosphor icon -->
+                <PhX :size="16" weight="bold" />
               </button>
             </header>
 
