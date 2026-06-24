@@ -54,8 +54,18 @@ const showShareToast = ref(false);
 // Binder filtering & organization
 const searchFilter = ref('');
 
+// Dedup guard to prevent redundant profile loads on reactive triggers
+let lastLoadKey = '';
+
 // Fetch/sync profile details based on route
-const loadProfile = async () => {
+const loadProfile = async (force = false) => {
+  const loadKey = `${profileId.value}|${authStore.isLoggedIn}|${authStore.user?.id ?? ''}`;
+  if (!force && loadKey === lastLoadKey) {
+    console.log(`loadProfile skipped (dedup): key="${loadKey}"`);
+    return;
+  }
+  lastLoadKey = loadKey;
+
   console.log(`loadProfile triggered: profileId="${profileId.value}"`);
   isLoadingProfile.value = true;
   isLoadingCards.value = true;
@@ -121,14 +131,14 @@ onMounted(async () => {
   }
 });
 
-// Watch auth status and route changes reactively
-watch(() => authStore.isLoggedIn, () => {
-  loadProfile();
-});
-
-watch([() => authStore.user, () => route.params.id], () => {
-  loadProfile();
-}, { deep: true });
+// Single consolidated watcher — only reacts to identity/route changes,
+// NOT deep user object mutations (points, cards, etc.)
+watch(
+  [() => authStore.isLoggedIn, () => authStore.user?.id, () => route.params.id],
+  () => {
+    loadProfile();
+  }
+);
 
 // Custom Redesign Handlers
 const handleShareProfile = () => {
@@ -189,7 +199,7 @@ const saveEditing = async () => {
   if (editDisplayName.value.trim().toLowerCase() !== profileId.value.toLowerCase()) {
     router.replace(`/@${editDisplayName.value.trim()}`);
   } else {
-    await loadProfile();
+    await loadProfile(true);
   }
 };
 
