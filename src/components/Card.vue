@@ -79,7 +79,8 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 <template>
   <div class="trading-card-wrapper">
     <div class="trading-card" :class="'trading-card--' + categoryMapping.cssClass">
-      <!-- ═══ Full-bleed background image ═══ -->
+
+      <!-- ① Image + image grain (clipped to inset area) -->
       <div class="trading-card__image-layer">
         <div v-if="hasImage && isCSSImage" 
           class="trading-card__image-bg"
@@ -94,33 +95,17 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
           alt="Card image"
         />
         <div v-else class="trading-card__image-bg trading-card__image-bg--placeholder"></div>
+        <div class="trading-card__image-grain" :style="{ backgroundPosition: grainPosition }"></div>
       </div>
 
-      <!-- ═══ Category color tint overlay (hard-light) ═══ -->
-      <div class="trading-card__tint-layer"></div>
-
-      <!-- ═══ Grain texture overlay ═══ -->
-      <div class="trading-card__grain-layer" :style="{ backgroundPosition: grainPosition }"></div>
-
-      <!-- ═══ Inner shadow overlay ═══ -->
-      <div class="trading-card__inner-shadow"></div>
-
-      <!-- ═══ Content layer (on top of everything) ═══ -->
+      <!-- ③ Content (text, stars, etc.) -->
       <div class="trading-card__content">
-        
-        <!-- Title (expands downward from top) -->
         <div class="trading-card__title-area">
           <div class="trading-card__title-banner">
-            <h3 class="trading-card__title">
-              {{ card.title }}
-            </h3>
+            <h3 class="trading-card__title">{{ card.title }}</h3>
           </div>
         </div>
-
-        <!-- Spacer pushes bottom content down -->
         <div class="trading-card__spacer"></div>
-
-        <!-- Stars + Category strip -->
         <div class="trading-card__attributes">
           <div class="trading-card__stars" :class="'trading-card__stars--' + rarityStars">
             <svg 
@@ -145,18 +130,13 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
             {{ categoryMapping.main }}<template v-if="categoryMapping.sub"> / {{ categoryMapping.sub }}</template>
           </span>
         </div>
-
-        <!-- Codex divider line -->
         <div class="trading-card__description-divider"></div>
-
-        <!-- Description (expands upward from bottom) -->
         <div class="trading-card__description">
           <p>{{ card.description }}</p>
         </div>
-
       </div>
 
-      <!-- Attribution line -->
+      <!-- Attribution -->
       <div class="trading-card__credit-line">
         <a 
           v-if="showLink !== false"
@@ -172,6 +152,12 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
           Wikimedia Commons / CC BY-SA 4.0
         </span>
       </div>
+
+      <!-- ② Full-card overlays (on top of everything, pointer-events: none) -->
+      <div class="trading-card__border-grain"></div>
+      <div class="trading-card__tint-layer"></div>
+      <div class="trading-card__noise-layer"></div>
+      <div class="trading-card__inner-shadow"></div>
 
     </div>
   </div>
@@ -193,7 +179,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 
 .trading-card {
   --_area-bg: rgba(249, 250, 248, 0.90);
-  --_title-bg: rgba(249, 250, 248, 1);
+  --_title-bg: rgba(249, 250, 248, 0.90);
 
   width: 100%;
   height: 100%;
@@ -203,7 +189,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   position: relative;
   isolation: isolate;
   background: var(--_bg);
-  border: 1.25px solid #EBEBEB;
+  border: 1px solid #EBEBEB;
   box-shadow: 
     0 2px 8px rgba(0, 0, 0, 0.12),
     0 8px 24px rgba(0, 0, 0, 0.06);
@@ -213,48 +199,71 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 }
 
 /* ── Category theme configurations ───────────────────────────── */
+/* Default / fallback */
 .trading-card,
-.trading-card--civilization,
+.trading-card--civilization {
+  --_tint: var(--color-category-civilization);
+  --_bg: var(--color-category-civilization-bg);
+  --_bevel-tr: var(--color-category-civilization-bevel-tr);
+  --_bevel-bl: var(--color-category-civilization-bevel-bl);
+}
+
+/* 6 active categories (slugs from CATEGORY_SLUG) */
+.trading-card--sports {
+  --_tint: var(--color-category-sports);
+  --_bg: var(--color-category-sports-bg);
+  --_bevel-tr: var(--color-category-sports-bevel-tr);
+  --_bevel-bl: var(--color-category-sports-bevel-bl);
+}
+
 .trading-card--society {
   --_tint: var(--color-category-society);
   --_bg: var(--color-category-society-bg);
-}
-
-.trading-card--nature,
-.trading-card--animals {
-  --_tint: var(--color-category-animals);
-  --_bg: var(--color-category-animals-bg);
-}
-
-.trading-card--earth {
-  --_tint: var(--color-category-earth);
-  --_bg: var(--color-category-earth-bg);
+  --_bevel-tr: var(--color-category-society-bevel-tr);
+  --_bevel-bl: var(--color-category-society-bevel-bl);
 }
 
 .trading-card--entertainment {
   --_tint: var(--color-category-entertainment);
   --_bg: var(--color-category-entertainment-bg);
+  --_bevel-tr: var(--color-category-entertainment-bevel-tr);
+  --_bevel-bl: var(--color-category-entertainment-bevel-bl);
+}
+
+.trading-card--earth {
+  --_tint: var(--color-category-earth);
+  --_bg: var(--color-category-earth-bg);
+  --_bevel-tr: var(--color-category-earth-bevel-tr);
+  --_bevel-bl: var(--color-category-earth-bevel-bl);
 }
 
 .trading-card--history {
   --_tint: var(--color-category-history);
   --_bg: var(--color-category-history-bg);
+  --_bevel-tr: var(--color-category-history-bevel-tr);
+  --_bevel-bl: var(--color-category-history-bevel-bl);
 }
 
-.trading-card--science,
 .trading-card--physical-science {
   --_tint: var(--color-category-physical-science);
   --_bg: var(--color-category-physical-science-bg);
+  --_bevel-tr: var(--color-category-physical-science-bevel-tr);
+  --_bevel-bl: var(--color-category-physical-science-bevel-bl);
 }
 
-.trading-card--space {
-  --_tint: var(--color-category-space);
-  --_bg: var(--color-category-space-bg);
+/* Legacy aliases */
+.trading-card--nature {
+  --_tint: var(--color-category-nature);
+  --_bg: var(--color-category-nature-bg);
+  --_bevel-tr: var(--color-category-nature-bevel-tr);
+  --_bevel-bl: var(--color-category-nature-bevel-bl);
 }
 
-.trading-card--sports {
-  --_tint: var(--color-category-sports);
-  --_bg: var(--color-category-sports-bg);
+.trading-card--science {
+  --_tint: var(--color-category-science);
+  --_bg: var(--color-category-science-bg);
+  --_bevel-tr: var(--color-category-science-bevel-tr);
+  --_bevel-bl: var(--color-category-science-bevel-bl);
 }
 
 
@@ -269,8 +278,8 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card__image-layer {
   position: absolute;
   inset: 14px;
-  z-index: 1;
   overflow: hidden;
+  isolation: isolate;
   border-top: 1.5px solid #A2A9B1;
   border-right: 1.5px solid #A2A9B1;
   border-bottom: 1.5px solid #C8CCD1;
@@ -283,7 +292,6 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 1;
 }
 
 .trading-card__image-bg--img {
@@ -293,46 +301,63 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 
 .trading-card__image-bg--placeholder {
   background: linear-gradient(135deg, #d5d0c8 0%, #c2bdb5 100%);
-  opacity: 1;
 }
 
-/* ── Category color tint overlay ─────────────────────────────── */
-.trading-card__tint-layer {
+/* ── Image grain (inside image area only) ────────────────────── */
+.trading-card__image-grain {
   position: absolute;
   inset: 0;
-  z-index: 4;
-  background-color: var(--_tint);
-  mix-blend-mode: hard-light;
-  pointer-events: none;
-}
-
-/* ── Grain texture overlay ───────────────────────────────────── */
-.trading-card__grain-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-image: url("/image-grain.png");
   background-repeat: repeat;
-  background-size: 200px 200px;
-  opacity: 0.18;
-  mix-blend-mode: luminosity;
+  background-size: 614px 410px;
+  opacity: 0.43;
+  mix-blend-mode: multiply;
   pointer-events: none;
 }
 
-/* ── Inner shadow overlay ────────────────────────────────────── */
+/* ── Full-card overlays (border-grain, tint, noise, inner shadow) ── */
+.trading-card__border-grain,
+.trading-card__tint-layer,
+.trading-card__noise-layer,
 .trading-card__inner-shadow {
   position: absolute;
   inset: 0;
-  z-index: 6;
+  pointer-events: none;
+}
+
+.trading-card__border-grain {
+  background-image: url("/border-grain.png");
+  background-repeat: repeat;
+  background-size: 480px 612px;
+  opacity: 0.28;
+  mix-blend-mode: multiply;
+  clip-path: polygon(
+    evenodd,
+    0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%,
+    14px 14px, calc(100% - 14px) 14px, calc(100% - 14px) calc(100% - 14px), 14px calc(100% - 14px), 14px 14px
+  );
+}
+
+.trading-card__tint-layer {
+  background-color: var(--_tint);
+  mix-blend-mode: hard-light;
+}
+
+.trading-card__noise-layer {
+  background-image: url("/noise.png");
+  background-repeat: repeat;
+  opacity: .15;
+  mix-blend-mode: multiply;
+}
+
+.trading-card__inner-shadow {
   box-shadow: inset 0 0 10.2px rgba(174, 162, 132, 0.58);
   mix-blend-mode: multiply;
-  pointer-events: none;
 }
 
 /* ── Content layer ───────────────────────────────────────────── */
 .trading-card__content {
   position: relative;
-  z-index: 3;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -351,7 +376,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 }
 
 .trading-card__title {
-  font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
+  font-family: Georgia;
   font-size: 18px; /* halved from 36px font-size */
   font-weight: bold;
   line-height: 1.2;
@@ -373,7 +398,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   align-items: center;
   justify-content: space-between;
   background: var(--_area-bg);
-  padding: 3px 4px; /* halved from 6px 8px */
+  padding: 7.5px 7.5px; /* halved from 6px 8px */
 }
 
 .trading-card__stars {
@@ -382,15 +407,15 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 }
 
 .trading-card__star-icon {
-  width: 18px;
-  height: 18px;
+  width: 12.5px;
+  height: 12.5px;
 }
 
 /* Style properties are handled dynamically/inline via template SVG attributes */
 
 .trading-card__category-label {
   font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 700;
   color: #000;
   letter-spacing: 0.02em;
@@ -400,18 +425,17 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card__description {
   flex-shrink: 0;
   background: var(--_area-bg);
-  padding: 4px; /* halved from 8px */
+  padding: 7.5px; /* halved from 8px */
 }
 
 .trading-card__description p {
   font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
   font-size: 11px;
-  line-height: 1.5;
+  line-height: 1.4;
   color: #000;
   margin: 0;
   text-align: justify;
   display: -webkit-box;
-  -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -427,8 +451,8 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
   align-items: center;
   justify-content: center;
   font-family: var(--font-family-system-sans, sans-serif);
-  font-size: 7px;
-  z-index: 3;
+  font-size: 5.5px;
+
   margin: 0;
 }
 
@@ -465,10 +489,10 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
 .trading-card__description-divider::after {
   content: '';
   position: absolute;
-  left: 4px;
-  right: 4px;
+  left: 7.5px;
+  right: 7.5px;
   top: 0;
   bottom: 0;
-  border-bottom: 1px solid #A2A9B1;
+  border-bottom: 1.5px solid #A2A9B1;
 }
 </style>
