@@ -4,7 +4,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Category } from '../stores/useGameStore';
-import { supabase } from '../supabase';
 import { 
   PhX, 
   PhUser, 
@@ -74,38 +73,7 @@ const isOwnProfile = computed(() => {
          authStore.user.id.toLowerCase() === profileId.toLowerCase();
 });
 
-// Fetch display username from Supabase profile table
-const dbUsername = ref<string | null>(null);
-
-const fetchProfileUsername = async () => {
-  if (!authStore.isLoggedIn || !authStore.user) {
-    dbUsername.value = null;
-    return;
-  }
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('id', authStore.user.id)
-      .maybeSingle();
-    if (!error && data) {
-      dbUsername.value = data.username;
-    }
-  } catch (err) {
-    console.error('Failed to fetch profile username:', err);
-  }
-};
-
-// Re-fetch when auth state changes
-watch(() => authStore.isLoggedIn, (loggedIn) => {
-  if (loggedIn) {
-    fetchProfileUsername();
-  } else {
-    dbUsername.value = null;
-  }
-}, { immediate: true });
-
-const displayUsername = computed(() => dbUsername.value || authStore.user?.username || '');
+const displayUsername = computed(() => authStore.user?.username || '');
 
 
 
