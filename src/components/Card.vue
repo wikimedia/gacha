@@ -61,7 +61,7 @@ const attributionText = computed(() => {
   if (commonsFilename.value) {
     const filename = commonsFilename.value.replace(/_/g, ' ');
     const display = filename.length > 50 ? filename.slice(0, 50) + '…' : filename;
-    return `Image: ${display} · Wikimedia Commons CC BY-SA`;
+    return `Image: ${display} / Wikimedia Commons CC BY-SA`;
   }
   return 'en.wikipedia.org / Creative Commons Attribution-ShareAlike';
 });
