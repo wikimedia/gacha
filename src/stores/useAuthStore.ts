@@ -69,19 +69,63 @@ export const useAuthStore = defineStore('auth', () => {
       let profileUsername: string | null = null;
       let profileBio: string | null = null;
       try {
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileFetchError } = await supabase
           .from('profiles')
           .select('username, bio')
           .eq('id', su.id)
           .maybeSingle();
-        if (profileData?.username) {
-          profileUsername = profileData.username;
+
+        if (profileFetchError) {
+          console.error('Error fetching profile from DB:', profileFetchError.message);
         }
-        if (profileData?.bio !== undefined && profileData?.bio !== null) {
-          profileBio = profileData.bio;
+        
+        if (profileData) {
+          if (profileData.username) {
+            profileUsername = profileData.username;
+          }
+          if (profileData.bio !== undefined && profileData.bio !== null) {
+            profileBio = profileData.bio;
+          }
+        } else {
+          // If profile row doesn't exist, create it!
+          const fallbackUsername = metadata.username || (email ? email.split('@')[0] : 'Scholar');
+          const fallbackBio = metadata.bio || 'Avid Moonflower scholar and collector.';
+          
+          console.log(`Creating missing profile for user ${su.id} with username ${fallbackUsername}...`);
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: su.id,
+              username: fallbackUsername,
+              bio: fallbackBio
+            });
+          
+          if (insertError) {
+            console.error('Error creating profile row in database:', insertError.message);
+            // If it failed because of username constraint (already exists), try with a random suffix
+            if (insertError.message.toLowerCase().includes('unique') || insertError.code === '23505') {
+              const uniqueUsername = `${fallbackUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
+              const { error: retryError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: su.id,
+                  username: uniqueUsername,
+                  bio: fallbackBio
+                });
+              if (!retryError) {
+                profileUsername = uniqueUsername;
+                profileBio = fallbackBio;
+              } else {
+                console.error('Retry profile creation failed:', retryError.message);
+              }
+            }
+          } else {
+            profileUsername = fallbackUsername;
+            profileBio = fallbackBio;
+          }
         }
       } catch (err) {
-        console.error('Error fetching profile:', err);
+        console.error('Error in profile check/creation:', err);
       }
       
       // Priority: profiles table > auth metadata > fallback
@@ -125,11 +169,13 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       // Merge guest points if any exist
+      let didMergePoints = false;
       const guestPointsRaw = localStorage.getItem('moonflower_guest_gdPoints');
       if (guestPointsRaw) {
         const guestPoints = parseInt(guestPointsRaw, 10);
         if (!isNaN(guestPoints) && guestPoints > 0) {
           finalPoints += guestPoints;
+          didMergePoints = true;
         }
       }
 
@@ -158,13 +204,15 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Migrate guest cards to database under the user's profile
       const guestCardsRaw = localStorage.getItem('moonflower_guest_collectedCards');
+      let didMigrate = false;
       if (guestCardsRaw) {
         try {
           const guestCards = JSON.parse(guestCardsRaw);
           if (Array.isArray(guestCards) && guestCards.length > 0) {
             const guestCardIds = guestCards.map((c: any) => c.id);
             console.log(`[handleAuthSession] Migrating ${guestCardIds.length} guest cards to user ${su.id}...`);
-            await gameStore.claimArticlesForProfile(guestCardIds);
+            await gameStore.claimArticlesForProfile(guestCardIds, guestCards);
+            didMigrate = true;
             
             // Clear guest progress in localStorage
             localStorage.removeItem('moonflower_guest_collectedCards');
@@ -175,6 +223,12 @@ export const useAuthStore = defineStore('auth', () => {
         } catch (err) {
           console.error('[handleAuthSession] Failed to migrate guest cards:', err);
         }
+      }
+
+      // If we merged points or migrated cards, make sure we sync the updated state back to Supabase User Metadata
+      if (didMergePoints || didMigrate) {
+        console.log('[handleAuthSession] Syncing merged guest data to Supabase metadata...', finalPoints);
+        await syncStoreToUser(finalPoints, gameStore.collectedCards);
       }
     } else {
       user.value = null;

@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import type { Card } from '../stores/useGameStore';
 import { CATEGORY_SLUG } from '../stores/useGameStore';
+import Stars from './Stars.vue';
 
 const props = withDefaults(defineProps<{
   card: Card;
@@ -10,28 +11,12 @@ const props = withDefaults(defineProps<{
   showLink: true
 });
 
-// ── Static Lookups ───────────────────────────────────────────────
-const RARITY_STARS: Record<string, number> = {
-  Legendary: 5, Epic: 4, Rare: 3, Uncommon: 2, Common: 1
-};
-
-const STAR_STYLES: Record<string, { fill: string; stroke: string }> = {
-  Legendary: { fill: '#FFCF4F', stroke: '#AB7F2A' },
-  Epic:      { fill: 'white',   stroke: '#404244' },
-  Rare:      { fill: '#987027', stroke: '#CA982E' },
-  Uncommon:  { fill: '#A8B0B7', stroke: '#72777D' },
-  Common:    { fill: '#595C5F', stroke: '#404244' }
-};
-
 // ── Computed Properties ──────────────────────────────────────────
 const categoryMapping = computed(() => ({
   main: props.card.category,
   sub: props.card.subCategory || '',
   cssClass: CATEGORY_SLUG[props.card.category] || 'civilization'
 }));
-
-const rarityStars = computed(() => RARITY_STARS[props.card.rarity] || 1);
-const starStyle = computed(() => STAR_STYLES[props.card.rarity] || STAR_STYLES.Common);
 
 const hasImage = computed(() => !!props.card.image);
 const isCSSImage = computed(() => {
@@ -72,8 +57,6 @@ const grainPosition = computed(() => {
   const seed = props.card.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return `${offsets[seed % offsets.length]} ${offsets[(seed >> 1) % offsets.length]}`;
 });
-
-const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.2612 22.5061L18.3081 23.8684L12.5 19.4312L6.69189 23.8684L4.73877 22.5061L6.98975 15.2209L1.11572 10.7349L1.875 8.49121H9.06982L11.3062 1.2561H13.6938L15.9302 8.49121Z';
 </script>
  
 <template>
@@ -107,25 +90,7 @@ const STAR_PATH = 'M15.9302 8.49121H23.125L23.8843 10.7349L18.009 15.2209L20.261
         </div>
         <div class="trading-card__spacer"></div>
         <div class="trading-card__attributes">
-          <div class="trading-card__stars" :class="'trading-card__stars--' + rarityStars">
-            <svg 
-              v-for="i in rarityStars" 
-              :key="i"
-              class="trading-card__star-icon"
-              xmlns="http://www.w3.org/2000/svg" 
-              width="25" 
-              height="25" 
-              viewBox="0 0 25 25"
-            >
-              <path 
-                :d="STAR_PATH" 
-                :fill="starStyle.fill" 
-                :stroke="starStyle.stroke" 
-                stroke-width="2" 
-                stroke-linejoin="bevel"
-              />
-            </svg>
-          </div>
+          <Stars :rarity="card.rarity" :size="12.5" class="trading-card__stars" />
           <span class="trading-card__category-label">
             {{ categoryMapping.main }}<template v-if="categoryMapping.sub"> / {{ categoryMapping.sub }}</template>
           </span>

@@ -327,7 +327,7 @@ export const useGameStore = defineStore('game', () => {
     const description = row.first_sentence || 'No description available.';
 
     // 5. Real vs fake is determined by source table (tagged as _isReal by fetchCategoryPool)
-    const isReal = !!row._isReal;
+    const isReal = row._isReal !== undefined ? !!row._isReal : true;
 
     return {
       id: row.qid,
@@ -768,7 +768,7 @@ export const useGameStore = defineStore('game', () => {
   };
 
   // Claim articles for a profile by setting profile_id on collected article rows
-  const claimArticlesForProfile = async (articleQids: string[]) => {
+  const claimArticlesForProfile = async (articleQids: string[], cardsInfo?: (Card | CollectedCard)[]) => {
     const authStore = useAuthStore();
     if (!authStore.isLoggedIn || !authStore.user) return;
 
@@ -786,21 +786,44 @@ export const useGameStore = defineStore('game', () => {
 
       if (error) {
         console.error('Error claiming articles for profile:', error.message);
+        throw error;
       } else {
         console.log(`Successfully claimed ${articleQids.length} articles for profile ${profileId}`);
         // Ensure they are also in the local collectedCards state
         let updatedAny = false;
         const nowStr = new Date().toISOString();
         for (const qid of articleQids) {
-          const exists = collectedCards.value.some(c => c.id === qid);
-          if (!exists) {
+          const existsIndex = collectedCards.value.findIndex(c => c.id === qid);
+          
+          // Find cardDetails from cardsInfo
+          let cardDetails: Card | undefined = undefined;
+          if (cardsInfo) {
+            const found = cardsInfo.find(c => {
+              if (typeof c === 'object' && c !== null) {
+                return c.id === qid;
+              }
+              return false;
+            });
+            if (found) {
+              cardDetails = 'cardDetails' in found ? (found.cardDetails as Card) : (found as Card);
+            }
+          }
+
+          if (existsIndex === -1) {
             collectedCards.value.push({
               id: qid,
               collectedAt: nowStr,
               isShowcase: false,
-              customSection: null
+              customSection: null,
+              cardDetails
             });
             updatedAny = true;
+          } else {
+            // Update cardDetails if missing
+            if (cardDetails && !collectedCards.value[existsIndex].cardDetails) {
+              collectedCards.value[existsIndex].cardDetails = cardDetails;
+              updatedAny = true;
+            }
           }
         }
         if (updatedAny) {
@@ -809,6 +832,7 @@ export const useGameStore = defineStore('game', () => {
       }
     } catch (err: any) {
       console.error('Failed to claim articles:', err.message);
+      throw err;
     }
   };
 

@@ -393,7 +393,7 @@ const endFakeoutGame = () => {
 
     // If logged in, claim them in the database immediately
     if (authStore.isLoggedIn && realCardIds.length > 0) {
-      gameStore.claimArticlesForProfile(realCardIds);
+      gameStore.claimArticlesForProfile(realCardIds, collectedThisGame.value);
     }
   }
   
@@ -513,7 +513,7 @@ const startGachaDrop = async () => {
 
           // If logged in, claim them in the database immediately
           if (authStore.isLoggedIn && droppedIds.length > 0) {
-            gameStore.claimArticlesForProfile(droppedIds);
+            gameStore.claimArticlesForProfile(droppedIds, gachaDroppedCards.value);
           }
 
           gameStore.persistState();
