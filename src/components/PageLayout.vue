@@ -12,6 +12,8 @@ defineProps<{
   activeMainCategory?: Category;
   gameActive?: boolean;
   binderColor?: string;
+  currentRound?: number;
+  totalRounds?: number;
 }>();
 
 const emit = defineEmits<{
@@ -44,6 +46,8 @@ defineExpose({
       :active-main-category="activeMainCategory"
       :game-active="gameActive"
       :binder-color="binderColor"
+      :current-round="currentRound"
+      :total-rounds="totalRounds"
       @activate="emit('activate')"
       @edit-profile="emit('edit-profile')"
       @quit-game="emit('quit-game')"

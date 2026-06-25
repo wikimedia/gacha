@@ -25,11 +25,15 @@ const props = withDefaults(defineProps<{
   activeMainCategory?: Category;
   gameActive?: boolean;
   binderColor?: string;
+  currentRound?: number;
+  totalRounds?: number;
 }>(), {
   gachaActive: false,
   isAnimating: false,
   gameActive: false,
-  binderColor: '#4a6783'
+  binderColor: '#4a6783',
+  currentRound: 1,
+  totalRounds: 10
 });
 
 const emit = defineEmits<{
@@ -292,8 +296,21 @@ defineExpose({
         </ul>
       </div>
 
-      <!-- Center: GOTCHA! Serif Title -->
+      <!-- Center: Progress Indicator (during game) or GOTCHA! title -->
+      <div v-if="gameActive" class="game-progress-bar">
+        <div
+          v-for="i in totalRounds"
+          :key="i"
+          class="game-progress-segment"
+          :class="{
+            'game-progress-segment--completed': i < currentRound,
+            'game-progress-segment--current': i === currentRound,
+            'game-progress-segment--upcoming': i > currentRound
+          }"
+        />
+      </div>
       <router-link 
+        v-else
         to="/" 
         class="font-serif font-black text-xl text-[#fdf4eb] tracking-widest no-underline hover:opacity-85 select-none"
       >
@@ -627,6 +644,34 @@ defineExpose({
 
 .header-icon-btn:hover {
   opacity: 0.8;
+}
+
+/* --- Game Progress Indicator (segmented bar) --- */
+.game-progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  margin: 0 12px;
+}
+
+.game-progress-segment {
+  flex: 1;
+  height: 16px;
+  border-radius: 1px;
+  transition: background-color 0.3s ease;
+}
+
+.game-progress-segment--completed {
+  background-color: #4a6783;
+}
+
+.game-progress-segment--current {
+  background-color: #4a6783;
+}
+
+.game-progress-segment--upcoming {
+  background-color: rgba(74, 103, 131, 0.25);
 }
 
 /* --- How to Play Slideshow Animations & Custom Dialog --- */

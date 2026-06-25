@@ -637,6 +637,8 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
     :is-animating="isAnimatingPoints"
     :game-active="gameActive"
     :active-main-category="gameActive ? selectedCategory || undefined : activeSubCategory.mainCategory"
+    :current-round="currentRound"
+    :total-rounds="gameDeck.length"
     :class="{ 'is-home-selection': !gachaActive && !showCardsUnlocked }"
     @activate="startGachaDrop" 
     @quit-game="quitGame"
