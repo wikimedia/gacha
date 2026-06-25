@@ -13,6 +13,11 @@ const router = createRouter({
       component: HomeView
     },
     {
+      path: '/play/:category',
+      name: 'play',
+      component: HomeView
+    },
+    {
       path: '/card',
       name: 'card',
       component: CardView

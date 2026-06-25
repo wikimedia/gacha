@@ -18,6 +18,17 @@ export const CATEGORY_SLUG: Record<Category, string> = {
   'Physical Science': 'physical-science'
 };
 
+// URL-friendly slug derived from the category's display name, used for the
+// /play/:category route (e.g. "People / Culture" -> "people-culture"). This is
+// intentionally separate from CATEGORY_SLUG above, which names CSS palettes.
+export const categoryToSlug = (category: Category): string =>
+  category.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+export const slugToCategory = (slug: string): Category | undefined => {
+  const normalized = slug.trim().toLowerCase();
+  return CATEGORIES.find(c => categoryToSlug(c) === normalized);
+};
+
 export interface Card {
   id: string;
   title: string;

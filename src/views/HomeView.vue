@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
-import { useGameStore, CATEGORIES } from '../stores/useGameStore';
+import { useGameStore, CATEGORIES, categoryToSlug, slugToCategory } from '../stores/useGameStore';
 import type { Card, Category } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
 import CardsUnlocked from '../components/CardsUnlocked.vue';
@@ -215,15 +215,24 @@ onMounted(async () => {
   authStore.initAuth();
   gameStore.loadGuestState();
   updateCooldowns();
-  
+
   displayedPoints.value = gameStore.gdPoints;
+
+  // If we landed directly on /play/:category, keep the loader up until the game
+  // has started (or we've redirected away) so the home screen doesn't flash.
+  await syncGameToRoute();
   isLoading.value = false;
-  
+
   setInterval(() => {
     updateCooldowns();
   }, 1000);
- 
+
   checkTriggerGacha();
+});
+
+// React to /play/:category changes (direct links, back/forward, programmatic nav).
+watch(() => route.params.category, () => {
+  syncGameToRoute();
 });
 
 // Game deck configuration
@@ -292,6 +301,45 @@ const startFakeoutGame = async (category: Category) => {
   } finally {
     isStartingGame.value = false;
   }
+};
+
+// Navigate to the slugified game URL; the route watcher below starts the game.
+// Keeping start logic route-driven means the Play button and direct links
+// (/play/<slug>) take the exact same path.
+const playCategory = (category: Category) => {
+  if (gameStore.isCooldownActive(category) || isStartingGame.value) return;
+  router.push(`/play/${categoryToSlug(category)}`);
+};
+
+// Reconcile game state with the /play/:category route param. Runs on mount and
+// whenever the param changes (direct navigation, back/forward, programmatic push).
+const syncGameToRoute = async () => {
+  const slug = route.params.category as string | undefined;
+  if (!slug) return;
+
+  const category = slugToCategory(slug);
+  if (!category) {
+    // Unknown slug — fall back to the home selection screen.
+    router.replace('/');
+    return;
+  }
+
+  // Reflect the category in the home selection UI (matters if a cooldown blocks
+  // the game and we show the selection screen instead).
+  const sub = subCategories.find(s => s.mainCategory === category);
+  if (sub) activeSubCategory.value = sub;
+
+  // Don't restart a game that's already running for this category.
+  if (gameActive.value && selectedCategory.value === category) return;
+
+  // Can't start while on cooldown — drop back to the home URL (the category is
+  // already selected above, so its cooldown is visible on the selection screen).
+  if (gameStore.isCooldownActive(category)) {
+    if (route.name === 'play') router.replace('/');
+    return;
+  }
+
+  await startFakeoutGame(category);
 };
 
 const loadRound = () => {
@@ -410,9 +458,24 @@ const handleClaimSuccess = (claimedCards: Card[]) => {
   console.log('Cards claimed successfully:', claimedCards);
 };
 
+// Leave the game and restore the home URL. Called from the quit button and
+// after dismissing the results screen so /play/<slug> doesn't linger.
+const returnToHome = () => {
+  if (route.name === 'play') {
+    router.push('/');
+  }
+};
+
+const quitGame = () => {
+  gameActive.value = false;
+  selectedCategory.value = null;
+  returnToHome();
+};
+
 const handleCardsUnlockedDismiss = () => {
   showCardsUnlocked.value = false;
   selectedCategory.value = null;
+  returnToHome();
   // If Fake Out, run the progress bar animation returning to Home
   if (cardsUnlockedGameType.value === 'fakeout') {
     animateProgressBar(pointsBeforeGame.value, gameStore.gdPoints);
@@ -576,7 +639,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
     :active-main-category="gameActive ? selectedCategory || undefined : activeSubCategory.mainCategory"
     :class="{ 'is-home-selection': !gachaActive && !showCardsUnlocked }"
     @activate="startGachaDrop" 
-    @quit-game="gameActive = false; selectedCategory = null"
+    @quit-game="quitGame"
   >
     <Loader v-if="isLoading" />
 
@@ -599,7 +662,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
               v-if="!cooldownTimers[activeSubCategory.mainCategory]"
               variant="primary"
               :loading="isStartingGame"
-              @click="startFakeoutGame(activeSubCategory.mainCategory)"
+              @click="playCategory(activeSubCategory.mainCategory)"
             >
               <template #icon>
                 <PhPlay :size="12" weight="fill" color="#FDF4EB" class="play-icon" />
