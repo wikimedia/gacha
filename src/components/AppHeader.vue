@@ -89,7 +89,7 @@ const isOwnProfile = computed(() => {
 });
 
 const points = computed(() => {
-  return gameStore.gdPoints;
+  return props.displayedPoints !== undefined ? props.displayedPoints : gameStore.gdPoints;
 });
 
 const confirmQuitGame = () => {
@@ -192,6 +192,16 @@ const handleSendOtp = async () => {
 
 
 
+const clearBadge = () => {
+  gameStore.clearNewCards();
+};
+
+watch(() => route.name, (newName) => {
+  if (newName === 'profile') {
+    clearBadge();
+  }
+}, { immediate: true });
+
 defineExpose({
   openAuthModal() {
     showAuthModal.value = true;
@@ -218,10 +228,16 @@ defineExpose({
       <div v-else class="dropdown dropdown-bottom dropdown-start z-50">
         <label 
           tabindex="0" 
-          class="header-icon-btn"
+          class="header-icon-btn relative"
+          @click="clearBadge"
+          @focusin="clearBadge"
         >
           <!-- User Profile Silhouette icon -->
           <PhUser :size="18" weight="bold" />
+          <span 
+            v-if="gameStore.hasNewCards" 
+            class="profile-badge-dot"
+          ></span>
         </label>
         
         <ul 
@@ -644,6 +660,34 @@ defineExpose({
 
 .header-icon-btn:hover {
   opacity: 0.8;
+}
+
+.header-icon-btn.relative {
+  position: relative;
+}
+
+.profile-badge-dot {
+  position: absolute;
+  bottom: -2.5px;
+  right: -2.5px;
+  width: 9px;
+  height: 9px;
+  background-color: #4A9EAA;
+  border-radius: 50%;
+  border: 1.5px solid #24221f;
+  box-shadow: 0 0 6px rgba(74, 158, 170, 0.6);
+  animation: pulse-badge 2s infinite ease-in-out;
+}
+
+@keyframes pulse-badge {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(74, 158, 170, 0.6);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(74, 158, 170, 0.9);
+  }
 }
 
 /* --- Game Progress Indicator (segmented bar) --- */
