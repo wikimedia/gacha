@@ -100,7 +100,7 @@ const grainPosition = computed(() => {
         ></div>
         <img
           v-else-if="hasImage && !imageFailed"
-          src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Big_Show_042025.jpg"
+          :src="card.image"
           loading="lazy"
           referrerpolicy="no-referrer"
           class="trading-card__image-bg trading-card__image-bg--img"
