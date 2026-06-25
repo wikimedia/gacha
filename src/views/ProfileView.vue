@@ -45,7 +45,7 @@ const binderColor = ref('#4a6783');
 const gridColumns = ref(2); // default to 2 columns
 const showEditDropdown = ref(false);
 const isShowcaseMode = ref(false);
-const editingField = ref<'username' | 'bio' | null>(null);
+const editingField = ref<'username' | 'bio' | 'binderColor' | null>(null);
 const editInputValue = ref('');
 const showShareToast = ref(false);
 
@@ -104,12 +104,7 @@ const loadProfile = async (force = false) => {
       };
       profileCards.value = [];
       
-      const localColor = localStorage.getItem(`moonflower_binder_color_${profileId.value}`);
-      if (localColor) {
-        binderColor.value = localColor;
-      } else {
-        binderColor.value = '#4a6783';
-      }
+      binderColor.value = '#4a6783';
     }
   } catch (err) {
     console.error('Error fetching profile from database:', err);
@@ -152,22 +147,45 @@ const handleShareProfile = () => {
     .catch(err => console.error('Failed to copy profile link:', err));
 };
 
+const getContrastTextColor = (hexColor?: string) => {
+  if (!hexColor) return '#fdf4eb';
+  const color = hexColor.startsWith('#') ? hexColor.slice(1) : hexColor;
+  if (color.length !== 6) return '#fdf4eb';
+  const r = parseInt(color.substring(0, 2), 16);
+  const g = parseInt(color.substring(2, 4), 16);
+  const b = parseInt(color.substring(4, 6), 16);
+  const y = 0.299 * r + 0.587 * g + 0.114 * b;
+  return y > 150 ? '#3f3f35' : '#fdf4eb';
+};
+
+const currentContrastColor = computed(() => {
+  const activeColor = (editingField.value === 'binderColor' && editInputValue.value) 
+    ? editInputValue.value 
+    : binderColor.value;
+  return getContrastTextColor(activeColor);
+});
+
 const updateBinderColor = async (color: string) => {
   binderColor.value = color;
   if (isPrivateMode.value) {
     await authStore.updateProfile({ backgroundColor: color });
   }
-  localStorage.setItem(`moonflower_binder_color_${profileId.value}`, color);
 };
 
-const startEditing = (field: 'username' | 'bio') => {
+const startEditing = (field: 'username' | 'bio' | 'binderColor') => {
   editingField.value = field;
-  editInputValue.value = field === 'username' ? editDisplayName.value : editBio.value;
+  if (field === 'username') {
+    editInputValue.value = editDisplayName.value;
+  } else if (field === 'bio') {
+    editInputValue.value = editBio.value;
+  } else if (field === 'binderColor') {
+    editInputValue.value = binderColor.value;
+  }
   showEditDropdown.value = false;
 };
 
-const handleEditProfileField = (field: 'username' | 'bio' | 'showcase') => {
-  if (field === 'username' || field === 'bio') {
+const handleEditProfileField = (field: 'username' | 'bio' | 'showcase' | 'binderColor') => {
+  if (field === 'username' || field === 'bio' || field === 'binderColor') {
     startEditing(field);
   } else if (field === 'showcase') {
     isShowcaseMode.value = true;
@@ -184,6 +202,8 @@ const saveEditing = async () => {
     editDisplayName.value = editInputValue.value.trim();
   } else if (editingField.value === 'bio') {
     editBio.value = editInputValue.value.trim();
+  } else if (editingField.value === 'binderColor') {
+    binderColor.value = editInputValue.value.trim();
   }
   
   if (isPrivateMode.value) {
@@ -374,8 +394,6 @@ const toggleCardShowcase = async (cardId: string) => {
             </p>
             <div class="text-[11px] font-bold text-[#888888] uppercase tracking-wide mt-4">
               Total cards: <span class="text-[#d9754b] font-serif font-black text-sm">{{ profileCards.length }}</span>
-              <span class="mx-2 text-[#c4b69d]/50">|</span>
-              Gacha Points: <span class="text-[#4a6783] font-serif font-black text-sm">{{ profileUser.gdPoints }}</span>
             </div>
           </div>
         </div>
@@ -389,8 +407,8 @@ const toggleCardShowcase = async (cardId: string) => {
           <!-- Left: Folder tab shape -->
           <div class="folder-tabs-group flex items-end">
             <div 
-              class="folder-tab-active flex items-center justify-center font-serif font-bold text-xs uppercase tracking-wider text-black px-6 py-2.5 rounded-t-[6px]"
-              :style="{ backgroundColor: binderColor }"
+              class="folder-tab-active flex items-center justify-center font-serif font-bold text-xs uppercase tracking-wider px-6 py-2.5 rounded-t-[6px]"
+              :style="{ backgroundColor: binderColor, color: getContrastTextColor(binderColor) }"
             >
               Facts
             </div>
@@ -521,22 +539,36 @@ const toggleCardShowcase = async (cardId: string) => {
     <!-- FULLSCREEN FOCUSED PROFILE EDIT OVERLAY -->
     <div v-if="editingField !== null" class="edit-overlay-fullscreen flex items-start justify-center z-50">
       <div class="edit-overlay-backdrop" @click="cancelEditing"></div>
-      <div class="edit-overlay-card w-full max-w-md mx-4 mt-[15vh] p-6 shadow-2xl rounded-[4px] relative border border-[#fdf4eb]/20" :style="{ backgroundColor: binderColor }">
+      <div 
+        class="edit-overlay-card w-full max-w-md mx-4 mt-[15vh] p-6 shadow-2xl rounded-[4px] relative border" 
+        :style="{ 
+          backgroundColor: (editingField === 'binderColor' && editInputValue) ? editInputValue : binderColor,
+          borderColor: `${currentContrastColor}20`,
+          color: currentContrastColor
+        }"
+      >
         <button 
           @click="cancelEditing" 
-          class="absolute right-4 top-4 text-[#fdf4eb]/80 hover:text-[#fdf4eb] font-bold text-sm cursor-pointer"
+          class="absolute right-4 top-4 font-bold text-sm cursor-pointer opacity-80 hover:opacity-100"
+          :style="{ color: currentContrastColor }"
         >
           ✕
         </button>
 
-        <h3 class="font-serif text-lg font-black border-b border-[#fdf4eb]/20 pb-2 text-[#fdf4eb] mb-4">
-          {{ editingField === 'username' ? 'Edit Username' : 'Edit Bio Description' }}
+        <h3 
+          class="font-serif text-lg font-black border-b pb-2 mb-4"
+          :style="{ color: currentContrastColor, borderColor: `${currentContrastColor}20` }"
+        >
+          {{ editingField === 'username' ? 'Edit Username' : (editingField === 'bio' ? 'Edit Bio Description' : 'Edit Binder Color') }}
         </h3>
         
         <div class="form-control w-full mb-6">
           <label class="label py-1">
-            <span class="label-text font-serif font-black text-xs uppercase text-[#fdf4eb]/80">
-              {{ editingField === 'username' ? 'Display Name' : 'Encyclopedia Bio' }}
+            <span 
+              class="label-text font-serif font-black text-xs uppercase opacity-80"
+              :style="{ color: currentContrastColor }"
+            >
+              {{ editingField === 'username' ? 'Display Name' : (editingField === 'bio' ? 'Encyclopedia Bio' : 'Binder Cover Color') }}
             </span>
           </label>
           
@@ -550,12 +582,32 @@ const toggleCardShowcase = async (cardId: string) => {
             @keyup.enter="saveEditing"
           />
           <textarea 
-            v-else
+            v-else-if="editingField === 'bio'"
             v-model="editInputValue"
             rows="4"
             class="textarea w-full font-sans bg-[#fdf4eb] text-[#3f3f35] border-none rounded-[2px] mt-1 resize-none leading-relaxed text-sm"
             placeholder="Write binder biography..."
           ></textarea>
+          <div v-else-if="editingField === 'binderColor'" class="flex items-center gap-3 w-full bg-[#fdf4eb] p-3 rounded-[2px] mt-1">
+            <label class="relative w-10 h-10 rounded-full border border-[#3f3f35]/20 overflow-hidden cursor-pointer flex-shrink-0">
+              <input 
+                type="color" 
+                v-model="editInputValue" 
+                class="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+              />
+              <div class="w-full h-full" :style="{ backgroundColor: editInputValue }"></div>
+            </label>
+            <div class="flex-grow flex flex-col text-left">
+              <span class="text-[9px] font-sans font-bold text-[#888888] uppercase tracking-wide">Hex Code</span>
+              <input 
+                type="text" 
+                v-model="editInputValue" 
+                class="bg-transparent font-mono text-sm border-none w-full p-0 text-[#3f3f35] focus:ring-0 focus:outline-none"
+                placeholder="#4a6783"
+                @keyup.enter="saveEditing"
+              />
+            </div>
+          </div>
         </div>
 
         <div class="flex gap-3">
@@ -567,7 +619,8 @@ const toggleCardShowcase = async (cardId: string) => {
           </button>
           <button 
             @click="cancelEditing"
-            class="btn btn-outline border-[#fdf4eb] text-[#fdf4eb] hover:bg-white/10 btn-sm flex-1 font-bold uppercase tracking-wider cursor-pointer"
+            class="btn btn-outline btn-sm flex-1 font-bold uppercase tracking-wider cursor-pointer"
+            :style="{ borderColor: currentContrastColor, color: currentContrastColor }"
           >
             Cancel
           </button>

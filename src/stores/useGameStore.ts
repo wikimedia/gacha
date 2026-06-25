@@ -735,7 +735,8 @@ export const useGameStore = defineStore('game', () => {
       const { data: articlesData, error: articlesError } = await supabase
         .from('articles_v2')
         .select('*')
-        .eq('profile_id', profileData.id);
+        .eq('profile_id', profileData.id)
+        .order('pinned', { ascending: false });
 
       if (articlesError) {
         console.error('Error fetching profile articles:', articlesError.message);
@@ -756,7 +757,7 @@ export const useGameStore = defineStore('game', () => {
           username: profileData.username,
           profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileData.username}`,
           bio: profileData.bio || 'Avid Moonflower scholar and collector.',
-          backgroundColor: '#eaecf0',
+          backgroundColor: profileData.binder_color || '#eaecf0',
           gdPoints: 0
         },
         cards

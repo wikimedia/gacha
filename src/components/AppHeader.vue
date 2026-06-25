@@ -38,7 +38,7 @@ const emit = defineEmits<{
   (e: 'logout'): void;
   (e: 'edit-profile'): void;
   (e: 'quit-game'): void;
-  (e: 'edit-profile-field', field: 'username' | 'bio' | 'showcase'): void;
+  (e: 'edit-profile-field', field: 'username' | 'bio' | 'showcase' | 'binderColor'): void;
   (e: 'update-binder-color', color: string): void;
 }>();
 
@@ -60,22 +60,57 @@ const handleLogout = async () => {
   emit('logout');
 };
 
-// Points display fallback to store
-const points = computed(() => props.displayedPoints !== undefined ? props.displayedPoints : gameStore.gdPoints);
-
-// Check if viewing own profile
-const isOwnProfile = computed(() => {
-  if (route.name !== 'profile') return false;
-  if (!authStore.isLoggedIn || !authStore.user) return false;
-  const profileId = (route.params.id as string) || '';
-  if (!profileId) return false;
-  return authStore.user.username.toLowerCase() === profileId.toLowerCase() ||
-         authStore.user.id.toLowerCase() === profileId.toLowerCase();
+const displayUsername = computed(() => {
+  if (authStore.user) {
+    return authStore.user.username;
+  }
+  return 'Guest Scholar';
 });
 
-const displayUsername = computed(() => authStore.user?.username || '');
+const dbUsername = computed(() => {
+  return authStore.user?.username || null;
+});
 
+const isOwnProfile = computed(() => {
+  if (!authStore.isLoggedIn || !authStore.user) return false;
+  const routeId = route.params.id as string;
+  if (!routeId) return false;
+  
+  const cleanRouteId = routeId.startsWith('@') ? routeId.slice(1) : routeId;
+  const cleanUserUsername = authStore.user.username;
+  const cleanUserId = authStore.user.id;
+  
+  return cleanRouteId.toLowerCase() === cleanUserUsername.toLowerCase() || 
+         cleanRouteId.toLowerCase() === cleanUserId.toLowerCase();
+});
 
+const points = computed(() => {
+  return gameStore.gdPoints;
+});
+
+const confirmQuitGame = () => {
+  if (window.confirm("Are you sure you want to quit? Your progress in this run will be lost.")) {
+    emit('quit-game');
+  }
+};
+
+const showHeaderEditDropdown = ref(false);
+
+const handleEditClick = (field: 'username' | 'bio' | 'showcase' | 'binderColor') => {
+  showHeaderEditDropdown.value = false;
+  emit('edit-profile-field', field);
+};
+
+const getContrastTextColor = (hexColor?: string) => {
+  if (!hexColor) return '#fdf4eb';
+  const color = hexColor.startsWith('#') ? hexColor.slice(1) : hexColor;
+  if (color.length !== 6) return '#fdf4eb';
+  const r = parseInt(color.substring(0, 2), 16);
+  const g = parseInt(color.substring(2, 4), 16);
+  const b = parseInt(color.substring(4, 6), 16);
+  const y = 0.299 * r + 0.587 * g + 0.114 * b;
+  return y > 150 ? '#24221f' : '#fdf4eb';
+};
 
 // Auth modal state
 const showAuthModal = ref(false);
@@ -151,42 +186,7 @@ const handleSendOtp = async () => {
   }
 };
 
-const confirmQuitGame = () => {
-  if (window.confirm("Are you sure you want to quit? Your progress in this run will be lost.")) {
-    emit('quit-game');
-  }
-};
 
-const showHeaderEditDropdown = ref(false);
-
-const binderColorsList = [
-  { name: 'Classic Blue', hex: '#4a6783' },
-  { name: 'Sage Green', hex: '#829466' },
-  { name: 'Terracotta', hex: '#d9754b' },
-  { name: 'Plum Rose', hex: '#917D8A' },
-  { name: 'Charcoal', hex: '#3f3f35' },
-  { name: 'Warm Sand', hex: '#bda380' }
-];
-
-const handleEditClick = (field: 'username' | 'bio' | 'showcase') => {
-  showHeaderEditDropdown.value = false;
-  emit('edit-profile-field', field);
-};
-
-const handleColorClick = (color: string) => {
-  emit('update-binder-color', color);
-};
-
-const getContrastTextColor = (hexColor?: string) => {
-  if (!hexColor) return '#fdf4eb';
-  const color = hexColor.startsWith('#') ? hexColor.slice(1) : hexColor;
-  if (color.length !== 6) return '#fdf4eb';
-  const r = parseInt(color.substring(0, 2), 16);
-  const g = parseInt(color.substring(2, 4), 16);
-  const b = parseInt(color.substring(4, 6), 16);
-  const y = 0.299 * r + 0.587 * g + 0.114 * b;
-  return y > 150 ? '#24221f' : '#fdf4eb';
-};
 
 defineExpose({
   openAuthModal() {
@@ -330,19 +330,8 @@ defineExpose({
             <div class="edit-dropdown-item" @click="handleEditClick('showcase')">
               Change Showcase
             </div>
-            <div class="edit-dropdown-item color-selection-item">
-              <div class="text-[10px] uppercase font-bold tracking-wider mb-2 opacity-80">Change Binder Color</div>
-              <div class="flex gap-2 flex-wrap">
-                <button 
-                  v-for="color in binderColorsList" 
-                  :key="color.hex"
-                  @click="handleColorClick(color.hex)"
-                  class="w-6 h-6 rounded-full border-2 transition-all hover:scale-110 cursor-pointer"
-                  :class="[binderColor === color.hex ? 'border-[#fdf4eb] scale-105' : 'border-transparent']"
-                  :style="{ backgroundColor: color.hex }"
-                  :title="color.name"
-                ></button>
-              </div>
+            <div class="edit-dropdown-item" @click="handleEditClick('binderColor')">
+              Change Binder Color
             </div>
           </div>
         </transition>
@@ -792,11 +781,12 @@ defineExpose({
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-.color-selection-item {
-  cursor: default;
-  border-bottom: none;
-  background-color: rgba(0, 0, 0, 0.1);
-  padding: 12px 16px;
+.hidden-color-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .header-icon-btn--active {

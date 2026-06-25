@@ -18,7 +18,7 @@ const emit = defineEmits<{
   (e: 'activate'): void;
   (e: 'edit-profile'): void;
   (e: 'quit-game'): void;
-  (e: 'edit-profile-field', field: 'username' | 'bio' | 'showcase'): void;
+  (e: 'edit-profile-field', field: 'username' | 'bio' | 'showcase' | 'binderColor'): void;
   (e: 'update-binder-color', color: string): void;
 }>();
 

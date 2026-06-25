@@ -68,10 +68,11 @@ export const useAuthStore = defineStore('auth', () => {
       // Fetch the real username and bio from the Supabase profiles table
       let profileUsername: string | null = null;
       let profileBio: string | null = null;
+      let profileBinderColor: string | null = null;
       try {
         const { data: profileData, error: profileFetchError } = await supabase
           .from('profiles')
-          .select('username, bio')
+          .select('username, bio, binder_color')
           .eq('id', su.id)
           .maybeSingle();
 
@@ -85,6 +86,9 @@ export const useAuthStore = defineStore('auth', () => {
           }
           if (profileData.bio !== undefined && profileData.bio !== null) {
             profileBio = profileData.bio;
+          }
+          if (profileData.binder_color) {
+            profileBinderColor = profileData.binder_color;
           }
         } else {
           // If profile row doesn't exist, create it!
@@ -139,7 +143,8 @@ export const useAuthStore = defineStore('auth', () => {
           const { data: articlesData, error: articlesError } = await supabase
             .from('articles_v2')
             .select('*')
-            .eq('profile_id', su.id);
+            .eq('profile_id', su.id)
+            .order('pinned', { ascending: false });
 
           if (articlesError) {
             console.error('Error loading user articles from database:', articlesError.message);
@@ -187,7 +192,7 @@ export const useAuthStore = defineStore('auth', () => {
         email: email,
         profilePic: metadata.profilePic || `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
         bio,
-        backgroundColor: metadata.backgroundColor || '#eaecf0',
+        backgroundColor: profileBinderColor || '#eaecf0',
         gdPoints: finalPoints,
         collectedCards: finalCards
       };
@@ -303,10 +308,11 @@ export const useAuthStore = defineStore('auth', () => {
         ...profileUpdate
       };
 
-      // Persist username and bio to the Supabase profiles table
+      // Persist username, bio, and binder_color to the Supabase profiles table
       const profilesUpdate: Record<string, string> = {};
       if (profileUpdate.username) profilesUpdate.username = profileUpdate.username;
       if (profileUpdate.bio !== undefined) profilesUpdate.bio = profileUpdate.bio;
+      if (profileUpdate.backgroundColor !== undefined) profilesUpdate.binder_color = profileUpdate.backgroundColor;
 
       if (Object.keys(profilesUpdate).length > 0) {
         const { error: profilesError } = await supabase
