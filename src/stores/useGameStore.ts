@@ -40,6 +40,9 @@ export interface Card {
   image: string;
   isReal: boolean;
   explanation: string; // Explaining why it's real or fake
+  imageLicense?: string;        // e.g. "CC BY-SA 4.0" — from articles_v2.image_license
+  imageCredit?: string;         // photographer / author — from articles_v2.image_credit
+  imageAttributionUrl?: string; // link to license/source page — from articles_v2.image_attribution_url
 }
 
 export interface CollectedCard {
@@ -352,7 +355,10 @@ export const useGameStore = defineStore('game', () => {
       isReal,
       explanation: isReal
         ? 'Real! This is a genuine Wikipedia entry.'
-        : 'Fake! This entry has been altered and is not a real Wikipedia fact.'
+        : 'Fake! This entry has been altered and is not a real Wikipedia fact.',
+      imageLicense: row.image_license || undefined,
+      imageCredit: row.image_credit || undefined,
+      imageAttributionUrl: row.image_attribution_url || undefined
     };
   };
 

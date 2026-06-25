@@ -36,13 +36,31 @@ const commonsFilename = computed(() => {
   return match ? decodeURIComponent(match[1]) : null;
 });
 
-const wikimediaImageLink = computed(() => 
-  commonsFilename.value 
-    ? `https://commons.wikimedia.org/wiki/File:${commonsFilename.value}`
-    : props.card.wikipediaLink
-);
+// Prefer the explicit attribution URL from Supabase; fall back to a
+// Commons file page derived from the image URL, then the Wikipedia article.
+const wikimediaImageLink = computed(() => {
+  if (props.card.imageAttributionUrl) return props.card.imageAttributionUrl;
+  if (commonsFilename.value) return `https://commons.wikimedia.org/wiki/File:${commonsFilename.value}`;
+  return props.card.wikipediaLink;
+});
 
+// Build the attribution string from real DB columns when available.
 const attributionText = computed(() => {
+  const parts: string[] = [];
+
+  // Credit (author / photographer)
+  if (props.card.imageCredit) {
+    parts.push(props.card.imageCredit);
+  }
+
+  // License
+  if (props.card.imageLicense) {
+    parts.push(props.card.imageLicense);
+  }
+
+  if (parts.length > 0) return parts.join(' / ');
+
+  // Fallback: derive from image URL like before
   if (commonsFilename.value) {
     const filename = commonsFilename.value.replace(/_/g, ' ');
     const display = filename.length > 50 ? filename.slice(0, 50) + '…' : filename;
@@ -114,7 +132,7 @@ const grainPosition = computed(() => {
           {{ attributionText }}
         </a>
         <span v-else class="trading-card__credit-text">
-          Wikimedia Commons / CC BY-SA 4.0
+          {{ attributionText }}
         </span>
       </div>
 
