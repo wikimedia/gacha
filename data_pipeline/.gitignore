@@ -10,4 +10,5 @@ __pycache__/
 *.jpeg
 *.png
 *.gif
-downloaded_common_images/
+downloaded_commons_images/
+.ipynb_checkpoints/

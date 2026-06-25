@@ -19,6 +19,8 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = ref<boolean>(false);
   const isAuthInitialized = ref<boolean>(false);
 
+  let loadedUserId: string | null = null;
+
   // Sync game store states directly with the user store
   const syncStoreToUser = async (points: number, cards: any[]) => {
     if (user.value && isLoggedIn.value) {
@@ -62,6 +64,12 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (session?.user) {
       const su = session.user;
+
+      if (loadedUserId === su.id) {
+        return;
+      }
+      loadedUserId = su.id;
+
       const metadata = su.user_metadata || {};
       
       const email = su.email || '';
@@ -182,6 +190,9 @@ export const useAuthStore = defineStore('auth', () => {
           finalPoints += guestPoints;
           didMergePoints = true;
         }
+        // Always clear merged guest points so they can't be counted (and
+        // re-synced) again on a subsequent sign-in.
+        localStorage.removeItem('moonflower_guest_gdPoints');
       }
 
       let finalCards = dbCards;
@@ -236,6 +247,7 @@ export const useAuthStore = defineStore('auth', () => {
         await syncStoreToUser(finalPoints, gameStore.collectedCards);
       }
     } else {
+      loadedUserId = null;
       user.value = null;
       isLoggedIn.value = false;
 
