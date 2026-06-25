@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import type { Card } from '../stores/useGameStore';
 import { CATEGORY_SLUG } from '../stores/useGameStore';
 import Stars from './Stars.vue';
+
+const PLACEHOLDER_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Missing-image-232x150.png';
 
 const props = withDefaults(defineProps<{
   card: Card;
@@ -29,6 +31,15 @@ const imageStyle = computed(() => {
   if (!img) return null;
   return isCSSImage.value ? img : `url("${img}")`;
 });
+
+// Track <img> load failures so we can swap in a placeholder. Reset when the
+// card's image changes (e.g. the same Card component is reused for a new card).
+const imageFailed = ref(false);
+watch(() => props.card.image, () => { imageFailed.value = false; });
+const onImageError = () => { imageFailed.value = true; };
+
+// Whether to show the placeholder image: either no image, or the real one failed.
+const showPlaceholderImage = computed(() => !!PLACEHOLDER_IMAGE_URL && (!hasImage.value || imageFailed.value));
 
 // Extract filename from Wikimedia Commons URL if applicable
 const commonsFilename = computed(() => {
@@ -83,17 +94,24 @@ const grainPosition = computed(() => {
 
       <!-- ① Image + image grain (clipped to inset area) -->
       <div class="trading-card__image-layer">
-        <div v-if="hasImage && isCSSImage" 
+        <div v-if="hasImage && isCSSImage && !imageFailed"
           class="trading-card__image-bg"
           :style="{ backgroundImage: imageStyle! }"
         ></div>
-        <img 
-          v-else-if="hasImage"
+        <img
+          v-else-if="hasImage && !imageFailed"
           :src="card.image"
           loading="lazy"
           referrerpolicy="no-referrer"
           class="trading-card__image-bg trading-card__image-bg--img"
           alt="Card image"
+          @error="onImageError"
+        />
+        <img
+          v-else-if="showPlaceholderImage"
+          :src="PLACEHOLDER_IMAGE_URL"
+          class="trading-card__image-bg trading-card__image-bg--img"
+          alt="Card image unavailable"
         />
         <div v-else class="trading-card__image-bg trading-card__image-bg--placeholder"></div>
         <div class="trading-card__image-grain" :style="{ backgroundPosition: grainPosition }"></div>

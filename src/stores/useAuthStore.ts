@@ -14,6 +14,26 @@ export interface User {
   collectedCards: CollectedCard[];
 }
 
+function randomPlaceholderUsername(): string {
+  const adjectives = [
+    'Curious', 'Brave', 'Clever', 'Wise', 'Mysterious', 'Adventurous', 'Gentle', 'Fierce', 'Nimble', 'Witty',
+    'Radiant', 'Daring', 'Stellar', 'Lunar', 'Cosmic', 'Mighty', 'Swift', 'Silent', 'Noble', 'Valiant',
+    'Jolly', 'Spirited', 'Dazzling', 'Intrepid', 'Whimsical', 'Curated', 'Studious', 'Inquisitive', 'Eager', 'Keen',
+    'Vivid', 'Bold', 'Quirky', 'Stoic', 'Plucky', 'Dapper', 'Cheerful', 'Earnest', 'Lively', 'Serene',
+    'Crafty', 'Gallant', 'Humble', 'Spry', 'Astute', 'Breezy', 'Dauntless', 'Gleeful', 'Mellow', 'Zealous'
+  ];
+  const animals = [
+    'Fox', 'Owl', 'Hawk', 'Wolf', 'Bear', 'Tiger', 'Panther', 'Eagle', 'Falcon', 'Lynx',
+    'Otter', 'Badger', 'Raven', 'Heron', 'Stag', 'Bison', 'Moose', 'Cheetah', 'Jaguar', 'Leopard',
+    'Dolphin', 'Narwhal', 'Walrus', 'Seal', 'Penguin', 'Puffin', 'Crane', 'Sparrow', 'Magpie', 'Robin',
+    'Gecko', 'Iguana', 'Cobra', 'Viper', 'Turtle', 'Toad', 'Newt', 'Salamander', 'Mantis', 'Beetle',
+    'Marten', 'Ferret', 'Mongoose', 'Meerkat', 'Capybara', 'Tapir', 'Ibex', 'Gazelle', 'Antelope', 'Wombat'
+  ];
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const animal = animals[Math.floor(Math.random() * animals.length)];
+  return `${adjective}${animal}${Math.floor(Math.random() * 1000)}`;
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
   const isLoggedIn = ref<boolean>(false);
@@ -21,13 +41,25 @@ export const useAuthStore = defineStore('auth', () => {
 
   let loadedUserId: string | null = null;
 
-  // Sync game store states directly with the user store
+  // The gdPoints value last written to Supabase auth metadata. syncStoreToUser is
+  // called from many places (per collected card, per claim, per persist), but the
+  // only thing it persists remotely is gdPoints. Tracking the last synced value
+  // lets us skip redundant updateUser() calls — a burst of identical writes was
+  // tripping the /auth/v1/user rate limit and triggering a sign-out/reload loop.
+  let lastSyncedPoints: number | null = null;
+
+  // Sync game store state into the local user object, and persist gdPoints to
+  // Supabase auth metadata only when it actually changed.
   const syncStoreToUser = async (points: number, cards: any[]) => {
     if (user.value && isLoggedIn.value) {
       user.value.gdPoints = points;
       user.value.collectedCards = cards;
 
-      // Sync store state to user object
+      // Nothing to persist if the remote value already matches.
+      if (points === lastSyncedPoints) return;
+
+      // Optimistically record the target so concurrent callers don't all fire.
+      lastSyncedPoints = points;
 
       // Persist to Supabase User Metadata (excluding collectedCards)
       const { error } = await supabase.auth.updateUser({
@@ -37,6 +69,8 @@ export const useAuthStore = defineStore('auth', () => {
       });
       if (error) {
         console.error('Error syncing progress to Supabase:', error.message);
+        // Allow a retry on the next call since this write didn't land.
+        lastSyncedPoints = null;
       }
     }
   };
@@ -99,8 +133,10 @@ export const useAuthStore = defineStore('auth', () => {
             profileBinderColor = profileData.binder_color;
           }
         } else {
-          // If profile row doesn't exist, create it!
-          const fallbackUsername = metadata.username || (email ? email.split('@')[0] : 'Scholar');
+          // If profile row doesn't exist, create it! New users get a fun random
+          // placeholder username (rather than leaking their email prefix) unless
+          // they've already set one in auth metadata.
+          const fallbackUsername = metadata.username || randomPlaceholderUsername();
           const fallbackBio = metadata.bio || 'Avid Moonflower scholar and collector.';
           
           console.log(`Creating missing profile for user ${su.id} with username ${fallbackUsername}...`);
@@ -114,9 +150,9 @@ export const useAuthStore = defineStore('auth', () => {
           
           if (insertError) {
             console.error('Error creating profile row in database:', insertError.message);
-            // If it failed because of username constraint (already exists), try with a random suffix
+            // If it failed because of username constraint (already exists), try a fresh random name
             if (insertError.message.toLowerCase().includes('unique') || insertError.code === '23505') {
-              const uniqueUsername = `${fallbackUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
+              const uniqueUsername = randomPlaceholderUsername();
               const { error: retryError } = await supabase
                 .from('profiles')
                 .insert({
@@ -210,6 +246,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       user.value = mappedUser;
       isLoggedIn.value = true;
+      // The freshly loaded points already reflect what's in metadata (modulo the
+      // merge below, which is synced explicitly). Seed the tracker so we don't
+      // immediately re-write an unchanged value.
+      lastSyncedPoints = didMergePoints ? null : finalPoints;
 
       // Sync user data to active Game Store
       gameStore.gdPoints = mappedUser.gdPoints;
@@ -248,6 +288,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } else {
       loadedUserId = null;
+      lastSyncedPoints = null;
       user.value = null;
       isLoggedIn.value = false;
 

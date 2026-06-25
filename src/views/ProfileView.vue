@@ -119,7 +119,6 @@ onMounted(async () => {
   gameStore.loadGuestState();
   isLoadingProfile.value = true;
   try {
-    await gameStore.loadCardsFromDatabase();
     await loadProfile();
   } finally {
     isLoadingProfile.value = false;

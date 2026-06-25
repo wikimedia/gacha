@@ -338,10 +338,12 @@ export const useGameStore = defineStore('game', () => {
     // 2. Normalize Rarity based on the article's percentile
     let rarity: 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary' = 'Common';
     const pct = row.percentile;
+
+    const maxCurrentRarity = 0.036;
     if (typeof pct === 'number') {
-      if (pct >= 0.90) rarity = 'Legendary';
-      else if (pct >= 0.70) rarity = 'Epic';
-      else if (pct >= 0.40) rarity = 'Rare';
+      if (pct < 0.10 * maxCurrentRarity) rarity = 'Legendary';
+      else if (pct < 0.30 * maxCurrentRarity) rarity = 'Epic';
+      else if (pct < 0.60 * maxCurrentRarity) rarity = 'Rare';
     }
 
     // 3. Format visual background image
