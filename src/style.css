@@ -495,6 +495,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   font-family: var(--font-family-system-sans);
   color: var(--color-base-content);
   background-image: linear-gradient(rgba(151, 107, 26, 0.29) 0%, rgba(51, 51, 51, 0) 10%, rgba(77, 77, 77, 0) 62.609%, rgba(151, 107, 26, 0.29) 100%), url('/bg-paperTexture.jpg') !important;
@@ -617,6 +618,7 @@ body {
 
 .app-page-wrapper.is-home-selection {
   height: 100vh !important;
+  height: 100dvh !important;
   overflow: hidden !important;
 }
 
