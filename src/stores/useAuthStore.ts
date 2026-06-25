@@ -21,13 +21,25 @@ export const useAuthStore = defineStore('auth', () => {
 
   let loadedUserId: string | null = null;
 
-  // Sync game store states directly with the user store
+  // The gdPoints value last written to Supabase auth metadata. syncStoreToUser is
+  // called from many places (per collected card, per claim, per persist), but the
+  // only thing it persists remotely is gdPoints. Tracking the last synced value
+  // lets us skip redundant updateUser() calls — a burst of identical writes was
+  // tripping the /auth/v1/user rate limit and triggering a sign-out/reload loop.
+  let lastSyncedPoints: number | null = null;
+
+  // Sync game store state into the local user object, and persist gdPoints to
+  // Supabase auth metadata only when it actually changed.
   const syncStoreToUser = async (points: number, cards: any[]) => {
     if (user.value && isLoggedIn.value) {
       user.value.gdPoints = points;
       user.value.collectedCards = cards;
 
-      // Sync store state to user object
+      // Nothing to persist if the remote value already matches.
+      if (points === lastSyncedPoints) return;
+
+      // Optimistically record the target so concurrent callers don't all fire.
+      lastSyncedPoints = points;
 
       // Persist to Supabase User Metadata (excluding collectedCards)
       const { error } = await supabase.auth.updateUser({
@@ -37,6 +49,8 @@ export const useAuthStore = defineStore('auth', () => {
       });
       if (error) {
         console.error('Error syncing progress to Supabase:', error.message);
+        // Allow a retry on the next call since this write didn't land.
+        lastSyncedPoints = null;
       }
     }
   };
@@ -210,6 +224,10 @@ export const useAuthStore = defineStore('auth', () => {
 
       user.value = mappedUser;
       isLoggedIn.value = true;
+      // The freshly loaded points already reflect what's in metadata (modulo the
+      // merge below, which is synced explicitly). Seed the tracker so we don't
+      // immediately re-write an unchanged value.
+      lastSyncedPoints = didMergePoints ? null : finalPoints;
 
       // Sync user data to active Game Store
       gameStore.gdPoints = mappedUser.gdPoints;
@@ -248,6 +266,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } else {
       loadedUserId = null;
+      lastSyncedPoints = null;
       user.value = null;
       isLoggedIn.value = false;
 
