@@ -344,6 +344,9 @@ export const useGameStore = defineStore('game', () => {
       if (pct < 0.10 * maxCurrentRarity) rarity = 'Legendary';
       else if (pct < 0.30 * maxCurrentRarity) rarity = 'Epic';
       else if (pct < 0.60 * maxCurrentRarity) rarity = 'Rare';
+      else if (pct < 0.80 * maxCurrentRarity) rarity = 'Uncommon';
+      else rarity = 'Common';
+
     }
 
     // 3. Format visual background image
