@@ -14,6 +14,26 @@ export interface User {
   collectedCards: CollectedCard[];
 }
 
+function randomPlaceholderUsername(): string {
+  const adjectives = [
+    'Curious', 'Brave', 'Clever', 'Wise', 'Mysterious', 'Adventurous', 'Gentle', 'Fierce', 'Nimble', 'Witty',
+    'Radiant', 'Daring', 'Stellar', 'Lunar', 'Cosmic', 'Mighty', 'Swift', 'Silent', 'Noble', 'Valiant',
+    'Jolly', 'Spirited', 'Dazzling', 'Intrepid', 'Whimsical', 'Curated', 'Studious', 'Inquisitive', 'Eager', 'Keen',
+    'Vivid', 'Bold', 'Quirky', 'Stoic', 'Plucky', 'Dapper', 'Cheerful', 'Earnest', 'Lively', 'Serene',
+    'Crafty', 'Gallant', 'Humble', 'Spry', 'Astute', 'Breezy', 'Dauntless', 'Gleeful', 'Mellow', 'Zealous'
+  ];
+  const animals = [
+    'Fox', 'Owl', 'Hawk', 'Wolf', 'Bear', 'Tiger', 'Panther', 'Eagle', 'Falcon', 'Lynx',
+    'Otter', 'Badger', 'Raven', 'Heron', 'Stag', 'Bison', 'Moose', 'Cheetah', 'Jaguar', 'Leopard',
+    'Dolphin', 'Narwhal', 'Walrus', 'Seal', 'Penguin', 'Puffin', 'Crane', 'Sparrow', 'Magpie', 'Robin',
+    'Gecko', 'Iguana', 'Cobra', 'Viper', 'Turtle', 'Toad', 'Newt', 'Salamander', 'Mantis', 'Beetle',
+    'Marten', 'Ferret', 'Mongoose', 'Meerkat', 'Capybara', 'Tapir', 'Ibex', 'Gazelle', 'Antelope', 'Wombat'
+  ];
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const animal = animals[Math.floor(Math.random() * animals.length)];
+  return `${adjective}${animal}${Math.floor(Math.random() * 1000)}`;
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
   const isLoggedIn = ref<boolean>(false);
@@ -113,8 +133,10 @@ export const useAuthStore = defineStore('auth', () => {
             profileBinderColor = profileData.binder_color;
           }
         } else {
-          // If profile row doesn't exist, create it!
-          const fallbackUsername = metadata.username || (email ? email.split('@')[0] : 'Scholar');
+          // If profile row doesn't exist, create it! New users get a fun random
+          // placeholder username (rather than leaking their email prefix) unless
+          // they've already set one in auth metadata.
+          const fallbackUsername = metadata.username || randomPlaceholderUsername();
           const fallbackBio = metadata.bio || 'Avid Moonflower scholar and collector.';
           
           console.log(`Creating missing profile for user ${su.id} with username ${fallbackUsername}...`);
@@ -128,9 +150,9 @@ export const useAuthStore = defineStore('auth', () => {
           
           if (insertError) {
             console.error('Error creating profile row in database:', insertError.message);
-            // If it failed because of username constraint (already exists), try with a random suffix
+            // If it failed because of username constraint (already exists), try a fresh random name
             if (insertError.message.toLowerCase().includes('unique') || insertError.code === '23505') {
-              const uniqueUsername = `${fallbackUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
+              const uniqueUsername = randomPlaceholderUsername();
               const { error: retryError } = await supabase
                 .from('profiles')
                 .insert({
