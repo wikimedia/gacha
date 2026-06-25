@@ -45,7 +45,7 @@ const subCategories: SubCategoryDef[] = [
     name: 'People / Culture',
     mainCategory: 'People / Culture',
     thumbnail: '/society.png',
-    bgCollage: '/History-mainImg.png'
+    bgCollage: '/People-mainImg.png'
   },
   {
     id: 'entertainment',
@@ -73,7 +73,7 @@ const subCategories: SubCategoryDef[] = [
     name: 'Physical Science',
     mainCategory: 'Physical Science',
     thumbnail: '/physical-science.png',
-    bgCollage: '/Earth-mainImg.png'
+    bgCollage: '/physicalScience-mainImg.png'
   }
 ];
 
