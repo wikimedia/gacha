@@ -64,13 +64,6 @@ const handleLogout = async () => {
   emit('logout');
 };
 
-const displayUsername = computed(() => {
-  if (authStore.user) {
-    return authStore.user.username;
-  }
-  return 'Guest Scholar';
-});
-
 const dbUsername = computed(() => {
   return authStore.user?.username || null;
 });
@@ -244,29 +237,13 @@ defineExpose({
           tabindex="0" 
           class="dropdown-content menu p-3 shadow-xl bg-base-100 rounded-box border border-base-300 w-64 mt-2 gap-2 text-sm text-left"
         >
-          <!-- User info -->
-          <li class="px-4 py-2 border-b border-base-200">
-            <div v-if="authStore.isLoggedIn" class="p-0">
-              <div class="font-bold text-[10px] text-secondary uppercase tracking-wider">Logged In As</div>
-              <div class="font-serif font-black text-primary text-base mt-0.5 truncate">{{ displayUsername }}</div>
-            </div>
-            <div v-else class="p-0">
-              <div class="font-bold text-[10px] text-secondary uppercase tracking-wider">Playing As</div>
-              <div class="font-serif font-black text-secondary text-base mt-0.5">Guest Scholar</div>
-            </div>
-          </li>
-          
+
           <!-- Points tracker -->
           <li class="px-4 py-2 border-b border-base-200">
-            <div class="flex justify-between items-center w-full p-0">
+            <div class="flex justify-between items-center w-full p-0 pointer-events-none select-none">
               <span class="text-[10px] font-bold text-secondary uppercase tracking-wider">Gacha Points</span>
               <span class="text-xs font-black text-primary" :class="{ 'animate-pulse text-warning': points >= 100 }">{{ points }}/100</span>
             </div>
-            <progress 
-              class="progress progress-primary w-full h-2 mt-1.5" 
-              :value="points" 
-              max="100"
-            ></progress>
             
             <!-- Activate Gacha Drop Button -->
             <button 
@@ -278,7 +255,7 @@ defineExpose({
             </button>
             <div 
               v-else 
-              class="text-[9px] text-secondary text-center mt-2 font-sans font-medium flex items-center justify-center gap-1"
+              class="text-[9px] text-secondary text-center mt-2 font-sans font-medium flex items-center justify-center gap-1 pointer-events-none select-none"
             >
               <span>🔒</span>
               <span>Reach 100 points to unlock Gacha Drop!</span>
@@ -305,7 +282,7 @@ defineExpose({
             </button>
           </li>
           <li v-else>
-            <button @click="handleLogout" class="text-error hover:bg-error/10 font-bold py-2 px-3 rounded border-t border-base-200 pt-2 mt-1">
+            <button @click="handleLogout" class="text-error hover:bg-base-200 active:bg-base-300 active:scale-[0.98] transition-all duration-75 font-bold py-2 px-3 rounded border-t border-base-200 pt-2 mt-1">
               🚪 Log Out
             </button>
           </li>
