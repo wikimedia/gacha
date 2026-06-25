@@ -364,7 +364,7 @@ export const useGameStore = defineStore('game', () => {
   // Skip anything flagged above this threshold (flag_score is null for unflagged rows).
   const FLAG_SCORE_MAX = 0.9;
 
-  // Real cards come from articles_v2, fake cards from fake_articles_v2.
+  // Real cards come from articles_v2, fake cards from fake_articles_v3.
   const FAKES_TABLE = 'fake_articles_v3';
 
   // Filters for real articles in articles_v2: unclaimed, has an image,
@@ -392,31 +392,41 @@ export const useGameStore = defineStore('game', () => {
     return q;
   };
 
-  // Fetch a random window of `sampleSize` rows from `table`. PostgREST has no
-  // ORDER BY random(), so we count the matching rows and read a page from a random
-  // offset — bounded work that varies every call. `applyFilters` must be applied
-  // identically to the count and data queries so the offset window stays valid.
+  // Fetch a random window of `sampleSize` rows from `table`. Each row carries a
+  // persistent random value in `rand`, indexed alongside the gameplay filters, so
+  // we seek to a random pivot and read the next `sampleSize` rows by `rand`. A
+  // contiguous block in rand-space is itself a random sample of the filtered set,
+  // and this is an O(sampleSize) index range scan — no count(*) and no large
+  // OFFSET scan. `applyFilters` must match the partial index predicate so the
+  // planner can use it.
   const fetchRandomSample = async (
     table: string,
     applyFilters: (q: any) => any,
     sampleSize: number
   ): Promise<any[]> => {
-    const { count, error: countError } = await applyFilters(
-      supabase.from(table).select('*', { count: 'exact', head: true })
-    );
+    const pivot = Math.random();
 
-    if (countError) throw countError;
-    if (!count) return [];
-
-    const maxOffset = Math.max(0, count - sampleSize);
-    const offset = Math.floor(Math.random() * (maxOffset + 1));
-
-    const { data, error } = await applyFilters(
-      supabase.from(table).select('*')
-    ).range(offset, offset + sampleSize - 1);
+    const { data, error } = await applyFilters(supabase.from(table).select('*'))
+      .gte('rand', pivot)
+      .order('rand', { ascending: true })
+      .limit(sampleSize);
 
     if (error) throw error;
-    return data || [];
+    let rows = data || [];
+
+    // If the pivot landed too near the top to fill the sample, wrap around to
+    // the start of rand-space and take the remainder.
+    if (rows.length < sampleSize) {
+      const { data: wrapData, error: wrapError } = await applyFilters(supabase.from(table).select('*'))
+        .lt('rand', pivot)
+        .order('rand', { ascending: true })
+        .limit(sampleSize - rows.length);
+
+      if (wrapError) throw wrapError;
+      rows = rows.concat(wrapData || []);
+    }
+
+    return rows;
   };
 
   // Real cards always come from articles_v2.
