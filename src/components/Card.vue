@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue';
 import type { Card } from '../stores/useGameStore';
 import { CATEGORY_SLUG } from '../stores/useGameStore';
 import Stars from './Stars.vue';
+import ShinyOverlay from './ShinyOverlay.vue';
 import { PhArrowClockwise } from '@phosphor-icons/vue';
 
 const PLACEHOLDER_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Missing-image-232x150.png';
@@ -151,6 +152,9 @@ const grainPosition = computed(() => {
         <div v-else class="trading-card__image-bg trading-card__image-bg--placeholder"></div>
         <div class="trading-card__image-grain" :style="{ backgroundPosition: grainPosition }"></div>
       </div>
+
+      <!-- ②ʹ Rarity foil effect (over artwork, below text banners) -->
+      <ShinyOverlay :rarity="card.rarity" class="trading-card__shiny" />
 
       <!-- ③ Content (text, stars, etc.) -->
       <div class="trading-card__content">
