@@ -116,6 +116,7 @@ const showCardsUnlocked = ref(false);
 const cardsUnlockedGameType = ref<'fakeout' | 'gacha'>('fakeout');
 const identifiedFakesThisGame = ref<Card[]>([]);
 const gameLost = ref(false);
+const incorrectCount = ref(0);
 const isStartingGame = ref(false);
 // Timestamp (ms) when the current fakeout game started, for measuring play duration.
 const gameStartTime = ref(0);
@@ -292,6 +293,7 @@ const startFakeoutGame = async (category: Category) => {
     collectedThisGame.value = [];
     identifiedFakesThisGame.value = [];
     gameLost.value = false;
+    incorrectCount.value = 0;
     showCardsUnlocked.value = false;
     roundAnswered.value = false;
     playerChoiceReal.value = null;
@@ -390,18 +392,21 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
       identifiedFakesThisGame.value.push(card);
     }
   } else {
-    trackEvent('lose_fakeout_game', {
-      logged_in: authStore.isLoggedIn,
-      gameScore: gameScore.value,       
-      fakeout_category: selectedCategory.value,
-      failedCardIsReal: card.isReal
-    });
-    gameLost.value = true;
+    incorrectCount.value += 1;
+    if (incorrectCount.value >= 3) {
+      trackEvent('lose_fakeout_game', {
+        logged_in: authStore.isLoggedIn,
+        gameScore: gameScore.value,       
+        fakeout_category: selectedCategory.value,
+        failedCardIsReal: card.isReal
+      });
+      gameLost.value = true;
+    }
   }
 
   // Tighten up loop: automatically advance to the next card or end game after 1 second!
   setTimeout(() => {
-    if (!isCorrect) {
+    if (incorrectCount.value >= 3) {
       endFakeoutGame();
     } else {
       nextRound();
@@ -773,7 +778,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
               class="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
             >
               <div 
-                class="px-6 py-3 border-[6px] font-mono font-black text-3xl uppercase tracking-widest bg-white/95 shadow-xl select-none animate-stamp-scale"
+                class="px-6 py-3 border-[6px] font-mono font-black text-3xl uppercase tracking-widest bg-white/95 shadow-xl select-none animate-stamp-scale whitespace-nowrap"
                 :class="[
                   roundWasCorrect 
                     ? 'border-success text-success' 
@@ -781,7 +786,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
                 ]"
                 :style="{ transform: `rotate(${stampAngle}deg)` }"
               >
-                {{ roundWasCorrect ? 'CORRECT' : 'INCORRECT' }}
+                {{ roundWasCorrect ? 'CORRECT' : `INCORRECT ${incorrectCount}/3` }}
               </div>
             </div>
 
