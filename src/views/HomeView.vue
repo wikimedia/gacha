@@ -106,9 +106,9 @@ const swipeDirection = ref<'left' | 'right' | null>(null);
 // Cooldown ticking
 const cooldownTimers = ref<Record<string, number>>({});
 
-// Gacha Drop States
+// Fact Frenzy States
 const gachaActive = ref(false);
-const gachaTimer = ref(10);
+const gachaTimer = ref(5);
 const gachaTapCount = ref(0);
 const gachaDroppedCards = ref<Card[]>([]);
 const showGachaSummary = ref(false);
@@ -235,6 +235,21 @@ onMounted(async () => {
 watch(() => route.params.category, () => {
   syncGameToRoute();
 });
+
+// ── First-session "How to Play" instructions ─────────────────────
+// Pop the existing How-to-Play modal (owned by AppHeader) on the home screen
+// the first time a guest visits. Logged-in users never see it, and it only
+// fires once per browser (tracked via localStorage). We wait for
+// isAuthResolved so it isn't flashed at a returning user mid session-lookup.
+const INSTRUCTIONS_SEEN_KEY = 'moonflower_seen_instructions';
+
+watch(() => authStore.isAuthResolved, (resolved) => {
+  if (!resolved) return;
+  if (authStore.isLoggedIn) return;
+  if (localStorage.getItem(INSTRUCTIONS_SEEN_KEY)) return;
+  localStorage.setItem(INSTRUCTIONS_SEEN_KEY, '1');
+  headerRef.value?.openInfoModal();
+}, { immediate: true });
 
 // Game deck configuration
 const DECK_SIZE = 10;
@@ -541,7 +556,7 @@ const evaluateSwipe = () => {
   }
 };
 
-// Gacha Drop Logic
+// Fact Frenzy Logic
 // Pool of real cards pre-fetched when gacha starts, used by handleGachaGlobeTap
 const gachaCardPool = ref<Card[]>([]);
 
@@ -560,7 +575,7 @@ const startGachaDrop = async () => {
     displayedPoints.value = gameStore.gdPoints;
     isUnlockedJustNow.value = false;
 
-    // Pre-fetch a pool of real cards for gacha drops across random categories
+    // Pre-fetch a pool of real cards for fact frenzy across random categories
     const randomCategory = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
     const pool = await gameStore.fetchCategoryPool(randomCategory);
     gachaCardPool.value = pool.filter((c: Card) => c.isReal);
@@ -823,7 +838,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
         </div>
       </section>
 
-      <!-- GACHA DROP TICKING GAMEPLAY -->
+      <!-- Fact Frenzy TICKING GAMEPLAY -->
       <section v-if="gachaActive" class="flex-grow flex flex-col justify-between py-4 text-center">
         <div>
           <span class="badge badge-warning badge-outline uppercase tracking-widest font-black text-xs px-3 py-2">

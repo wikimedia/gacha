@@ -435,7 +435,7 @@ body {
   animation: pulse-shake 0.2s ease-in-out;
 }
 
-/* Shake lock icon when player tries to activate Gacha drop but it's locked */
+/* Shake lock icon when player tries to activate Fact Frenzy but it's locked */
 @keyframes lockShake {
   0%, 100% { transform: translateX(0); }
   20%, 60% { transform: translateX(-2px) rotate(-3deg); }

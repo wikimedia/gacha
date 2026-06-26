@@ -38,6 +38,9 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null);
   const isLoggedIn = ref<boolean>(false);
   const isAuthInitialized = ref<boolean>(false);
+  // Flips true once the initial session lookup has completed, so consumers can
+  // distinguish "not logged in yet (still checking)" from "confirmed guest".
+  const isAuthResolved = ref<boolean>(false);
 
   let loadedUserId: string | null = null;
 
@@ -81,8 +84,9 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthInitialized.value = true;
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleAuthSession(session);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      await handleAuthSession(session);
+      isAuthResolved.value = true;
     });
 
     // Subscribe to auth state changes
@@ -394,6 +398,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     isLoggedIn,
+    isAuthResolved,
     initAuth,
     sendOtp,
     verifyOtp,
