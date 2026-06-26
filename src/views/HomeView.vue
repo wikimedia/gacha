@@ -106,9 +106,9 @@ const swipeDirection = ref<'left' | 'right' | null>(null);
 // Cooldown ticking
 const cooldownTimers = ref<Record<string, number>>({});
 
-// Gacha Drop States
+// Fact Frenzy States
 const gachaActive = ref(false);
-const gachaTimer = ref(10);
+const gachaTimer = ref(5);
 const gachaTapCount = ref(0);
 const gachaDroppedCards = ref<Card[]>([]);
 const showGachaSummary = ref(false);
@@ -116,6 +116,7 @@ const showCardsUnlocked = ref(false);
 const cardsUnlockedGameType = ref<'fakeout' | 'gacha'>('fakeout');
 const identifiedFakesThisGame = ref<Card[]>([]);
 const gameLost = ref(false);
+const incorrectCount = ref(0);
 const isStartingGame = ref(false);
 // Timestamp (ms) when the current fakeout game started, for measuring play duration.
 const gameStartTime = ref(0);
@@ -235,6 +236,21 @@ watch(() => route.params.category, () => {
   syncGameToRoute();
 });
 
+// ── First-session "How to Play" instructions ─────────────────────
+// Pop the existing How-to-Play modal (owned by AppHeader) on the home screen
+// the first time a guest visits. Logged-in users never see it, and it only
+// fires once per browser (tracked via localStorage). We wait for
+// isAuthResolved so it isn't flashed at a returning user mid session-lookup.
+const INSTRUCTIONS_SEEN_KEY = 'moonflower_seen_instructions';
+
+watch(() => authStore.isAuthResolved, (resolved) => {
+  if (!resolved) return;
+  if (authStore.isLoggedIn) return;
+  if (localStorage.getItem(INSTRUCTIONS_SEEN_KEY)) return;
+  localStorage.setItem(INSTRUCTIONS_SEEN_KEY, '1');
+  headerRef.value?.openInfoModal();
+}, { immediate: true });
+
 // Game deck configuration
 const DECK_SIZE = 10;
 const TARGET_REAL = DECK_SIZE / 2; // aim for an even real/fake split, backfilled if one side is short
@@ -292,6 +308,7 @@ const startFakeoutGame = async (category: Category) => {
     collectedThisGame.value = [];
     identifiedFakesThisGame.value = [];
     gameLost.value = false;
+    incorrectCount.value = 0;
     showCardsUnlocked.value = false;
     roundAnswered.value = false;
     playerChoiceReal.value = null;
@@ -390,18 +407,21 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
       identifiedFakesThisGame.value.push(card);
     }
   } else {
-    trackEvent('lose_fakeout_game', {
-      logged_in: authStore.isLoggedIn,
-      gameScore: gameScore.value,       
-      fakeout_category: selectedCategory.value,
-      failedCardIsReal: card.isReal
-    });
-    gameLost.value = true;
+    incorrectCount.value += 1;
+    if (incorrectCount.value >= 3) {
+      trackEvent('lose_fakeout_game', {
+        logged_in: authStore.isLoggedIn,
+        gameScore: gameScore.value,       
+        fakeout_category: selectedCategory.value,
+        failedCardIsReal: card.isReal
+      });
+      gameLost.value = true;
+    }
   }
 
   // Tighten up loop: automatically advance to the next card or end game after 1 second!
   setTimeout(() => {
-    if (!isCorrect) {
+    if (incorrectCount.value >= 3) {
       endFakeoutGame();
     } else {
       nextRound();
@@ -536,7 +556,7 @@ const evaluateSwipe = () => {
   }
 };
 
-// Gacha Drop Logic
+// Fact Frenzy Logic
 // Pool of real cards pre-fetched when gacha starts, used by handleGachaGlobeTap
 const gachaCardPool = ref<Card[]>([]);
 
@@ -555,7 +575,7 @@ const startGachaDrop = async () => {
     displayedPoints.value = gameStore.gdPoints;
     isUnlockedJustNow.value = false;
 
-    // Pre-fetch a pool of real cards for gacha drops across random categories
+    // Pre-fetch a pool of real cards for fact frenzy across random categories
     const randomCategory = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
     const pool = await gameStore.fetchCategoryPool(randomCategory);
     gachaCardPool.value = pool.filter((c: Card) => c.isReal);
@@ -657,28 +677,28 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             class="collage-image select-none" 
             alt="Category Collage" 
           />
+        </div>
 
-          <!-- Play/Cooldown Button -->
-          <div class="play-button-wrapper">
-            <BaseButton 
-              v-if="!cooldownTimers[activeSubCategory.mainCategory]"
-              variant="primary"
-              :loading="isStartingGame"
-              @click="playCategory(activeSubCategory.mainCategory)"
-            >
-              <template #icon>
-                <PhPlay :size="12" weight="fill" color="#FDF4EB" class="play-icon" />
-              </template>
-              Play
-            </BaseButton>
-            <BaseButton 
-              v-else
-              disabled
-              variant="primary"
-            >
-              {{ cooldownTimers[activeSubCategory.mainCategory] }} Seconds
-            </BaseButton>
-          </div>
+        <!-- Play/Cooldown Button -->
+        <div class="play-button-wrapper">
+          <BaseButton 
+            v-if="!cooldownTimers[activeSubCategory.mainCategory]"
+            variant="primary"
+            :loading="isStartingGame"
+            @click="playCategory(activeSubCategory.mainCategory)"
+          >
+            <template #icon>
+              <PhPlay :size="12" weight="fill" color="#FDF4EB" class="play-icon" />
+            </template>
+            Play
+          </BaseButton>
+          <BaseButton 
+            v-else
+            disabled
+            variant="primary"
+          >
+            {{ cooldownTimers[activeSubCategory.mainCategory] }} Seconds
+          </BaseButton>
         </div>
 
         <!-- Horizontal Category Slider -->
@@ -757,10 +777,10 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
                   ]"
                 >
                   <div v-if="swipeOffset > 30" class="px-4 py-2 border-4 border-success bg-white rounded shadow-md font-sans">
-                    ✓ True
+                    ✓ Fact
                   </div>
                   <div v-if="swipeOffset < -30" class="px-4 py-2 border-4 border-error bg-white rounded shadow-md font-sans">
-                    ✕ False
+                    ✕ Fake
                   </div>
                 </div>
               </div>
@@ -773,7 +793,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
               class="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
             >
               <div 
-                class="px-6 py-3 border-[6px] font-mono font-black text-3xl uppercase tracking-widest bg-white/95 shadow-xl select-none animate-stamp-scale"
+                class="px-6 py-3 border-[6px] font-mono font-black text-3xl uppercase tracking-widest bg-white/95 shadow-xl select-none animate-stamp-scale whitespace-nowrap"
                 :class="[
                   roundWasCorrect 
                     ? 'border-success text-success' 
@@ -781,7 +801,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
                 ]"
                 :style="{ transform: `rotate(${stampAngle}deg)` }"
               >
-                {{ roundWasCorrect ? 'CORRECT' : 'INCORRECT' }}
+                {{ roundWasCorrect ? 'CORRECT' : `INCORRECT ${incorrectCount}/3` }}
               </div>
             </div>
 
@@ -800,9 +820,9 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
           >
             <template #icon>
               <!-- Thumbs Down Icon -->
-              <PhThumbsDown :size="18" weight="fill" class="mix-blend-soft-light" />
+              <PhThumbsDown :size="18" weight="fill" />
             </template>
-            False
+            Fake
           </BaseButton>
           
           <BaseButton 
@@ -811,14 +831,14 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
           >
             <template #icon>
               <!-- Thumbs Up Icon -->
-              <PhThumbsUp :size="18" weight="fill" class="mix-blend-soft-light" />
+              <PhThumbsUp :size="18" weight="fill" />
             </template>
-            True
+            Fact
           </BaseButton>
         </div>
       </section>
 
-      <!-- GACHA DROP TICKING GAMEPLAY -->
+      <!-- Fact Frenzy TICKING GAMEPLAY -->
       <section v-if="gachaActive" class="flex-grow flex flex-col justify-between py-4 text-center">
         <div>
           <span class="badge badge-warning badge-outline uppercase tracking-widest font-black text-xs px-3 py-2">

@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
+import CardDetailModal from '../components/CardDetailModal.vue';
 import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import { 
   PhPencilSimple,
-  PhExport, 
   PhSquare, 
   PhColumns, 
   PhGridNine, 
@@ -44,10 +44,39 @@ const editBio = ref('');
 const binderColor = ref('#4a6783');
 const gridColumns = ref(2); // default to 2 columns
 const showEditDropdown = ref(false);
+const dropdownDirection = ref<'down' | 'up'>('down');
+const editBtnRef = ref<HTMLElement | null>(null);
+
+const toggleEditDropdown = () => {
+  if (!showEditDropdown.value && editBtnRef.value) {
+    const rect = editBtnRef.value.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    dropdownDirection.value = spaceBelow < 220 ? 'up' : 'down';
+  }
+  showEditDropdown.value = !showEditDropdown.value;
+};
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && showEditDropdown.value) {
+    showEditDropdown.value = false;
+  }
+};
 const isShowcaseMode = ref(false);
 const editingField = ref<'username' | 'bio' | 'binderColor' | null>(null);
 const editInputValue = ref('');
 const showShareToast = ref(false);
+
+// Card detail modal state
+const isDetailModalOpen = ref(false);
+const detailModalCards = ref<Card[]>([]);
+const detailModalInitialIndex = ref(0);
+
+const openCardDetail = (card: Card, cardsList: Card[]) => {
+  if (isShowcaseMode.value) return;
+  detailModalCards.value = cardsList;
+  detailModalInitialIndex.value = cardsList.findIndex(c => c.id === card.id);
+  isDetailModalOpen.value = true;
+};
 
 
 
@@ -98,7 +127,7 @@ const loadProfile = async (force = false) => {
         id: `usr_${profileId.value.toLowerCase()}`,
         username: profileId.value,
         profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileId.value}`,
-        bio: 'This scholar is yet to publish their official Moonflower profile bio.',
+        bio: 'Avid scholar and collector.',
         backgroundColor: '#eaecf0',
         gdPoints: 0
       };
@@ -115,6 +144,7 @@ const loadProfile = async (force = false) => {
 };
 
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeyDown);
   authStore.initAuth();
   gameStore.loadGuestState();
   isLoadingProfile.value = true;
@@ -123,6 +153,10 @@ onMounted(async () => {
   } finally {
     isLoadingProfile.value = false;
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
 });
 
 // Single consolidated watcher — only reacts to identity/route changes,
@@ -184,6 +218,7 @@ const startEditing = (field: 'username' | 'bio' | 'binderColor') => {
 };
 
 const handleEditProfileField = (field: 'username' | 'bio' | 'showcase' | 'binderColor') => {
+  showEditDropdown.value = false;
   if (field === 'username' || field === 'bio' || field === 'binderColor') {
     startEditing(field);
   } else if (field === 'showcase') {
@@ -331,6 +366,7 @@ const toggleCardShowcase = async (cardId: string) => {
     :binder-color="binderColor"
     @edit-profile-field="handleEditProfileField"
     @update-binder-color="updateBinderColor"
+    @share-profile="handleShareProfile"
   >
     <Loader v-if="isLoadingProfile" message="Loading scholar profile..." />
 
@@ -344,7 +380,7 @@ const toggleCardShowcase = async (cardId: string) => {
       <div v-if="isPrivateMode && isShowcaseMode" class="showcase-edit-banner flex justify-between items-center bg-[#d9754b] text-[#fdf4eb] px-4 py-2.5 text-xs font-serif font-black shadow-md rounded-[2px] mb-4 mx-4 sm:mx-0">
         <span class="flex items-center gap-1.5">
           <PhPencilSimple :size="12" weight="bold" class="animate-pulse" />
-          SHOWCASE MODE: TAP A CARD PIN TO HIGHLIGHT IT AS YOUR MAIN AVATAR
+          Tap a card pin to highlight it as your profile picture.
         </span>
         <button @click="isShowcaseMode = false" class="btn btn-xs bg-[#fdf4eb] hover:bg-white text-[#d9754b] border-none font-bold tracking-wider">Done</button>
       </div>
@@ -413,14 +449,44 @@ const toggleCardShowcase = async (cardId: string) => {
             </div>
           </div>
 
-          <!-- Right: Clipboard Share button -->
-          <button 
-            @click="handleShareProfile" 
-            class="share-round-btn flex items-center justify-center w-8 h-8 rounded-full border border-[#c4b69d] hover:bg-[#c4b69d]/10 text-[#4a6783] transition-colors mb-1.5 mr-2 sm:mr-0"
-            title="Share Profile Link"
-          >
-            <PhExport :size="14" weight="bold" />
-          </button>
+          <!-- Right: Edit Profile options dropdown button -->
+          <div v-if="isPrivateMode" class="relative mb-1.5 mr-2 sm:mr-0">
+            <button 
+              ref="editBtnRef"
+              @click="toggleEditDropdown" 
+              class="header-icon-btn"
+              :class="{ 'header-icon-btn--active': showEditDropdown }"
+              title="Edit Profile Options"
+            >
+              <PhPencilSimple :size="18" weight="bold" class="pb-[2px]" />
+            </button>
+
+            <!-- EDIT DROPDOWN MENU -->
+            <transition name="dropdown-fade">
+              <div 
+                v-if="showEditDropdown" 
+                class="edit-dropdown-menu" 
+                :class="['edit-dropdown-menu--' + dropdownDirection]"
+                :style="{ 
+                  '--binder-dropdown-bg': binderColor,
+                  '--binder-dropdown-text': getContrastTextColor(binderColor)
+                }"
+              >
+                <div class="edit-dropdown-item" @click="handleEditProfileField('username')">
+                  Edit Name
+                </div>
+                <div class="edit-dropdown-item" @click="handleEditProfileField('bio')">
+                  Edit Description
+                </div>
+                <div class="edit-dropdown-item" @click="handleEditProfileField('showcase')">
+                  Change Profile Picture
+                </div>
+                <div class="edit-dropdown-item" @click="handleEditProfileField('binderColor')">
+                  Change Binder Color
+                </div>
+              </div>
+            </transition>
+          </div>
         </div>
 
         <!-- THE BINDER BOX COVER -->
@@ -505,9 +571,13 @@ const toggleCardShowcase = async (cardId: string) => {
                       :key="card.id" 
                       class="card-scale-wrapper"
                     >
-                      <div class="card-scaled-content">
+                      <div 
+                        class="card-scaled-content"
+                        :class="{ 'cursor-pointer': !isShowcaseMode }"
+                        @click="openCardDetail(card, sectionCards)"
+                      >
                         <!-- Render Card itself -->
-                        <CardComp :card="card" :show-link="!isShowcaseMode" />
+                        <CardComp :card="card" :show-link="false" />
 
                         <!-- Showcase pin overlays (only in showcase edit mode) -->
                         <button 
@@ -626,6 +696,13 @@ const toggleCardShowcase = async (cardId: string) => {
         </div>
       </div>
     </div>
+    <!-- Card Detail Modal -->
+    <CardDetailModal
+      :show="isDetailModalOpen"
+      :cards="detailModalCards"
+      :initial-index="detailModalInitialIndex"
+      @close="isDetailModalOpen = false"
+    />
   </PageLayout>
 </template>
 
@@ -655,10 +732,7 @@ const toggleCardShowcase = async (cardId: string) => {
   background-color: #eaecf0;
 }
 
-/* Share Clipboard button */
-.share-round-btn:hover {
-  background-color: rgba(196, 182, 157, 0.2) !important;
-}
+
 
 /* Clipboard Toast notification */
 .toast-notification {
@@ -924,10 +998,9 @@ const toggleCardShowcase = async (cardId: string) => {
 /* Edit Menu Dropdown Options Panel */
 .edit-dropdown-menu {
   position: absolute;
-  top: 36px;
-  left: 0;
+  right: 0;
   background-color: var(--binder-dropdown-bg, #4a6783);
-  border: 1.5px solid #fdf4eb;
+  border: 1.5px solid var(--binder-dropdown-text, #fdf4eb);
   border-radius: 4px;
   width: 210px;
   z-index: 50;
@@ -937,20 +1010,35 @@ const toggleCardShowcase = async (cardId: string) => {
   flex-direction: column;
 }
 
+.edit-dropdown-menu--down {
+  top: 36px;
+  bottom: auto;
+}
+
+.edit-dropdown-menu--up {
+  bottom: 36px;
+  top: auto;
+}
+
 .edit-dropdown-item {
   padding: 11px 16px;
-  color: #fdf4eb;
+  color: var(--binder-dropdown-text, #fdf4eb);
   font-family: var(--font-family-serif);
   font-size: 13px;
   font-weight: bold;
   text-align: left;
   cursor: pointer;
-  border-bottom: 1px solid rgba(253, 244, 235, 0.2);
+  border-bottom: 1px solid rgba(128, 128, 128, 0.25);
   transition: all 0.2s ease;
 }
 
 .edit-dropdown-item:hover:not(.color-selection-item) {
-  background-color: rgba(253, 244, 235, 0.15);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.edit-dropdown-menu[style*="--binder-dropdown-text:#3f3f35"] .edit-dropdown-item:hover:not(.color-selection-item),
+.edit-dropdown-menu[style*="--binder-dropdown-text: #3f3f35"] .edit-dropdown-item:hover:not(.color-selection-item) {
+  background-color: rgba(0, 0, 0, 0.08);
 }
 
 .color-selection-item {
@@ -987,16 +1075,22 @@ const toggleCardShowcase = async (cardId: string) => {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Transistions definitions */
+/* Transitions definitions */
 .dropdown-fade-enter-active,
 .dropdown-fade-leave-active {
   transition: all 0.2s ease;
 }
 
-.dropdown-fade-enter-from,
-.dropdown-fade-leave-to {
+.edit-dropdown-menu--down.dropdown-fade-enter-from,
+.edit-dropdown-menu--down.dropdown-fade-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+.edit-dropdown-menu--up.dropdown-fade-enter-from,
+.edit-dropdown-menu--up.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 </style>

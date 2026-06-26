@@ -80,11 +80,12 @@ withDefaults(
   border-radius: 3px;
   font-size: 22px;
   gap: 12px;
-  background-color: #97a97b;
+  background-color: #3f3f35;
+  color: #fdf4eb;
 }
 
 .app-btn-true:hover:not(:disabled) {
-  background-color: #839568;
+  background-color: #4d4d41;
 }
 
 /* False button variant */
@@ -94,11 +95,12 @@ withDefaults(
   border-radius: 3px;
   font-size: 22px;
   gap: 12px;
-  background-color: #d9754b;
+  background-color: #fdf4eb;
+  color: #3f3f35;
 }
 
 .app-btn-false:hover:not(:disabled) {
-  background-color: #c46037;
+  background-color: #f0e5d5;
 }
 
 .app-btn-icon {

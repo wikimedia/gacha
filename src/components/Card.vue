@@ -4,6 +4,7 @@ import type { Card } from '../stores/useGameStore';
 import { CATEGORY_SLUG } from '../stores/useGameStore';
 import Stars from './Stars.vue';
 import ShinyOverlay from './ShinyOverlay.vue';
+import { PhArrowClockwise } from '@phosphor-icons/vue';
 
 const PLACEHOLDER_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Missing-image-232x150.png';
 
@@ -21,26 +22,60 @@ const categoryMapping = computed(() => ({
   cssClass: CATEGORY_SLUG[props.card.category] || 'civilization'
 }));
 
+const displayCategory = computed(() => {
+  const cat = categoryMapping.value.sub || categoryMapping.value.main;
+  if (!cat) return '';
+  const parts = cat.split('/');
+  return parts[parts.length - 1].trim();
+});
+
 const hasImage = computed(() => !!props.card.image);
 const isCSSImage = computed(() => {
   const img = props.card.image || '';
   return img.startsWith('linear-gradient') || img.startsWith('url(');
 });
 
-const imageStyle = computed(() => {
+// Track <img> load failures so we can swap in a placeholder. Reset when the
+// card's image changes (e.g. the same Card component is reused for a new card).
+const imageFailed = ref(false);
+const imageRetryCount = ref(0);
+
+watch(() => props.card.image, () => {
+  imageFailed.value = false;
+  imageRetryCount.value = 0;
+});
+
+const onImageError = () => {
+  imageFailed.value = true;
+};
+
+// Cache-busted URL for retrying image loads
+const imageUrl = computed(() => {
   const img = props.card.image;
+  if (!img) return '';
+  if (isCSSImage.value) return img;
+  if (imageRetryCount.value === 0) return img;
+  try {
+    const separator = img.includes('?') ? '&' : '?';
+    return `${img}${separator}retry=${imageRetryCount.value}`;
+  } catch (e) {
+    return img;
+  }
+});
+
+const imageStyle = computed(() => {
+  const img = imageUrl.value;
   if (!img) return null;
   return isCSSImage.value ? img : `url("${img}")`;
 });
 
-// Track <img> load failures so we can swap in a placeholder. Reset when the
-// card's image changes (e.g. the same Card component is reused for a new card).
-const imageFailed = ref(false);
-watch(() => props.card.image, () => { imageFailed.value = false; });
-const onImageError = () => { imageFailed.value = true; };
-
 // Whether to show the placeholder image: either no image, or the real one failed.
 const showPlaceholderImage = computed(() => !!PLACEHOLDER_IMAGE_URL && (!hasImage.value || imageFailed.value));
+
+const handleRetry = () => {
+  imageFailed.value = false;
+  imageRetryCount.value++;
+};
 
 // Extract filename from Wikimedia Commons URL if applicable
 const commonsFilename = computed(() => {
@@ -101,7 +136,7 @@ const grainPosition = computed(() => {
         ></div>
         <img
           v-else-if="hasImage && !imageFailed"
-          :src="card.image"
+          :src="imageUrl"
           loading="lazy"
           referrerpolicy="no-referrer"
           class="trading-card__image-bg trading-card__image-bg--img"
@@ -132,7 +167,7 @@ const grainPosition = computed(() => {
         <div class="trading-card__attributes">
           <Stars :rarity="card.rarity" :size="12.5" class="trading-card__stars" />
           <span class="trading-card__category-label">
-            {{ categoryMapping.main }}<template v-if="categoryMapping.sub"> / {{ categoryMapping.sub }}</template>
+            {{ displayCategory }}
           </span>
         </div>
         <div class="trading-card__description-divider"></div>
@@ -163,6 +198,27 @@ const grainPosition = computed(() => {
       <div class="trading-card__tint-layer"></div>
       <div class="trading-card__noise-layer"></div>
       <div class="trading-card__inner-shadow"></div>
+
+      <!-- Retry Button Overlay (rendered on top of everything, pointer-events: auto) -->
+      <div 
+        v-if="imageFailed" 
+        class="trading-card__retry-container"
+        @mousedown.stop
+        @mouseup.stop
+        @click.stop
+        @touchstart.stop
+        @touchmove.stop
+        @touchend.stop
+      >
+        <p class="trading-card__retry-message">Image failed to load</p>
+        <button
+          class="trading-card__retry-button"
+          @click="handleRetry"
+        >
+          <PhArrowClockwise class="trading-card__retry-icon" />
+          <span>Retry</span>
+        </button>
+      </div>
 
     </div>
   </div>
@@ -499,5 +555,69 @@ const grainPosition = computed(() => {
   top: 0;
   bottom: 0;
   border-bottom: 1.5px solid #A2A9B1;
+}
+
+/* ── Retry Overlay ───────────────────────────────────────────── */
+.trading-card__retry-container {
+  position: absolute;
+  inset: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2.5px);
+  border-radius: 0;
+}
+
+.trading-card__retry-message {
+  color: #ffffff;
+  font-family: var(--font-family-system-sans, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 12px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.02em;
+}
+
+.trading-card__retry-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  color: #202122;
+  border: 1.5px solid #a2a9b1;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-family: var(--font-family-system-sans, sans-serif);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.trading-card__retry-button:hover {
+  background-color: #f8f9fa;
+  border-color: #72777d;
+  color: #000000;
+  transform: scale(1.05);
+}
+
+.trading-card__retry-button:active {
+  background-color: #eaecf0;
+  transform: scale(0.95);
+}
+
+.trading-card__retry-icon {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.4s ease;
+}
+
+.trading-card__retry-button:hover .trading-card__retry-icon {
+  transform: rotate(180deg);
 }
 </style>

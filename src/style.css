@@ -435,7 +435,7 @@ body {
   animation: pulse-shake 0.2s ease-in-out;
 }
 
-/* Shake lock icon when player tries to activate Gacha drop but it's locked */
+/* Shake lock icon when player tries to activate Fact Frenzy but it's locked */
 @keyframes lockShake {
   0%, 100% { transform: translateX(0); }
   20%, 60% { transform: translateX(-2px) rotate(-3deg); }
@@ -498,8 +498,8 @@ body {
   min-height: 100dvh;
   font-family: var(--font-family-system-sans);
   color: var(--color-base-content);
-  background-image: linear-gradient(rgba(151, 107, 26, 0.29) 0%, rgba(51, 51, 51, 0) 10%, rgba(77, 77, 77, 0) 62.609%, rgba(151, 107, 26, 0.29) 100%), url('/bg-paperTexture.jpg') !important;
-  background-size: 100% 100%, 345px !important;
+  background-image: linear-gradient(rgba(151, 107, 26, 0.29) 0%, rgba(51, 51, 51, 0) 10%, rgba(77, 77, 77, 0) 62.609%, rgba(151, 107, 26, 0.29) 100%), url('/bg-paperTexture.png') !important;
+  background-size: 100% 100%, 341px !important;
   background-repeat: no-repeat, repeat !important;
   background-attachment: fixed, fixed !important;
   background-blend-mode: multiply, multiply !important;
@@ -645,7 +645,8 @@ body {
   flex-grow: 1;
   flex-shrink: 1;
   min-height: 0;
-  margin: 0.5rem auto 1.5rem auto;
+  margin: 0 auto;
+  padding: 1rem 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -656,17 +657,19 @@ body {
 
 .collage-image {
   width: 100%;
-  height: 100%;
+  flex: 1 1 0%;
+  min-height: 0;
   object-fit: contain;
   max-height: 380px;
 }
 
 .play-button-wrapper {
-  position: absolute;
-  bottom: 0px;
-  left: 50%;
-  transform: translateX(-50%);
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-shrink: 0;
   z-index: 20;
+  display: flex;
+  justify-content: center;
 }
 
 
@@ -728,16 +731,15 @@ body {
   height: 102px;
   border-radius: 1px;
   overflow: hidden;
-  border: 2.184px solid transparent;
+  border: 0px solid transparent;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: all 0.25s ease;
   background-color: var(--color-base-300);
 }
 
 .category-slider-item.is-active .category-slider-thumbnail-wrapper {
-  border-color: #fdf4eb;
+  border: 2.184px solid #fdf4eb;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 6px 14px rgba(0, 0, 0, 0.22);
-  transform: translateY(-3px);
 }
 
 .category-slider-thumbnail {
@@ -855,3 +857,34 @@ body {
 .input:focus, .textarea:focus {
   outline: 1.5px solid #4a6783 !important;
 }
+
+/* Shared Header Icon Button Styles */
+.header-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1.5px solid #fdf4eb;
+  border-radius: 2px;
+  color: #fdf4eb;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: opacity 0.2s ease;
+}
+
+.header-icon-btn:hover {
+  opacity: 0.8;
+}
+
+.header-icon-btn.relative {
+  position: relative;
+}
+
+.header-icon-btn--active {
+  background-color: var(--binder-dropdown-text, #fdf4eb) !important;
+  color: var(--binder-dropdown-bg, #4a6783) !important;
+  border-color: var(--binder-dropdown-text, #fdf4eb) !important;
+}
+
