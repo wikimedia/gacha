@@ -22,6 +22,7 @@ const emit = defineEmits<{
   (e: 'quit-game'): void;
   (e: 'edit-profile-field', field: 'username' | 'bio' | 'showcase' | 'binderColor'): void;
   (e: 'update-binder-color', color: string): void;
+  (e: 'share-profile'): void;
 }>();
 
 const headerRef = ref<any>(null);
@@ -53,6 +54,7 @@ defineExpose({
       @quit-game="emit('quit-game')"
       @edit-profile-field="(field) => emit('edit-profile-field', field)"
       @update-binder-color="(color) => emit('update-binder-color', color)"
+      @share-profile="emit('share-profile')"
     />
     <main class="app-page-main" :class="{ 'app-page-main-wide': isWide }">
       <slot />

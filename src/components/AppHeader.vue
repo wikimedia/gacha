@@ -15,7 +15,7 @@ import {
   PhCaretLeft, 
   PhCaretRight, 
   PhCheck,
-  PhPencilSimple
+  PhExport
 } from '@phosphor-icons/vue';
 
 const props = withDefaults(defineProps<{
@@ -44,6 +44,7 @@ const emit = defineEmits<{
   (e: 'quit-game'): void;
   (e: 'edit-profile-field', field: 'username' | 'bio' | 'showcase' | 'binderColor'): void;
   (e: 'update-binder-color', color: string): void;
+  (e: 'share-profile'): void;
 }>();
 
 const authStore = useAuthStore();
@@ -91,23 +92,7 @@ const confirmQuitGame = () => {
   }
 };
 
-const showHeaderEditDropdown = ref(false);
 
-const handleEditClick = (field: 'username' | 'bio' | 'showcase' | 'binderColor') => {
-  showHeaderEditDropdown.value = false;
-  emit('edit-profile-field', field);
-};
-
-const getContrastTextColor = (hexColor?: string) => {
-  if (!hexColor) return '#fdf4eb';
-  const color = hexColor.startsWith('#') ? hexColor.slice(1) : hexColor;
-  if (color.length !== 6) return '#fdf4eb';
-  const r = parseInt(color.substring(0, 2), 16);
-  const g = parseInt(color.substring(2, 4), 16);
-  const b = parseInt(color.substring(4, 6), 16);
-  const y = 0.299 * r + 0.587 * g + 0.114 * b;
-  return y > 150 ? '#24221f' : '#fdf4eb';
-};
 
 // Auth modal state
 const showAuthModal = ref(false);
@@ -320,41 +305,16 @@ defineExpose({
         GOTCHA!
       </router-link>
 
-      <!-- Right: Info Dialog Trigger OR Edit pencil dropdown -->
-      <div v-if="route.name === 'profile' && isOwnProfile" class="relative z-50">
+      <!-- Right: Info Dialog Trigger OR Share button -->
+      <div v-if="route.name === 'profile'" class="relative z-50">
         <button 
           class="header-icon-btn"
-          @click="showHeaderEditDropdown = !showHeaderEditDropdown"
-          aria-label="Edit Profile Options"
-          :class="{ 'header-icon-btn--active': showHeaderEditDropdown }"
+          @click="emit('share-profile')"
+          aria-label="Share Profile Link"
+          title="Share Profile Link"
         >
-          <PhPencilSimple :size="18" weight="bold" />
+          <PhExport :size="18" weight="bold" />
         </button>
-
-        <!-- EDIT DROPDOWN MENU -->
-        <transition name="dropdown-fade">
-          <div 
-            v-if="showHeaderEditDropdown" 
-            class="edit-dropdown-menu" 
-            :style="{ 
-              '--binder-dropdown-bg': binderColor,
-              '--binder-dropdown-text': getContrastTextColor(binderColor)
-            }"
-          >
-            <div class="edit-dropdown-item" @click="handleEditClick('username')">
-              Edit Name
-            </div>
-            <div class="edit-dropdown-item" @click="handleEditClick('bio')">
-              Edit Description
-            </div>
-            <div class="edit-dropdown-item" @click="handleEditClick('showcase')">
-              Change Profile Picture
-            </div>
-            <div class="edit-dropdown-item" @click="handleEditClick('binderColor')">
-              Change Binder Color
-            </div>
-          </div>
-        </transition>
       </div>
       <button 
         v-else
@@ -680,17 +640,25 @@ defineExpose({
 /* --- Game Progress Indicator (segmented bar) --- */
 .game-progress-bar {
   display: flex;
-  align-items: center;
-  gap: 3px;
-  flex: 1;
+  align-items: stretch;
+  flex: 0 0 auto;
   margin: 0 12px;
+  height: 26px;
+  border: 1.5px solid #fdf4eb;
+  border-radius: 2px;
+  overflow: hidden;
+  background: transparent;
 }
 
 .game-progress-segment {
-  flex: 1;
-  height: 16px;
-  border-radius: 1px;
+  width: 24px;
+  flex-shrink: 0;
   transition: background-color 0.3s ease;
+  border-right: 1.5px solid #fdf4eb;
+}
+
+.game-progress-segment:last-child {
+  border-right: none;
 }
 
 .game-progress-segment--completed {

@@ -9,7 +9,6 @@ import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import { 
   PhPencilSimple,
-  PhExport, 
   PhSquare, 
   PhColumns, 
   PhGridNine, 
@@ -44,6 +43,17 @@ const editBio = ref('');
 const binderColor = ref('#4a6783');
 const gridColumns = ref(2); // default to 2 columns
 const showEditDropdown = ref(false);
+const dropdownDirection = ref<'down' | 'up'>('down');
+const editBtnRef = ref<HTMLElement | null>(null);
+
+const toggleEditDropdown = () => {
+  if (!showEditDropdown.value && editBtnRef.value) {
+    const rect = editBtnRef.value.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    dropdownDirection.value = spaceBelow < 220 ? 'up' : 'down';
+  }
+  showEditDropdown.value = !showEditDropdown.value;
+};
 const isShowcaseMode = ref(false);
 const editingField = ref<'username' | 'bio' | 'binderColor' | null>(null);
 const editInputValue = ref('');
@@ -184,6 +194,7 @@ const startEditing = (field: 'username' | 'bio' | 'binderColor') => {
 };
 
 const handleEditProfileField = (field: 'username' | 'bio' | 'showcase' | 'binderColor') => {
+  showEditDropdown.value = false;
   if (field === 'username' || field === 'bio' || field === 'binderColor') {
     startEditing(field);
   } else if (field === 'showcase') {
@@ -331,6 +342,7 @@ const toggleCardShowcase = async (cardId: string) => {
     :binder-color="binderColor"
     @edit-profile-field="handleEditProfileField"
     @update-binder-color="updateBinderColor"
+    @share-profile="handleShareProfile"
   >
     <Loader v-if="isLoadingProfile" message="Loading scholar profile..." />
 
@@ -413,14 +425,44 @@ const toggleCardShowcase = async (cardId: string) => {
             </div>
           </div>
 
-          <!-- Right: Clipboard Share button -->
-          <button 
-            @click="handleShareProfile" 
-            class="share-round-btn flex items-center justify-center w-8 h-8 rounded-full border border-[#c4b69d] hover:bg-[#c4b69d]/10 text-[#4a6783] transition-colors mb-1.5 mr-2 sm:mr-0"
-            title="Share Profile Link"
-          >
-            <PhExport :size="14" weight="bold" />
-          </button>
+          <!-- Right: Edit Profile options dropdown button -->
+          <div v-if="isPrivateMode" class="relative mb-1.5 mr-2 sm:mr-0">
+            <button 
+              ref="editBtnRef"
+              @click="toggleEditDropdown" 
+              class="edit-round-btn flex items-center justify-center w-8 h-8 rounded-full border border-[#c4b69d] hover:bg-[#c4b69d]/10 text-[#4a6783] transition-colors"
+              :class="{ 'edit-round-btn--active': showEditDropdown }"
+              title="Edit Profile Options"
+            >
+              <PhPencilSimple :size="14" weight="bold" />
+            </button>
+
+            <!-- EDIT DROPDOWN MENU -->
+            <transition name="dropdown-fade">
+              <div 
+                v-if="showEditDropdown" 
+                class="edit-dropdown-menu" 
+                :class="['edit-dropdown-menu--' + dropdownDirection]"
+                :style="{ 
+                  '--binder-dropdown-bg': binderColor,
+                  '--binder-dropdown-text': getContrastTextColor(binderColor)
+                }"
+              >
+                <div class="edit-dropdown-item" @click="handleEditProfileField('username')">
+                  Edit Name
+                </div>
+                <div class="edit-dropdown-item" @click="handleEditProfileField('bio')">
+                  Edit Description
+                </div>
+                <div class="edit-dropdown-item" @click="handleEditProfileField('showcase')">
+                  Change Profile Picture
+                </div>
+                <div class="edit-dropdown-item" @click="handleEditProfileField('binderColor')">
+                  Change Binder Color
+                </div>
+              </div>
+            </transition>
+          </div>
         </div>
 
         <!-- THE BINDER BOX COVER -->
@@ -655,8 +697,10 @@ const toggleCardShowcase = async (cardId: string) => {
   background-color: #eaecf0;
 }
 
-/* Share Clipboard button */
-.share-round-btn:hover {
+/* Share Clipboard & Edit buttons */
+.share-round-btn:hover,
+.edit-round-btn:hover,
+.edit-round-btn--active {
   background-color: rgba(196, 182, 157, 0.2) !important;
 }
 
@@ -924,10 +968,9 @@ const toggleCardShowcase = async (cardId: string) => {
 /* Edit Menu Dropdown Options Panel */
 .edit-dropdown-menu {
   position: absolute;
-  top: 36px;
-  left: 0;
+  right: 0;
   background-color: var(--binder-dropdown-bg, #4a6783);
-  border: 1.5px solid #fdf4eb;
+  border: 1.5px solid var(--binder-dropdown-text, #fdf4eb);
   border-radius: 4px;
   width: 210px;
   z-index: 50;
@@ -937,20 +980,35 @@ const toggleCardShowcase = async (cardId: string) => {
   flex-direction: column;
 }
 
+.edit-dropdown-menu--down {
+  top: 36px;
+  bottom: auto;
+}
+
+.edit-dropdown-menu--up {
+  bottom: 36px;
+  top: auto;
+}
+
 .edit-dropdown-item {
   padding: 11px 16px;
-  color: #fdf4eb;
+  color: var(--binder-dropdown-text, #fdf4eb);
   font-family: var(--font-family-serif);
   font-size: 13px;
   font-weight: bold;
   text-align: left;
   cursor: pointer;
-  border-bottom: 1px solid rgba(253, 244, 235, 0.2);
+  border-bottom: 1px solid rgba(128, 128, 128, 0.25);
   transition: all 0.2s ease;
 }
 
 .edit-dropdown-item:hover:not(.color-selection-item) {
-  background-color: rgba(253, 244, 235, 0.15);
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.edit-dropdown-menu[style*="--binder-dropdown-text:#3f3f35"] .edit-dropdown-item:hover:not(.color-selection-item),
+.edit-dropdown-menu[style*="--binder-dropdown-text: #3f3f35"] .edit-dropdown-item:hover:not(.color-selection-item) {
+  background-color: rgba(0, 0, 0, 0.08);
 }
 
 .color-selection-item {
@@ -987,16 +1045,22 @@ const toggleCardShowcase = async (cardId: string) => {
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* Transistions definitions */
+/* Transitions definitions */
 .dropdown-fade-enter-active,
 .dropdown-fade-leave-active {
   transition: all 0.2s ease;
 }
 
-.dropdown-fade-enter-from,
-.dropdown-fade-leave-to {
+.edit-dropdown-menu--down.dropdown-fade-enter-from,
+.edit-dropdown-menu--down.dropdown-fade-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+.edit-dropdown-menu--up.dropdown-fade-enter-from,
+.edit-dropdown-menu--up.dropdown-fade-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 </style>
