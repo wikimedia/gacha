@@ -207,7 +207,7 @@ defineExpose({
     <!-- Figma Mock Header (Stacked overlay with icons) -->
     <div class="gacha-header-overlay pointer-events-auto">
       
-      <!-- Left: Profile Menu Button / Dropdown OR Exit Button -->
+      <!-- Left: Profile Menu Button / Dropdown OR Exit Button / Back Home Button -->
       <div v-if="gameActive" class="z-50">
         <button 
           class="header-icon-btn"
@@ -217,6 +217,16 @@ defineExpose({
           <!-- 'X' close Phosphor icon -->
           <PhX :size="18" weight="bold" />
         </button>
+      </div>
+      <div v-else-if="route.name === 'profile'" class="z-50">
+        <router-link 
+          to="/"
+          class="header-icon-btn"
+          aria-label="Back to Home"
+        >
+          <!-- 'X' close Phosphor icon -->
+          <PhX :size="18" weight="bold" />
+        </router-link>
       </div>
       <div v-else class="dropdown dropdown-bottom dropdown-start z-50">
         <label 
