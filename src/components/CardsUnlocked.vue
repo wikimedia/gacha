@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from './Card.vue';
+import CardDetailModal from './CardDetailModal.vue';
 import Stars from './Stars.vue';
 
 const props = defineProps<{
@@ -213,6 +214,21 @@ const handleViewBinder = () => {
   }
 };
 
+// Card detail modal states
+const isDetailModalOpen = ref(false);
+const detailModalInitialIndex = ref(0);
+
+const detailModalCards = computed(() => cardsInGrid.value.map(item => item.card));
+const detailModalIsCorrectArray = computed(() => cardsInGrid.value.map(item => item.isCorrect));
+
+const openCardDetail = (card: Card) => {
+  const index = cardsInGrid.value.findIndex(item => item.card.id === card.id);
+  if (index !== -1) {
+    detailModalInitialIndex.value = index;
+    isDetailModalOpen.value = true;
+  }
+};
+
 const handleDismiss = () => {
   emit('dismiss');
 };
@@ -256,7 +272,8 @@ const handleDismiss = () => {
           <div 
             v-for="item in cardsInGrid" 
             :key="item.card.id" 
-            class="grid-card-wrapper animate-card-reveal"
+            class="grid-card-wrapper animate-card-reveal cursor-pointer"
+            @click="openCardDetail(item.card)"
           >
             <!-- Scaled Card -->
             <div class="grid-card-inner">
@@ -388,13 +405,25 @@ const handleDismiss = () => {
       <div v-if="activeTab === 'stats'" class="stats-tab-content flex-grow flex flex-col gap-6 py-2 items-center">
         <!-- 3D Card Stack -->
         <div class="card-stack-container mt-2">
-          <div v-if="stackCards.left" class="card-stack-item card-stack-item--left">
+          <div 
+            v-if="stackCards.left" 
+            class="card-stack-item card-stack-item--left cursor-pointer"
+            @click="openCardDetail(stackCards.left)"
+          >
             <CardComp :card="stackCards.left" :show-link="false" class="scaled-card-left" />
           </div>
-          <div v-if="stackCards.right" class="card-stack-item card-stack-item--right">
+          <div 
+            v-if="stackCards.right" 
+            class="card-stack-item card-stack-item--right cursor-pointer"
+            @click="openCardDetail(stackCards.right)"
+          >
             <CardComp :card="stackCards.right" :show-link="false" class="scaled-card-right" />
           </div>
-          <div v-if="stackCards.center" class="card-stack-item card-stack-item--center">
+          <div 
+            v-if="stackCards.center" 
+            class="card-stack-item card-stack-item--center cursor-pointer"
+            @click="openCardDetail(stackCards.center)"
+          >
             <CardComp :card="stackCards.center" :show-link="false" class="scaled-card-center" />
           </div>
         </div>
@@ -452,8 +481,16 @@ const handleDismiss = () => {
         </button>
       </div>
 
-    </div>
+    <!-- Card Detail Modal -->
+    <CardDetailModal
+      :show="isDetailModalOpen"
+      :cards="detailModalCards"
+      :initial-index="detailModalInitialIndex"
+      :is-correct-array="detailModalIsCorrectArray"
+      @close="isDetailModalOpen = false"
+    />
   </div>
+</div>
 </template>
 
 <style scoped>

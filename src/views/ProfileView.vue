@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
+import CardDetailModal from '../components/CardDetailModal.vue';
 import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import { 
@@ -58,6 +59,18 @@ const isShowcaseMode = ref(false);
 const editingField = ref<'username' | 'bio' | 'binderColor' | null>(null);
 const editInputValue = ref('');
 const showShareToast = ref(false);
+
+// Card detail modal state
+const isDetailModalOpen = ref(false);
+const detailModalCards = ref<Card[]>([]);
+const detailModalInitialIndex = ref(0);
+
+const openCardDetail = (card: Card, cardsList: Card[]) => {
+  if (isShowcaseMode.value) return;
+  detailModalCards.value = cardsList;
+  detailModalInitialIndex.value = cardsList.findIndex(c => c.id === card.id);
+  isDetailModalOpen.value = true;
+};
 
 
 
@@ -547,9 +560,13 @@ const toggleCardShowcase = async (cardId: string) => {
                       :key="card.id" 
                       class="card-scale-wrapper"
                     >
-                      <div class="card-scaled-content">
+                      <div 
+                        class="card-scaled-content"
+                        :class="{ 'cursor-pointer': !isShowcaseMode }"
+                        @click="openCardDetail(card, sectionCards)"
+                      >
                         <!-- Render Card itself -->
-                        <CardComp :card="card" :show-link="!isShowcaseMode" />
+                        <CardComp :card="card" :show-link="false" />
 
                         <!-- Showcase pin overlays (only in showcase edit mode) -->
                         <button 
@@ -668,6 +685,13 @@ const toggleCardShowcase = async (cardId: string) => {
         </div>
       </div>
     </div>
+    <!-- Card Detail Modal -->
+    <CardDetailModal
+      :show="isDetailModalOpen"
+      :cards="detailModalCards"
+      :initial-index="detailModalInitialIndex"
+      @close="isDetailModalOpen = false"
+    />
   </PageLayout>
 </template>
 
