@@ -21,6 +21,13 @@ const categoryMapping = computed(() => ({
   cssClass: CATEGORY_SLUG[props.card.category] || 'civilization'
 }));
 
+const displayCategory = computed(() => {
+  const cat = categoryMapping.value.sub || categoryMapping.value.main;
+  if (!cat) return '';
+  const parts = cat.split('/');
+  return parts[parts.length - 1].trim();
+});
+
 const hasImage = computed(() => !!props.card.image);
 const isCSSImage = computed(() => {
   const img = props.card.image || '';
@@ -156,7 +163,7 @@ const grainPosition = computed(() => {
         <div class="trading-card__attributes">
           <Stars :rarity="card.rarity" :size="12.5" class="trading-card__stars" />
           <span class="trading-card__category-label">
-            {{ categoryMapping.main }}<template v-if="categoryMapping.sub"> / {{ categoryMapping.sub }}</template>
+            {{ displayCategory }}
           </span>
         </div>
         <div class="trading-card__description-divider"></div>
