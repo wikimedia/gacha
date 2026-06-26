@@ -657,28 +657,28 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             class="collage-image select-none" 
             alt="Category Collage" 
           />
+        </div>
 
-          <!-- Play/Cooldown Button -->
-          <div class="play-button-wrapper">
-            <BaseButton 
-              v-if="!cooldownTimers[activeSubCategory.mainCategory]"
-              variant="primary"
-              :loading="isStartingGame"
-              @click="playCategory(activeSubCategory.mainCategory)"
-            >
-              <template #icon>
-                <PhPlay :size="12" weight="fill" color="#FDF4EB" class="play-icon" />
-              </template>
-              Play
-            </BaseButton>
-            <BaseButton 
-              v-else
-              disabled
-              variant="primary"
-            >
-              {{ cooldownTimers[activeSubCategory.mainCategory] }} Seconds
-            </BaseButton>
-          </div>
+        <!-- Play/Cooldown Button -->
+        <div class="play-button-wrapper">
+          <BaseButton 
+            v-if="!cooldownTimers[activeSubCategory.mainCategory]"
+            variant="primary"
+            :loading="isStartingGame"
+            @click="playCategory(activeSubCategory.mainCategory)"
+          >
+            <template #icon>
+              <PhPlay :size="12" weight="fill" color="#FDF4EB" class="play-icon" />
+            </template>
+            Play
+          </BaseButton>
+          <BaseButton 
+            v-else
+            disabled
+            variant="primary"
+          >
+            {{ cooldownTimers[activeSubCategory.mainCategory] }} Seconds
+          </BaseButton>
         </div>
 
         <!-- Horizontal Category Slider -->
