@@ -98,7 +98,9 @@ const level = computed(() => LEVELS[props.rarity] ?? 0);
     transparent 58%
   );
   mix-blend-mode: screen;
-  animation: shiny-sheen 6s linear infinite;
+  /* Total duration = gap between sweeps; the keyframes do the actual
+     travel in the first 20%, so the sweep itself is quick. */
+  animation: shiny-sheen 4s linear infinite;
 }
 
 /* ── L2: holographic rainbow bands ──────────────────────────────
@@ -143,25 +145,17 @@ const level = computed(() => LEVELS[props.rarity] ?? 0);
   mix-blend-mode: screen;
 }
 
+/* Each field is a tiled SVG of scattered 4-point "twinkle" sparkles
+   (the curved/pinched sides are what make them read as stars, not dots).
+   Only the # in the fill color must be URL-encoded (%23). */
 .shiny__glitter::before {
-  background-image:
-    radial-gradient(circle at 12% 22%, #fff 0, transparent 1.6px),
-    radial-gradient(circle at 47% 8%,  #fff 0, transparent 1.3px),
-    radial-gradient(circle at 78% 33%, #fff 0, transparent 1.8px),
-    radial-gradient(circle at 28% 61%, #fff 0, transparent 1.4px),
-    radial-gradient(circle at 90% 74%, #fff 0, transparent 1.6px),
-    radial-gradient(circle at 58% 88%, #fff 0, transparent 1.3px);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='%23fff'><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(18,22) scale(7)'/><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(72,14) scale(5)'/><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(86,52) scale(8)'/><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(38,68) scale(6)'/><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(58,88) scale(4.5)'/><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(8,84) scale(5.5)'/></g></svg>");
   background-size: 140px 140px;
   animation: glitter-a 4.3s ease-in-out infinite;
 }
 
 .shiny__glitter::after {
-  background-image:
-    radial-gradient(circle at 33% 14%, #fff 0, transparent 1.4px),
-    radial-gradient(circle at 71% 41%, #fff 0, transparent 1.7px),
-    radial-gradient(circle at 9% 69%,  #fff 0, transparent 1.3px),
-    radial-gradient(circle at 86% 19%, #fff 0, transparent 1.5px),
-    radial-gradient(circle at 52% 82%, #fff 0, transparent 1.6px);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><g fill='%23fff'><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(30,18) scale(6)'/><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(74,40) scale(7.5)'/><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(12,60) scale(5)'/><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(55,82) scale(6.5)'/><path d='M0,-1 C0.18,-0.35 0.35,-0.18 1,0 C0.35,0.18 0.18,0.35 0,1 C-0.18,0.35 -0.35,0.18 -1,0 C-0.35,-0.18 -0.18,-0.35 0,-1 Z' transform='translate(88,80) scale(4)'/></g></svg>");
   background-size: 196px 196px;
   animation: glitter-b 5.7s ease-in-out infinite;
 }
@@ -193,10 +187,13 @@ const level = computed(() => LEVELS[props.rarity] ?? 0);
 }
 
 /* ── Keyframes ──────────────────────────────────────────────── */
-/* Band starts and ends fully off-card, so the reset is invisible. */
+/* Quick sweep across in the first 20% of the cycle, then parked fully
+   off the right edge for the rest (the long gap). The reset from off-right
+   back to off-left is invisible since the band is off-card at both. */
 @keyframes shiny-sheen {
-  from { transform: translateX(-100%); }
-  to   { transform: translateX(100%); }
+  0%   { transform: translateX(-100%); }
+  25%  { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* Translate exactly one gradient period (240px) → seamless wrap. */
