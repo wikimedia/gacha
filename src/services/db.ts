@@ -136,7 +136,7 @@ export const loadProfileFromDB = async (usernameOrId: string): Promise<{ userPro
         id: profileData.id,
         username: profileData.username,
         profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileData.username}`,
-        bio: profileData.bio || 'Avid Moonflower scholar and collector.',
+        bio: profileData.bio || 'Avid scholar and collector.',
         backgroundColor: profileData.binder_color || '#eaecf0',
         gdPoints: 0
       },

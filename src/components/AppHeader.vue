@@ -338,7 +338,7 @@ defineExpose({
               Edit Description
             </div>
             <div class="edit-dropdown-item" @click="handleEditClick('showcase')">
-              Change Showcase
+              Change Profile Picture
             </div>
             <div class="edit-dropdown-item" @click="handleEditClick('binderColor')">
               Change Binder Color

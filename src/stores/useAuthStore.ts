@@ -137,7 +137,7 @@ export const useAuthStore = defineStore('auth', () => {
           // placeholder username (rather than leaking their email prefix) unless
           // they've already set one in auth metadata.
           const fallbackUsername = metadata.username || randomPlaceholderUsername();
-          const fallbackBio = metadata.bio || 'Avid Moonflower scholar and collector.';
+          const fallbackBio = metadata.bio || 'Avid scholar and collector.';
           
           console.log(`Creating missing profile for user ${su.id} with username ${fallbackUsername}...`);
           const { error: insertError } = await supabase
@@ -331,7 +331,7 @@ export const useAuthStore = defineStore('auth', () => {
       username,
       email,
       profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
-      bio: 'Avid Moonflower scholar and collector.',
+      bio: 'Avid scholar and collector.',
       backgroundColor: '#eaecf0',
       gdPoints: 0,
       collectedCards: []

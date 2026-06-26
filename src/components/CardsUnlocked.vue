@@ -333,7 +333,7 @@ const handleDismiss = () => {
                 🎁 Claim {{ unlockedCards.length }} Cards
               </button>
               <button @click="handleDismiss" class="btn btn-outline border-base-300 w-full uppercase font-bold text-xs">
-                🔄 Play Another Round
+                🔄 Play Again
               </button>
             </div>
 
@@ -375,7 +375,7 @@ const handleDismiss = () => {
                   📖 Open Binder & View Cards
                 </button>
                 <button @click="handleDismiss" class="btn btn-outline border-base-300 w-full uppercase font-bold text-xs">
-                  Play Another Round
+                  Play Again
                 </button>
               </div>
             </div>

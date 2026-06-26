@@ -98,7 +98,7 @@ const loadProfile = async (force = false) => {
         id: `usr_${profileId.value.toLowerCase()}`,
         username: profileId.value,
         profilePic: `https://api.dicebear.com/7.x/identicon/svg?seed=${profileId.value}`,
-        bio: 'This scholar is yet to publish their official Moonflower profile bio.',
+        bio: 'Avid scholar and collector.',
         backgroundColor: '#eaecf0',
         gdPoints: 0
       };
@@ -344,7 +344,7 @@ const toggleCardShowcase = async (cardId: string) => {
       <div v-if="isPrivateMode && isShowcaseMode" class="showcase-edit-banner flex justify-between items-center bg-[#d9754b] text-[#fdf4eb] px-4 py-2.5 text-xs font-serif font-black shadow-md rounded-[2px] mb-4 mx-4 sm:mx-0">
         <span class="flex items-center gap-1.5">
           <PhPencilSimple :size="12" weight="bold" class="animate-pulse" />
-          SHOWCASE MODE: TAP A CARD PIN TO HIGHLIGHT IT AS YOUR MAIN AVATAR
+          Tap a card pin to highlight it as your profile picture.
         </span>
         <button @click="isShowcaseMode = false" class="btn btn-xs bg-[#fdf4eb] hover:bg-white text-[#d9754b] border-none font-bold tracking-wider">Done</button>
       </div>
