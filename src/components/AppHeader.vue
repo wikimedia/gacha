@@ -590,28 +590,7 @@ defineExpose({
   user-select: none;
 }
 
-.header-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: transparent;
-  border: 1.5px solid #fdf4eb;
-  border-radius: 2px;
-  color: #fdf4eb;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: opacity 0.2s ease;
-}
 
-.header-icon-btn:hover {
-  opacity: 0.8;
-}
-
-.header-icon-btn.relative {
-  position: relative;
-}
 
 .profile-badge-dot {
   position: absolute;
@@ -833,11 +812,7 @@ defineExpose({
   pointer-events: none;
 }
 
-.header-icon-btn--active {
-  background-color: var(--binder-dropdown-text, #fdf4eb) !important;
-  color: var(--binder-dropdown-bg, #4a6783) !important;
-  border-color: var(--binder-dropdown-text, #fdf4eb) !important;
-}
+
 
 .dropdown-fade-enter-active,
 .dropdown-fade-leave-active {

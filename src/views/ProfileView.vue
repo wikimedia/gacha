@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
@@ -54,6 +54,12 @@ const toggleEditDropdown = () => {
     dropdownDirection.value = spaceBelow < 220 ? 'up' : 'down';
   }
   showEditDropdown.value = !showEditDropdown.value;
+};
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && showEditDropdown.value) {
+    showEditDropdown.value = false;
+  }
 };
 const isShowcaseMode = ref(false);
 const editingField = ref<'username' | 'bio' | 'binderColor' | null>(null);
@@ -138,6 +144,7 @@ const loadProfile = async (force = false) => {
 };
 
 onMounted(async () => {
+  window.addEventListener('keydown', handleKeyDown);
   authStore.initAuth();
   gameStore.loadGuestState();
   isLoadingProfile.value = true;
@@ -146,6 +153,10 @@ onMounted(async () => {
   } finally {
     isLoadingProfile.value = false;
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown);
 });
 
 // Single consolidated watcher — only reacts to identity/route changes,
@@ -443,11 +454,11 @@ const toggleCardShowcase = async (cardId: string) => {
             <button 
               ref="editBtnRef"
               @click="toggleEditDropdown" 
-              class="edit-round-btn flex items-center justify-center w-8 h-8 rounded-full border border-[#c4b69d] hover:bg-[#c4b69d]/10 text-[#4a6783] transition-colors"
-              :class="{ 'edit-round-btn--active': showEditDropdown }"
+              class="header-icon-btn"
+              :class="{ 'header-icon-btn--active': showEditDropdown }"
               title="Edit Profile Options"
             >
-              <PhPencilSimple :size="14" weight="bold" />
+              <PhPencilSimple :size="18" weight="bold" class="pb-[2px]" />
             </button>
 
             <!-- EDIT DROPDOWN MENU -->
@@ -721,12 +732,7 @@ const toggleCardShowcase = async (cardId: string) => {
   background-color: #eaecf0;
 }
 
-/* Share Clipboard & Edit buttons */
-.share-round-btn:hover,
-.edit-round-btn:hover,
-.edit-round-btn--active {
-  background-color: rgba(196, 182, 157, 0.2) !important;
-}
+
 
 /* Clipboard Toast notification */
 .toast-notification {
