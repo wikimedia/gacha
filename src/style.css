@@ -731,16 +731,15 @@ body {
   height: 102px;
   border-radius: 1px;
   overflow: hidden;
-  border: 2.184px solid transparent;
+  border: 0px solid transparent;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: all 0.25s ease;
   background-color: var(--color-base-300);
 }
 
 .category-slider-item.is-active .category-slider-thumbnail-wrapper {
-  border-color: #fdf4eb;
+  border: 2.184px solid #fdf4eb;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 6px 14px rgba(0, 0, 0, 0.22);
-  transform: translateY(-3px);
 }
 
 .category-slider-thumbnail {

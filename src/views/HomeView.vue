@@ -762,10 +762,10 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
                   ]"
                 >
                   <div v-if="swipeOffset > 30" class="px-4 py-2 border-4 border-success bg-white rounded shadow-md font-sans">
-                    ✓ True
+                    ✓ Fact
                   </div>
                   <div v-if="swipeOffset < -30" class="px-4 py-2 border-4 border-error bg-white rounded shadow-md font-sans">
-                    ✕ False
+                    ✕ Fake
                   </div>
                 </div>
               </div>
@@ -805,9 +805,9 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
           >
             <template #icon>
               <!-- Thumbs Down Icon -->
-              <PhThumbsDown :size="18" weight="fill" class="mix-blend-soft-light" />
+              <PhThumbsDown :size="18" weight="fill" />
             </template>
-            False
+            Fake
           </BaseButton>
           
           <BaseButton 
@@ -816,9 +816,9 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
           >
             <template #icon>
               <!-- Thumbs Up Icon -->
-              <PhThumbsUp :size="18" weight="fill" class="mix-blend-soft-light" />
+              <PhThumbsUp :size="18" weight="fill" />
             </template>
-            True
+            Fact
           </BaseButton>
         </div>
       </section>

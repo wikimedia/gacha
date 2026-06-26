@@ -372,7 +372,7 @@ export const useGameStore = defineStore('game', () => {
       image,
       isReal,
       explanation: isReal
-        ? 'Real! This is a genuine Wikipedia entry.'
+        ? 'Fact! This is a genuine Wikipedia entry.'
         : 'Fake! This entry has been altered and is not a real Wikipedia fact.',
       imageLicense: row.image_license || undefined,
       imageCredit: row.image_credit || undefined,

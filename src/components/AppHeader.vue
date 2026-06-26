@@ -106,8 +106,8 @@ const authError = ref('');
 const currentSlide = ref(0);
 const slides = [
   {
-    title: '1. Identify Real Articles',
-    description: 'Swipe Right (or click Real) if you think the card is a genuine, unedited Wikipedia article.',
+    title: '1. Identify Facts',
+    description: 'Swipe Right (or click Fact) if you think the card is a genuine, unedited Wikipedia article.',
   },
   {
     title: '2. Spot the Fakes',
@@ -462,13 +462,13 @@ defineExpose({
                   <div class="mini-card-line w-5/6 bg-slate-300"></div>
                   <div class="mini-card-line w-2/3 bg-slate-300"></div>
                   <div class="real-badge font-sans font-black uppercase text-[8px] tracking-wider text-[#177860] border border-[#177860] px-1 py-0.5 rounded bg-[#fdf4eb] shadow-md absolute top-12 left-1/2 -translate-x-1/2 rotate-[-12deg] flex items-center gap-0.5">
-                    ✓ Real
+                    ✓ Fact
                   </div>
                 </div>
                 <!-- Swipe arrow pointing right -->
                 <div class="absolute right-3 text-[#177860]/80 animate-pulse flex flex-col items-center select-none">
                   <PhArrowRight :size="24" weight="bold" />
-                  <span class="text-[8px] font-bold uppercase tracking-wider mt-0.5">Real</span>
+                  <span class="text-[8px] font-bold uppercase tracking-wider mt-0.5">Fact</span>
                 </div>
               </div>
 

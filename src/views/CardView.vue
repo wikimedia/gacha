@@ -21,7 +21,7 @@ const defaultMockCards: CardType[] = [
     description: 'Wombats are the only known animals in the world that produce cube-shaped poop, which they stack to mark their territory and prevent the feces from rolling away.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Vombatus_ursinus_-Maria_Island_National_Park.jpg',
     isReal: true,
-    explanation: 'Real! Their highly elastic intestinal walls squeeze the waste into flat-faced cubes.'
+    explanation: 'Fact! Their highly elastic intestinal walls squeeze the waste into flat-faced cubes.'
   },
   {
     id: 'preview_rare',
@@ -32,7 +32,7 @@ const defaultMockCards: CardType[] = [
     description: 'Canada and Denmark engaged in a peaceful conflict over Hans Island, where they took turns planting flags and leaving bottles of Canadian Club whiskey or Danish Schnapps.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Hans_Island_from_Canadian_side.jpg',
     isReal: true,
-    explanation: 'Real! Known as the "Whisky War," it was resolved in 2022 by dividing the small island between both nations.'
+    explanation: 'Fact! Known as the "Whisky War," it was resolved in 2022 by dividing the small island between both nations.'
   },
   {
     id: 'preview_epic',
@@ -43,7 +43,7 @@ const defaultMockCards: CardType[] = [
     description: 'In 1932, the Australian military deployed soldiers armed with machine guns to combat a massive population of emus destroying crops, but the emus actually won.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Dromaius_novaehollandiae_-_cemetery.jpg',
     isReal: true,
-    explanation: 'Real! The emus proved highly resilient and clever, dodging bullets, which led the Australian government to withdraw military forces.'
+    explanation: 'Fact! The emus proved highly resilient and clever, dodging bullets, which led the Australian government to withdraw military forces.'
   },
   {
     id: 'preview_legendary',
@@ -54,7 +54,7 @@ const defaultMockCards: CardType[] = [
     description: 'A mysterious mania occurred in Strasbourg where hundreds of citizens danced uncontrollably for weeks without rest, leading to several deaths from pure physical exhaustion.',
     image: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/St_John%27s_dancers.jpg',
     isReal: true,
-    explanation: 'Real! The city council even hired musicians and constructed a wooden stage to encourage them to keep dancing, believing they had to dance the fever out.'
+    explanation: 'Fact! The city council even hired musicians and constructed a wooden stage to encourage them to keep dancing, believing they had to dance the fever out.'
   }
 ];
 
