@@ -12,10 +12,16 @@ import {
   PhArrowRight, 
   PhWarningCircle, 
   PhArrowLeft, 
-  PhCaretLeft, 
-  PhCaretRight, 
+  PhCaretLeft,
+  PhCaretRight,
   PhCheck,
-  PhExport
+  PhExport,
+  PhPencilSimple,
+  PhStar,
+  PhGlobeHemisphereWest,
+  PhHeart,
+  PhHandTap,
+  PhLightning
 } from '@phosphor-icons/vue';
 
 const props = withDefaults(defineProps<{
@@ -106,20 +112,32 @@ const authError = ref('');
 const currentSlide = ref(0);
 const slides = [
   {
-    title: '1. Identify Facts',
-    description: 'Swipe Right (or click Fact) if you think the card is a genuine, unedited Wikipedia article.',
+    title: 'Collect Unique Cards',
+    description: 'Collect cards based on real Wikipedia articles. Each card is unique. If you find one, you’re the only player in the world who owns it.',
   },
   {
-    title: '2. Spot the Fakes',
-    description: 'Swipe Left (or click Fake) if you think the card contains fabricated facts or details.',
+    title: 'Ranked by Popularity',
+    description: 'Cards are ranked 1 to 5 stars based on how popular the article is on Wikipedia.',
   },
   {
-    title: '3. Survive 10 Rounds',
-    description: 'Each category game consists of 10 rounds. A single mistake will end the run.',
+    title: 'Swipe Right for Real',
+    description: 'Swipe right if you think a card is real to collect it!',
   },
   {
-    title: '4. Claim Your Cards',
-    description: 'Earn points to activate the Gacha Drop, where you can tap the globe to acquire real Wikipedia cards for your collection!',
+    title: 'Swipe Left for Fake',
+    description: 'Swipe left if you think a card is made up. Fake articles always have a visual or textual “tell.”',
+  },
+  {
+    title: '10 Cards, 3 Chances',
+    description: 'Each round has 10 cards. You get 3 chances per round.',
+  },
+  {
+    title: 'Unlock Fact Frenzy',
+    description: 'Earn 1 point for every real card you collect. Reach 100 points to unlock Fact Frenzy, a 5-second tap rush where you grab as many cards as possible.',
+  },
+  {
+    title: 'Build Your Collection',
+    description: 'Build your collection. Trust your instincts. Go wild.',
   },
 ];
 
@@ -134,6 +152,32 @@ const prevSlide = () => {
     currentSlide.value--;
   }
 };
+
+// Swipe navigation for the info slideshow (in addition to the arrow buttons).
+// Works for touch and mouse drag; pointer handlers are gated to mouse so a
+// touch swipe doesn't get counted twice (touch fires both event families).
+const SWIPE_THRESHOLD = 40;
+let swipeStartX = 0;
+let swipeActive = false;
+
+const beginSwipe = (x: number) => {
+  swipeStartX = x;
+  swipeActive = true;
+};
+
+const endSwipe = (x: number) => {
+  if (!swipeActive) return;
+  swipeActive = false;
+  const dx = x - swipeStartX;
+  if (Math.abs(dx) < SWIPE_THRESHOLD) return;
+  if (dx < 0) nextSlide();
+  else prevSlide();
+};
+
+const onSwipeTouchStart = (e: TouchEvent) => beginSwipe(e.changedTouches[0].clientX);
+const onSwipeTouchEnd = (e: TouchEvent) => endSwipe(e.changedTouches[0].clientX);
+const onSwipePointerDown = (e: PointerEvent) => { if (e.pointerType === 'mouse') beginSwipe(e.clientX); };
+const onSwipePointerUp = (e: PointerEvent) => { if (e.pointerType === 'mouse') endSwipe(e.clientX); };
 
 watch(showInfoModal, (isOpen) => {
   if (isOpen) {
@@ -183,6 +227,9 @@ watch(() => route.name, (newName) => {
 defineExpose({
   openAuthModal() {
     showAuthModal.value = true;
+  },
+  openInfoModal() {
+    showInfoModal.value = true;
   }
 });
 </script>
@@ -240,20 +287,19 @@ defineExpose({
               <span class="text-xs font-black text-primary" :class="{ 'animate-pulse text-warning': points >= 100 }">{{ points }}/100</span>
             </div>
             
-            <!-- Activate Gacha Drop Button -->
             <button 
               v-if="points >= 100"
               @click.stop="handleActivateClick"
               class="btn btn-primary btn-xs w-full mt-3 text-[10px] font-black uppercase text-white gacha-gradient-animation select-none shadow hover:scale-105 active:scale-95 transition-transform"
             >
-              ⚡ Activate Gacha Drop
+              ⚡ Fact Frenzy ⚡
             </button>
             <div 
               v-else 
               class="text-[9px] text-secondary text-center mt-2 font-sans font-medium flex items-center justify-center gap-1 pointer-events-none select-none"
             >
               <span>🔒</span>
-              <span>Reach 100 points to unlock Gacha Drop!</span>
+              <span>You need 100 points start a Fact Frenzy</span>
             </div>
           </li>
 
@@ -447,12 +493,54 @@ defineExpose({
             </button>
           </div>
 
-          <!-- Middle: Illustration + Text -->
-          <div class="flex-grow flex flex-col items-center justify-center w-full max-w-sm mx-auto my-auto py-2">
+          <!-- Middle: Illustration + Text (swipe left/right to navigate) -->
+          <div
+            class="flex-grow flex flex-col items-center justify-center w-full max-w-sm mx-auto my-auto py-2 touch-pan-y"
+            @touchstart.passive="onSwipeTouchStart"
+            @touchend="onSwipeTouchEnd"
+            @pointerdown="onSwipePointerDown"
+            @pointerup="onSwipePointerUp"
+          >
             <!-- Slide illustration container -->
             <div class="w-full max-w-[246px] h-[229px] flex items-center justify-center bg-[#eaecf0]/10 border border-[#c4b69d]/20 rounded-md relative overflow-hidden select-none">
-              <!-- Slide 1: Real Card Animation -->
+              <!-- Slide 1: Unique Wikipedia Card -->
               <div v-if="currentSlide === 0" class="flex items-center justify-center w-full h-full relative">
+                <div class="mini-card mini-card-float">
+                  <div class="mini-card-header bg-[#4a6783]"></div>
+                  <div class="mini-card-img bg-slate-200">
+                    <PhGlobeHemisphereWest :size="22" weight="regular" color="#4a6783" />
+                  </div>
+                  <div class="mini-card-line w-full bg-slate-300"></div>
+                  <div class="mini-card-line w-5/6 bg-slate-300"></div>
+                  <div class="mini-card-line w-2/3 bg-slate-300"></div>
+                  <div class="unique-badge font-sans font-black uppercase text-[8px] tracking-wider text-[#d4a843] border border-[#d4a843] px-1 py-0.5 rounded bg-[#fdf4eb] shadow-md absolute -top-2 -right-2 rotate-[10deg]">
+                    1 / 1
+                  </div>
+                </div>
+                <!-- Sparkles -->
+                <div class="star-particle absolute top-6 right-14 text-[#d4a843] animate-ping">✦</div>
+                <div class="star-particle absolute bottom-7 left-14 text-[#d4a843] animate-ping" style="animation-delay: 0.6s">✦</div>
+              </div>
+
+              <!-- Slide 2: 1–5 Star Rarity -->
+              <div v-if="currentSlide === 1" class="flex flex-col items-center justify-center w-full h-full gap-5 select-none">
+                <div class="flex items-end gap-1.5">
+                  <PhStar
+                    v-for="n in 5"
+                    :key="n"
+                    :size="22 + n * 4"
+                    weight="fill"
+                    class="star-pop text-[#d4a843]"
+                    :style="{ animationDelay: (n * 0.15) + 's' }"
+                  />
+                </div>
+                <div class="text-[10px] font-sans font-black uppercase tracking-wider text-[#fdf4eb]/70 flex items-center gap-1.5">
+                  <PhStar :size="11" weight="fill" class="text-[#d4a843]" /> More stars = more views
+                </div>
+              </div>
+
+              <!-- Slide 3: Real Card Animation -->
+              <div v-if="currentSlide === 2" class="flex items-center justify-center w-full h-full relative">
                 <div class="mini-card mini-card-real">
                   <div class="mini-card-header bg-[#4a6783]"></div>
                   <div class="mini-card-img bg-slate-200">
@@ -472,8 +560,8 @@ defineExpose({
                 </div>
               </div>
 
-              <!-- Slide 2: Fake Card Animation -->
-              <div v-if="currentSlide === 1" class="flex items-center justify-center w-full h-full relative">
+              <!-- Slide 4: Fake Card Animation -->
+              <div v-if="currentSlide === 3" class="flex items-center justify-center w-full h-full relative">
                 <div class="mini-card mini-card-fake">
                   <div class="mini-card-header bg-[#4a6783]"></div>
                   <div class="mini-card-img bg-slate-200">
@@ -493,35 +581,92 @@ defineExpose({
                 </div>
               </div>
 
-              <!-- Slide 3: Survive 10 Rounds Animation -->
-              <div v-if="currentSlide === 2" class="flex flex-col items-center justify-center w-full h-full gap-3 select-none">
-                <div class="bg-[#fdf4eb] border border-[#c4b69d] rounded-sm shadow-md p-3 flex flex-col items-center w-36 gap-2">
-                  <div class="text-[10px] font-serif font-black text-[#4a6783] tracking-wider uppercase">
-                    Round 7 / 10
+              <!-- Slide 5: 10 Cards, 3 Chances -->
+              <div v-if="currentSlide === 4" class="flex flex-col items-center justify-center w-full h-full gap-6 select-none">
+                <!-- Fanned deck of 10 -->
+                <div class="relative w-[120px] h-[112px]">
+                  <div class="mini-card !w-[72px] !h-[100px] absolute left-1/2 top-1.5 -translate-x-1/2 -rotate-[14deg] origin-bottom">
+                    <div class="mini-card-header bg-[#4a6783]"></div>
+                    <div class="mini-card-img bg-slate-200"></div>
+                    <div class="mini-card-line w-full bg-slate-300"></div>
+                    <div class="mini-card-line w-2/3 bg-slate-300"></div>
                   </div>
-                  <div class="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                    <div class="h-full bg-[#4a6783] rounded-full" style="width: 70%"></div>
+                  <div class="mini-card !w-[72px] !h-[100px] absolute left-1/2 top-0 -translate-x-1/2 rotate-[14deg] origin-bottom">
+                    <div class="mini-card-header bg-[#4a6783]"></div>
+                    <div class="mini-card-img bg-slate-200"></div>
+                    <div class="mini-card-line w-full bg-slate-300"></div>
+                    <div class="mini-card-line w-2/3 bg-slate-300"></div>
                   </div>
-                  <div class="text-[8px] text-[#bf3c2c] font-black uppercase tracking-wide flex items-center gap-1 mt-0.5">
-                    ⚡ 1 mistake ends run
+                  <div class="mini-card !w-[72px] !h-[100px] absolute left-1/2 top-0 -translate-x-1/2">
+                    <div class="mini-card-header bg-[#4a6783]"></div>
+                    <div class="mini-card-img bg-slate-200"></div>
+                    <div class="mini-card-line w-full bg-slate-300"></div>
+                    <div class="mini-card-line w-2/3 bg-slate-300"></div>
+                  </div>
+                  <div class="unique-badge font-sans font-black uppercase text-[10px] tracking-wider text-[#4a6783] border border-[#4a6783] px-1.5 py-0.5 rounded bg-[#fdf4eb] shadow-md absolute -bottom-1 left-1/2 -translate-x-1/2">
+                    × 10
                   </div>
                 </div>
+                <!-- 3 chances -->
+                <div class="flex items-center gap-2">
+                  <PhHeart
+                    v-for="n in 3"
+                    :key="n"
+                    :size="16"
+                    weight="fill"
+                    class="heart-pop text-[#bf3c2c]"
+                    :style="{ animationDelay: (n * 0.2) + 's' }"
+                  />
+                </div>
               </div>
-
-              <!-- Slide 4: Gacha Card Glow Animation -->
-              <div v-if="currentSlide === 3" class="flex items-center justify-center w-full h-full relative">
+              <!-- Slide 6: Fact Frenzy -->
+              <div v-if="currentSlide === 5" class="flex items-center justify-center w-full h-full relative">
                 <div class="mini-card mini-card-gacha">
                   <div class="mini-card-header bg-[#d4a843]"></div>
-                  <div class="mini-card-img bg-[#fdf6e3] text-[#d4a843] flex items-center justify-center font-serif font-black text-[8px]">
-                    ★★★★★
+                  <div class="mini-card-img bg-[#fdf6e3] text-[#d4a843] flex items-center justify-center">
+                    <PhLightning :size="22" weight="fill" />
                   </div>
                   <div class="mini-card-line w-full bg-[#d4a843]/30"></div>
                   <div class="mini-card-line w-5/6 bg-[#d4a843]/30"></div>
                   <div class="mini-card-line w-2/3 bg-[#d4a843]/30"></div>
                 </div>
-                <!-- Star particle decorations -->
-                <div class="star-particle absolute top-8 left-16 text-[#d4a843] animate-ping">★</div>
-                <div class="star-particle absolute bottom-8 right-16 text-[#d4a843] animate-ping" style="animation-delay: 0.5s">★</div>
+                <!-- Tap ripple -->
+                <div class="absolute right-5 bottom-7 text-[#d4a843] flex items-center justify-center">
+                  <span class="tap-ripple"></span>
+                  <PhHandTap :size="26" weight="fill" class="relative tap-bob" />
+                </div>
+                <!-- 100 pts unlock badge -->
+                <div class="unique-badge font-sans font-black uppercase text-[9px] tracking-wider text-[#d4a843] border border-[#d4a843] px-1.5 py-0.5 rounded bg-[#fdf4eb] shadow-md absolute top-7 left-6 -rotate-[8deg]">
+                  100 pts → 0:05
+                </div>
+                <div class="star-particle absolute top-6 right-16 text-[#d4a843] animate-ping">★</div>
+                <div class="star-particle absolute bottom-6 left-16 text-[#d4a843] animate-ping" style="animation-delay: 0.5s">★</div>
+              </div>
+
+              <!-- Slide 7: Build Your Collection -->
+              <div v-if="currentSlide === 6" class="flex items-center justify-center w-full h-full relative">
+                <div class="collection-fan relative w-[150px] h-[112px]">
+                  <div class="mini-card mini-card-fake !w-[64px] !h-[92px] absolute left-1/2 top-2 -translate-x-1/2 -rotate-[20deg] origin-bottom">
+                    <div class="mini-card-header bg-[#4a6783]"></div>
+                    <div class="mini-card-img bg-slate-200"></div>
+                    <div class="mini-card-line w-full bg-slate-300"></div>
+                  </div>
+                  <div class="mini-card mini-card-real !w-[64px] !h-[92px] absolute left-1/2 top-2 -translate-x-1/2 rotate-[20deg] origin-bottom">
+                    <div class="mini-card-header bg-[#4a6783]"></div>
+                    <div class="mini-card-img bg-slate-200"></div>
+                    <div class="mini-card-line w-full bg-slate-300"></div>
+                  </div>
+                  <div class="mini-card mini-card-gacha !w-[68px] !h-[96px] absolute left-1/2 top-0 -translate-x-1/2 z-10">
+                    <div class="mini-card-header bg-[#d4a843]"></div>
+                    <div class="mini-card-img bg-[#fdf6e3] text-[#d4a843] flex items-center justify-center">
+                      <PhStar :size="18" weight="fill" />
+                    </div>
+                    <div class="mini-card-line w-full bg-[#d4a843]/30"></div>
+                  </div>
+                </div>
+                <div class="star-particle absolute top-4 left-10 text-[#d4a843] animate-ping">✦</div>
+                <div class="star-particle absolute top-10 right-10 text-[#d4a843] animate-ping" style="animation-delay: 0.4s">★</div>
+                <div class="star-particle absolute bottom-5 left-1/2 text-[#d4a843] animate-ping" style="animation-delay: 0.8s">✦</div>
               </div>
             </div>
 
@@ -763,6 +908,85 @@ defineExpose({
 .star-particle {
   pointer-events: none;
   font-size: 14px;
+}
+
+/* Slide 1 — unique card gently floats (no gold glow; that's the gacha card) */
+.mini-card-float {
+  animation: floatGentle 3s ease-in-out infinite;
+}
+
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-7px) rotate(2deg); }
+}
+
+/* Slide 2 — stars pop in sequence (staggered via inline animation-delay) */
+.star-pop {
+  animation: starPop 1.8s ease-in-out infinite;
+}
+
+@keyframes starPop {
+  0%, 100% {
+    transform: scale(0.78);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+
+/* Slide 5 — chance hearts pulse in sequence */
+.heart-pop {
+  animation: heartPop 1.6s ease-in-out infinite;
+}
+
+@keyframes heartPop {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+}
+
+/* Slide 6 — Fact Frenzy tap: a finger that taps with an expanding ripple */
+.tap-bob {
+  animation: tapBob 1.2s ease-in-out infinite;
+}
+
+@keyframes tapBob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(3px) scale(0.9); }
+}
+
+.tap-ripple {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  border: 2px solid #d4a843;
+  animation: tapRipple 1.2s ease-out infinite;
+}
+
+@keyframes tapRipple {
+  0% { transform: scale(0.5); opacity: 0.8; }
+  70% { transform: scale(2.1); opacity: 0; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+/* Slide 7 — collection fan does a celebratory wobble */
+.collection-fan {
+  animation: celebrateWobble 3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+@keyframes celebrateWobble {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(-2deg) translateY(-3px); }
+  75% { transform: rotate(2deg) translateY(-3px); }
 }
 
 /* Edit Menu Dropdown Options Panel */

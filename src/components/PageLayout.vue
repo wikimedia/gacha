@@ -30,6 +30,9 @@ const headerRef = ref<any>(null);
 defineExpose({
   openAuthModal() {
     headerRef.value?.openAuthModal();
+  },
+  openInfoModal() {
+    headerRef.value?.openInfoModal();
   }
 });
 </script>
