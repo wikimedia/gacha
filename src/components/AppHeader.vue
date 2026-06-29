@@ -329,7 +329,7 @@ defineExpose({
         </ul>
       </div>
 
-      <!-- Center: Progress Indicator (during game) or GOTCHA! title -->
+      <!-- Center: Progress Indicator (during game) or title -->
       <div v-if="gameActive" class="game-progress-bar">
         <div
           v-for="i in totalRounds"
@@ -347,7 +347,7 @@ defineExpose({
         to="/" 
         class="font-serif font-black text-xl text-[#fdf4eb] tracking-widest no-underline hover:opacity-85 select-none"
       >
-        GOTCHA!
+        World of Wikipedia
       </router-link>
 
       <!-- Right: Info Dialog Trigger OR Share button -->
