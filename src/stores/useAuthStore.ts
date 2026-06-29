@@ -181,9 +181,33 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       // Priority: profiles table > auth metadata > fallback
-      const username = profileUsername || metadata.username || 'Scholar';
-      const bio = profileBio ?? metadata.bio ?? 'Avid Moonflower scholar and collector.';
-      
+      let username = profileUsername || metadata.username || randomPlaceholderUsername();
+      const bio = profileBio ?? metadata.bio ?? 'Avid scholar and collector.';
+
+      // setup their profile row
+      if (!profileUsername && su.id && !su.id.startsWith('usr_')) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const { error: usernameError } = await supabase
+            .from('profiles')
+            .update({ username })
+            .eq('id', su.id);
+
+          if (!usernameError) {
+            profileUsername = username;
+            break;
+          }
+
+          // Username already taken — pick a fresh random name and try again.
+          if (usernameError.code === '23505' || usernameError.message.toLowerCase().includes('unique')) {
+            username = randomPlaceholderUsername();
+            continue;
+          }
+
+          console.error('Error persisting username to profile:', usernameError.message);
+          break;
+        }
+      }
+
       // Fetch user's collected cards directly from the database articles_v2 table
       let dbCards: any[] = [];
       if (su.id && !su.id.startsWith('usr_')) {

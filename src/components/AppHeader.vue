@@ -408,7 +408,7 @@ defineExpose({
             <input 
               v-model="authEmail"
               type="email" 
-              placeholder="e.g. scholar@moonflower.org"
+              placeholder="e.g. scholar@wikipedia.org"
               required
               class="input input-bordered w-full input-sm font-sans"
             >

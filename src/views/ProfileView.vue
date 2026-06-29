@@ -64,6 +64,10 @@ const handleKeyDown = (e: KeyboardEvent) => {
 const isShowcaseMode = ref(false);
 const editingField = ref<'username' | 'bio' | 'binderColor' | null>(null);
 const editInputValue = ref('');
+const editError = ref('');
+
+// Usernames must be longer than 3 characters.
+const MIN_USERNAME_LENGTH = 4;
 const showShareToast = ref(false);
 
 // Card detail modal state
@@ -206,6 +210,7 @@ const updateBinderColor = async (color: string) => {
 };
 
 const startEditing = (field: 'username' | 'bio' | 'binderColor') => {
+  editError.value = '';
   editingField.value = field;
   if (field === 'username') {
     editInputValue.value = editDisplayName.value;
@@ -229,11 +234,18 @@ const handleEditProfileField = (field: 'username' | 'bio' | 'showcase' | 'binder
 const cancelEditing = () => {
   editingField.value = null;
   editInputValue.value = '';
+  editError.value = '';
 };
 
 const saveEditing = async () => {
+  editError.value = '';
   if (editingField.value === 'username') {
-    editDisplayName.value = editInputValue.value.trim();
+    const trimmed = editInputValue.value.trim();
+    if (trimmed.length < MIN_USERNAME_LENGTH) {
+      editError.value = `Username must be more than 3 characters.`;
+      return;
+    }
+    editDisplayName.value = trimmed;
   } else if (editingField.value === 'bio') {
     editBio.value = editInputValue.value.trim();
   } else if (editingField.value === 'binderColor') {
@@ -650,6 +662,12 @@ const toggleCardShowcase = async (cardId: string) => {
             placeholder="Type username..."
             @keyup.enter="saveEditing"
           />
+          <p
+            v-if="editingField === 'username' && editError"
+            class="text-error text-xs font-sans font-semibold mt-2"
+          >
+            {{ editError }}
+          </p>
           <textarea 
             v-else-if="editingField === 'bio'"
             v-model="editInputValue"
