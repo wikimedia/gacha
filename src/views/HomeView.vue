@@ -38,7 +38,7 @@ const subCategories: SubCategoryDef[] = [
     name: 'Sports',
     mainCategory: 'Sports',
     thumbnail: '/sports.png',
-    bgCollage: '/History-mainImg.png'
+    bgCollage: '/sports-mainImg.png'
   },
   {
     id: 'society',
@@ -52,7 +52,7 @@ const subCategories: SubCategoryDef[] = [
     name: 'Media',
     mainCategory: 'Media',
     thumbnail: '/entertainment.png',
-    bgCollage: '/History-mainImg.png'
+    bgCollage: '/media-mainImg.png'
   },
   {
     id: 'earth',
