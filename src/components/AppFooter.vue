@@ -61,7 +61,7 @@
 .app-footer__contact {
   margin: 0;
   font-family: var(--font-family-system-sans);
-  font-size: 0.6875rem;
+  font-size: 0.5875rem;
   font-weight: 500;
   color: var(--color-figma-charcoal-muted, rgba(63, 63, 53, 0.8));
 }
