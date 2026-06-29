@@ -236,6 +236,19 @@ watch(() => route.params.category, () => {
   syncGameToRoute();
 });
 
+// Returning to the home route (e.g. clicking the header title from the results
+// screen) must drop any active game or post-game results, not just change the
+// URL. /play/:category and / both render this view, so the component is never
+// remounted — we reset the in-component state here. (Fact Frenzy is left alone:
+// it's launched on the home route via the triggerGacha query.)
+watch(() => route.name, (name) => {
+  if (name === 'home' && !gachaActive.value) {
+    showCardsUnlocked.value = false;
+    gameActive.value = false;
+    selectedCategory.value = null;
+  }
+});
+
 // ── First-session "How to Play" instructions ─────────────────────
 // Pop the existing How-to-Play modal (owned by AppHeader) on the home screen
 // the first time a guest visits. Logged-in users never see it, and it only
