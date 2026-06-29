@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import AppHeader from './AppHeader.vue';
+import AppFooter from './AppFooter.vue';
 import type { Category } from '../stores/useGameStore';
 
 defineProps<{
@@ -62,5 +63,6 @@ defineExpose({
     <main class="app-page-main" :class="{ 'app-page-main-wide': isWide }">
       <slot />
     </main>
+    <AppFooter />
   </div>
 </template>
