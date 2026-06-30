@@ -5,6 +5,7 @@ import Loader from '../components/Loader.vue';
 import PageLayout from '../components/PageLayout.vue';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card as CardType, Category } from '../stores/useGameStore';
+import { preloadAllFrames } from '../components/shinyFrames';
 
 const gameStore = useGameStore();
 const displayCards = ref<CardType[]>([]);
@@ -154,6 +155,10 @@ onMounted(async () => {
     errorMsg.value = 'Failed to load cards from Supabase, using mock cards.';
     displayCards.value = defaultMockCards;
   } finally {
+    // Wait for the shiny PNG sequences to decode before revealing the cards,
+    // so their intros play smoothly on first paint. Capped so a slow/missing
+    // batch can't stall the preview indefinitely.
+    await preloadAllFrames(8000);
     isLoading.value = false;
   }
 });

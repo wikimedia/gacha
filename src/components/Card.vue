@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import type { Card } from '../stores/useGameStore';
 import { CATEGORY_SLUG } from '../stores/useGameStore';
 import Stars from './Stars.vue';
 import ShinyOverlay from './ShinyOverlay.vue';
-import { PhArrowClockwise } from '@phosphor-icons/vue';
 
 const PLACEHOLDER_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Missing-image-232x150.png';
 
 const props = withDefaults(defineProps<{
   card: Card;
   showLink?: boolean;
+  shinyTrigger?: 'auto' | 'on' | 'off'; // auto = in view, on = always, off = never
 }>(), {
-  showLink: true
+  showLink: true,
+  shinyTrigger: 'auto'
 });
 
 // ── Computed Properties ──────────────────────────────────────────
@@ -47,6 +48,12 @@ watch(() => props.card.image, () => {
 
 const onImageError = () => {
   imageFailed.value = true;
+  // retry after a short delay
+  setTimeout(() => {
+    if (imageRetryCount.value > 0) return; // only retry once
+    imageFailed.value = false;
+    imageRetryCount.value++;
+  }, 3000);
 };
 
 // Cache-busted URL for retrying image loads
@@ -116,6 +123,39 @@ const attributionText = computed(() => {
   return 'en.wikipedia.org / Creative Commons Attribution-ShareAlike';
 });
 
+// ── Shiny "in view" gate ─────────────────────────────────────────
+// In 'auto' mode a viewport IntersectionObserver decides; in 'on'/'off' the
+// parent decides. `shinyInView` is the single value handed to ShinyOverlay.
+const rootEl = ref<HTMLElement | null>(null);
+const autoInView = ref(false);
+let observer: IntersectionObserver | null = null;
+
+const shinyInView = computed(() => {
+  if (props.shinyTrigger === 'on') return true;
+  if (props.shinyTrigger === 'off') return false;
+  return autoInView.value;
+});
+
+onMounted(() => {
+  if (props.shinyTrigger !== 'auto') return;
+  if (typeof IntersectionObserver === 'undefined') {
+    autoInView.value = true;
+    return;
+  }
+  observer = new IntersectionObserver(
+    (entries) => {
+      autoInView.value = entries[0]?.isIntersecting ?? false;
+    },
+    { threshold: 0.35 }
+  );
+  if (rootEl.value) observer.observe(rootEl.value);
+});
+
+onUnmounted(() => {
+  observer?.disconnect();
+  observer = null;
+});
+
 // Stable pseudo-random background position for the grain texture
 const grainPosition = computed(() => {
   const offsets = ['left', 'center', 'right', '25%', '75%'];
@@ -125,7 +165,7 @@ const grainPosition = computed(() => {
 </script>
  
 <template>
-  <div class="trading-card-wrapper">
+  <div class="trading-card-wrapper" ref="rootEl">
     <div class="trading-card" :class="'trading-card--' + categoryMapping.cssClass">
 
       <!-- ① Image + image grain (clipped to inset area) -->
@@ -154,7 +194,7 @@ const grainPosition = computed(() => {
       </div>
 
       <!-- ②ʹ Rarity foil effect (over artwork, below text banners) -->
-      <ShinyOverlay :rarity="card.rarity" class="trading-card__shiny" />
+      <ShinyOverlay :rarity="card.rarity" :in-view="shinyInView" class="trading-card__shiny" />
 
       <!-- ③ Content (text, stars, etc.) -->
       <div class="trading-card__content">
@@ -198,28 +238,6 @@ const grainPosition = computed(() => {
       <div class="trading-card__tint-layer"></div>
       <div class="trading-card__noise-layer"></div>
       <div class="trading-card__inner-shadow"></div>
-
-      <!-- Retry Button Overlay (rendered on top of everything, pointer-events: auto) -->
-      <div 
-        v-if="imageFailed" 
-        class="trading-card__retry-container"
-        @mousedown.stop
-        @mouseup.stop
-        @click.stop
-        @touchstart.stop
-        @touchmove.stop
-        @touchend.stop
-      >
-        <p class="trading-card__retry-message">Image failed to load</p>
-        <button
-          class="trading-card__retry-button"
-          @click="handleRetry"
-        >
-          <PhArrowClockwise class="trading-card__retry-icon" />
-          <span>Retry</span>
-        </button>
-      </div>
-
     </div>
   </div>
 </template>
