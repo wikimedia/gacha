@@ -778,7 +778,11 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
                 @mouseup="index === 0 ? handleMouseUp() : null"
                 @mouseleave="index === 0 ? handleMouseUp() : null"
               >
-                <CardComp :card="card" :show-link="false" />
+                <CardComp
+                  :card="card"
+                  :show-link="false"
+                  :shiny-trigger="index === 0 ? 'on' : 'off'"
+                />
                 
                 <!-- Swiping Indicators Overlay -->
                 <div 
