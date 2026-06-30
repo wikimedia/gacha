@@ -11,10 +11,8 @@
  *           rarities stack extra intro layers on top of the shared sweep.
  *   loop  — layers looped FOREVER after the intro completes.
  *
- * Frames are plain image URLs, so real PNG sequences and generated SVG
- * placeholders are interchangeable. The shared sweep intro below is real art
- * in /public/sweep-intro; the per-rarity loops are still placeholders until
- * real loop art lands.
+ * Frames are plain image URLs pointing at PNG sequences in /public. A rarity's
+ * effect is assembled from per-rarity base/intro/loop layer maps below.
  */
 
 export type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary';
@@ -145,79 +143,6 @@ const RARITY_BASES: Partial<Record<Rarity, FrameLayer[]>> = {
   Legendary: [GOLD_OVERLAY],
 };
 
-
-// ── Placeholder loop generation ───────────────────────────────────
-// Until real loop art lands, each rarity loops a generated SVG sheen.
-const SHOW_DEBUG_BADGE = false;
-
-// Card footprint the overlay stretches to fill (matches .trading-card).
-const W = 315;
-const H = 440;
-
-interface PlaceholderConfig {
-  hue: number;
-  bands: number;
-  rainbow: boolean;
-  shine: number;
-}
-
-const PLACEHOLDERS: Record<Rarity, PlaceholderConfig> = {
-  Common:    { hue: 210, bands: 1, rainbow: false, shine: 0.28 },
-  Uncommon:  { hue: 50,  bands: 1, rainbow: false, shine: 0.45 },
-  Rare:      { hue: 280, bands: 2, rainbow: true,  shine: 0.6 },
-  Epic:      { hue: 160, bands: 2, rainbow: true,  shine: 0.75 },
-  Legendary: { hue: 0,   bands: 3, rainbow: true,  shine: 0.95 },
-};
-
-function svg(inner: string): string {
-  const doc =
-    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${W} ${H}' ` +
-    `preserveAspectRatio='none'>${inner}</svg>`;
-  return 'data:image/svg+xml,' + encodeURIComponent(doc);
-}
-
-function badge(label: string, cur: number, total: number): string {
-  if (!SHOW_DEBUG_BADGE) return '';
-  return (
-    `<text x='8' y='${H - 8}' font-family='monospace' font-size='12' ` +
-    `font-weight='bold' fill='rgba(255,255,255,0.7)'>${label} ${cur}/${total}</text>`
-  );
-}
-
-function band(x: number, hue: number, shine: number, id: string): string {
-  const a = (m: number) => (m * shine).toFixed(3);
-  return (
-    `<defs><linearGradient id='${id}' x1='0' y1='0' x2='1' y2='0'>` +
-    `<stop offset='0%' stop-color='hsla(${hue},90%,75%,0)'/>` +
-    `<stop offset='50%' stop-color='hsla(${hue},95%,80%,${a(0.9)})'/>` +
-    `<stop offset='100%' stop-color='hsla(${hue},90%,75%,0)'/>` +
-    `</linearGradient></defs>` +
-    `<rect x='${x.toFixed(1)}' y='-120' width='95' height='${H + 240}' ` +
-    `fill='url(#${id})' transform='rotate(18 ${W / 2} ${H / 2})'/>`
-  );
-}
-
-function loopFrame(cfg: PlaceholderConfig, i: number, n: number): string {
-  const t = i / n; // 0 → 1 over the cycle (t=1 lands back on t=0)
-  const X0 = -160;
-  const X1 = W + 60;
-  let bars = '';
-  for (let k = 0; k < cfg.bands; k++) {
-    const p = (t + k / cfg.bands) % 1;
-    const x = X0 + p * (X1 - X0);
-    const hue = cfg.rainbow ? (cfg.hue + (k / cfg.bands) * 360) % 360 : cfg.hue;
-    bars += band(x, hue, cfg.shine, `lg${i}_${k}`);
-  }
-  return svg(bars + badge('LOOP', i + 1, n));
-}
-
-const LOOP_FRAMES = 36;
-
-function buildPlaceholderLoop(cfg: PlaceholderConfig): FrameLayer {
-  const frames: string[] = [];
-  for (let i = 0; i < LOOP_FRAMES; i++) frames.push(loopFrame(cfg, i, LOOP_FRAMES));
-  return { frames, blend: 'screen', fps: 20 };
-}
 
 // ── Public registry ───────────────────────────────────────────────
 const cache = new Map<Rarity, FrameSequence>();

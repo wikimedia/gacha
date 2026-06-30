@@ -79,11 +79,6 @@ const imageStyle = computed(() => {
 // Whether to show the placeholder image: either no image, or the real one failed.
 const showPlaceholderImage = computed(() => !!PLACEHOLDER_IMAGE_URL && (!hasImage.value || imageFailed.value));
 
-const handleRetry = () => {
-  imageFailed.value = false;
-  imageRetryCount.value++;
-};
-
 // Extract filename from Wikimedia Commons URL if applicable
 const commonsFilename = computed(() => {
   const match = (props.card.image || '').match(/upload\.wikimedia\.org\/wikipedia\/commons\/[^/]+\/[^/]+\/(.+)$/);
