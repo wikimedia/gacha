@@ -84,11 +84,11 @@ export const fetchFakeSample = (sampleSize: number, category?: Category): Promis
 // Load a public user profile from the Supabase "profile" table by username or user id
 export const loadProfileFromDB = async (usernameOrId: string): Promise<{ userProfile: any, cards: CollectedCard[] } | null> => {
   try {
-    // Try matching by username first (case-insensitive)
+    // Try matching by username first (case-insensitive) using the lowercase generated column
     let { data: profileData, error } = await supabase
       .from('profiles')
       .select('*')
-      .ilike('username', usernameOrId)
+      .eq('username_lower', usernameOrId.toLowerCase())
       .maybeSingle();
 
     if (error) {
