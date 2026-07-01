@@ -161,17 +161,23 @@ const handleShare = () => {
               <!-- Correct/Incorrect badge overlays (Results Page) -->
               <div 
                 v-if="isCorrectArray && isCorrectArray[index] === true"
-                class="modal-badge modal-badge--correct shadow-md"
+                class="modal-badge modal-badge--correct"
                 title="Correct"
               >
-                ✓
+                <svg class="modal-badge-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+                  <path d="M8 12.5l3 3 5-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
               </div>
               <div 
                 v-else-if="isCorrectArray && isCorrectArray[index] === false"
-                class="modal-badge modal-badge--incorrect shadow-md"
+                class="modal-badge modal-badge--incorrect"
                 title="Incorrect"
               >
-                ✗
+                <svg class="modal-badge-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+                  <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
               </div>
 
               <!-- Fake Card Overlay (stamp) -->
@@ -277,29 +283,32 @@ const handleShare = () => {
 /* Modal Check/Cross Badges */
 .modal-badge {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  border-top-right-radius: 11.5px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  border: 3px solid #ffffff;
+  align-items: flex-start;
+  justify-content: flex-end;
   z-index: 30;
-  font-family: sans-serif;
-  font-weight: 900;
-  font-size: 20px;
-  color: #ffffff;
+  pointer-events: none;
 }
 
 .modal-badge--correct {
-  background-color: #2a9d8f;
+  background: linear-gradient(225deg, #8ea885 50%, transparent 50%);
 }
 
 .modal-badge--incorrect {
-  background-color: #e63946;
+  background: linear-gradient(225deg, #d06a4c 50%, transparent 50%);
+}
+
+.modal-badge-svg {
+  width: 30px;
+  height: 30px;
+  margin-top: 10px;
+  margin-right: 10px;
+  color: #ffffff;
 }
 
 /* FAKE Overlay and Stamp */

@@ -288,17 +288,23 @@ const handleDismiss = () => {
             <!-- Correct/Incorrect badge in top-right corner of the scaled wrapper (Only for Fakeout game) -->
             <div 
               v-if="gameType === 'fakeout' && item.isCorrect"
-              class="card-grid-badge card-grid-badge--correct shadow"
+              class="card-grid-badge card-grid-badge--correct"
               title="Correct"
             >
-              <span class="badge-icon">✓</span>
+              <svg class="badge-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+                <path d="M8 12.5l3 3 5-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
             </div>
             <div 
               v-else-if="gameType === 'fakeout'"
-              class="card-grid-badge card-grid-badge--incorrect shadow"
+              class="card-grid-badge card-grid-badge--incorrect"
               title="Incorrect"
             >
-              <span class="badge-icon">✗</span>
+              <svg class="badge-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+                <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
             </div>
 
             <!-- Fake Card Overlay (with diagonal FAKE stamp) -->
@@ -974,34 +980,32 @@ const handleDismiss = () => {
 
 .card-grid-badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+  top: 0;
+  right: 0;
+  width: 38px;
+  height: 38px;
+  border-top-right-radius: 5.5px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  border: 2px solid #fff;
+  align-items: flex-start;
+  justify-content: flex-end;
   z-index: 30;
+  pointer-events: none;
 }
 
 .card-grid-badge--correct {
-  background-color: #2a9d8f;
-  color: #fff;
+  background: linear-gradient(225deg, #8ea885 50%, transparent 50%);
 }
 
 .card-grid-badge--incorrect {
-  background-color: #e63946;
-  color: #fff;
+  background: linear-gradient(225deg, #d06a4c 50%, transparent 50%);
 }
 
-.badge-icon {
-  font-family: sans-serif;
-  font-weight: 900;
-  font-size: 12px;
-  line-height: 1;
+.badge-icon-svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 5px;
+  margin-right: 5px;
+  color: #ffffff;
 }
 
 .card-grid-fake-overlay {

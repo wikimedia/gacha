@@ -11,6 +11,7 @@ const props = withDefaults(defineProps<{
   card: Card;
   showLink?: boolean;
   shinyTrigger?: 'auto' | 'on' | 'off'; // auto = in view, on = always, off = never
+  badge?: 'correct' | 'incorrect';
 }>(), {
   showLink: true,
   shinyTrigger: 'auto'
@@ -233,6 +234,23 @@ const grainPosition = computed(() => {
       <div class="trading-card__tint-layer"></div>
       <div class="trading-card__noise-layer"></div>
       <div class="trading-card__inner-shadow"></div>
+
+      <!-- Correct/Incorrect corner badge -->
+      <div 
+        v-if="badge" 
+        class="trading-card__badge" 
+        :class="'trading-card__badge--' + badge"
+        :title="badge === 'correct' ? 'Correct' : 'Incorrect'"
+      >
+        <svg v-if="badge === 'correct'" class="trading-card__badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+          <path d="M8 12.5l3 3 5-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <svg v-else class="trading-card__badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+          <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
     </div>
   </div>
 </template>
@@ -632,5 +650,35 @@ const grainPosition = computed(() => {
 
 .trading-card__retry-button:hover .trading-card__retry-icon {
   transform: rotate(180deg);
+}
+
+/* Correct/Incorrect Corner Badges */
+.trading-card__badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  z-index: 40; /* Above overlays */
+  pointer-events: none;
+}
+
+.trading-card__badge--correct {
+  background: linear-gradient(225deg, #8ea885 50%, transparent 50%);
+}
+
+.trading-card__badge--incorrect {
+  background: linear-gradient(225deg, #d06a4c 50%, transparent 50%);
+}
+
+.trading-card__badge-icon {
+  width: 26px;
+  height: 26px;
+  margin-top: 10px;
+  margin-right: 10px;
+  color: #ffffff;
 }
 </style>

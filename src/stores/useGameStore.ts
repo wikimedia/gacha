@@ -43,6 +43,7 @@ export interface Card {
   imageLicense?: string;        // e.g. "CC BY-SA 4.0" — from articles_v2.image_license
   imageCredit?: string;         // photographer / author — from articles_v2.image_credit
   imageAttributionUrl?: string; // link to license/source page — from articles_v2.image_attribution_url
+  badge?: 'correct' | 'incorrect';
 }
 
 export interface CollectedCard {

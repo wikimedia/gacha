@@ -59,6 +59,33 @@ const defaultMockCards: CardType[] = [
   }
 ];
 
+const badgeDemoCards: CardType[] = [
+  {
+    id: 'preview_correct_badge',
+    title: 'Correct Identification',
+    wikipediaLink: 'https://en.wikipedia.org/wiki/Earth',
+    category: 'Earth',
+    rarity: 'Rare',
+    description: 'This card demonstrates the styling of a correctly identified card, displaying a clean green validation badge on the top right.',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg',
+    isReal: true,
+    explanation: 'Fact! This is a demo card showcasing the "Correct" checkmark badge.',
+    badge: 'correct'
+  },
+  {
+    id: 'preview_incorrect_badge',
+    title: 'Incorrect Identification',
+    wikipediaLink: 'https://en.wikipedia.org/wiki/Emu_War',
+    category: 'Sports',
+    rarity: 'Epic',
+    description: 'This card demonstrates the styling of an incorrectly identified card, displaying a vibrant red warning badge on the top right.',
+    image: 'https://upload.wikimedia.org/wikipedia/commons/e/ec/Dromaius_novaehollandiae_-_cemetery.jpg',
+    isReal: false,
+    explanation: 'Fake! This is a demo card showcasing the "Incorrect" cross badge.',
+    badge: 'incorrect'
+  }
+];
+
 onMounted(async () => {
   try {
     isLoading.value = true;
@@ -150,10 +177,16 @@ onMounted(async () => {
       mockList.sort((a, b) => categoryOrder[a.category] - categoryOrder[b.category]);
       displayCards.value = mockList;
     }
+
+    // Append the badge demo cards to displayCards so they are always visible
+    displayCards.value = [
+      ...displayCards.value,
+      ...badgeDemoCards
+    ];
   } catch (err: any) {
     console.error('Error loading cards from Supabase for preview:', err);
     errorMsg.value = 'Failed to load cards from Supabase, using mock cards.';
-    displayCards.value = defaultMockCards;
+    displayCards.value = [...defaultMockCards, ...badgeDemoCards];
   } finally {
     // Wait for the shiny PNG sequences to decode before revealing the cards,
     // so their intros play smoothly on first paint. Capped so a slow/missing
@@ -181,7 +214,7 @@ onMounted(async () => {
           :key="card.id" 
           class="card-preview-item"
         >
-          <Card :card="card" />
+          <Card :card="card" :badge="card.badge" />
           <span class="card-preview-label">{{ card.rarity }}</span>
         </div>
       </div>
