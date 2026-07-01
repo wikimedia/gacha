@@ -104,27 +104,47 @@ const loadProfile = async (force = false) => {
   isLoadingCards.value = true;
   
   try {
-    const dbProfile = await gameStore.loadProfileFromDB(profileId.value);
-    if (dbProfile) {
+    // For our own profile, look the row up by the authenticated user id rather
+    // than the URL username. A freshly-signed-up user's persisted username can
+    // briefly diverge from authStore.user.username (used to build the URL); a
+    // username lookup would then miss and we'd drop the collection entirely.
+    const lookupKey = isPrivateMode.value && authStore.user?.id
+      ? authStore.user.id
+      : profileId.value;
+    const dbProfile = await gameStore.loadProfileFromDB(lookupKey);
+
+    if (isPrivateMode.value && authStore.user) {
+      // Own profile: trust in-memory state. Always render and always merge the
+      // local collection with whatever the DB returned — freshly claimed or
+      // migrated guest cards may not be reflected in the DB snapshot yet, and
+      // the profile row itself may not have resolved. Falling back to [] here
+      // (the old behavior when the lookup missed) is what made a new user's
+      // collection vanish until they renamed and forced a reload.
+      profileUser.value = dbProfile?.userProfile ?? {
+        id: authStore.user.id,
+        username: authStore.user.username,
+        profilePic: authStore.user.profilePic,
+        bio: authStore.user.bio,
+        backgroundColor: authStore.user.backgroundColor || '#eaecf0',
+        gdPoints: 0
+      };
+      editDisplayName.value = profileUser.value.username;
+      editBio.value = profileUser.value.bio;
+      binderColor.value = authStore.user.backgroundColor
+        || dbProfile?.userProfile?.backgroundColor
+        || '#4a6783';
+
+      const dbCards = dbProfile?.cards ?? [];
+      const dbCardIds = new Set(dbCards.map((c: any) => c.id));
+      const localOnly = gameStore.collectedCards.filter(c => !dbCardIds.has(c.id));
+      const mergedCards = [...dbCards, ...localOnly];
+
+      profileCards.value = mergedCards;
+      gameStore.collectedCards = mergedCards;
+    } else if (dbProfile) {
       profileUser.value = dbProfile.userProfile;
       binderColor.value = dbProfile.userProfile.backgroundColor || '#4a6783';
-      if (isPrivateMode.value) {
-        editDisplayName.value = dbProfile.userProfile.username;
-        editBio.value = dbProfile.userProfile.bio;
-        if (authStore.user?.backgroundColor) {
-          binderColor.value = authStore.user.backgroundColor;
-        }
-        
-        // Merge DB cards with any in-memory cards that might not be in the DB yet
-        const dbCardIds = new Set(dbProfile.cards.map((c: any) => c.id));
-        const localOnly = gameStore.collectedCards.filter(c => !dbCardIds.has(c.id));
-        const mergedCards = [...dbProfile.cards, ...localOnly];
-        
-        profileCards.value = mergedCards;
-        gameStore.collectedCards = mergedCards;
-      } else {
-        profileCards.value = dbProfile.cards;
-      }
+      profileCards.value = dbProfile.cards;
     } else {
       // Mock profile fallback so page doesn't crash if they visit a random path
       profileUser.value = {
@@ -136,7 +156,7 @@ const loadProfile = async (force = false) => {
         gdPoints: 0
       };
       profileCards.value = [];
-      
+
       binderColor.value = '#4a6783';
     }
   } catch (err) {
@@ -169,6 +189,20 @@ watch(
   [() => authStore.isLoggedIn, () => authStore.user?.id, () => route.params.id],
   () => {
     loadProfile();
+  }
+);
+
+// profileCards is a snapshot taken inside loadProfile, so it doesn't react to
+// the async guest-card migration / claim finishing after the initial load.
+// When our own in-memory collection grows, re-run loadProfile to fold the new
+// cards into the binder (loadProfile itself keeps the merge idempotent, so this
+// settles after one pass).
+watch(
+  () => gameStore.collectedCards.length,
+  (newLen, oldLen) => {
+    if (isPrivateMode.value && newLen > (oldLen ?? 0)) {
+      loadProfile(true);
+    }
   }
 );
 
