@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import type { Card } from '../stores/useGameStore';
 import CardComp from './Card.vue';
 import { PhCaretLeft, PhCaretRight, PhX } from '@phosphor-icons/vue';
+import { trackEvent } from '../analytics.ts';
 
 const props = withDefaults(defineProps<{
   show: boolean;
@@ -96,6 +97,7 @@ const handleLearnMore = () => {
   if (activeCard.value?.wikipediaLink) {
     window.open(activeCard.value.wikipediaLink, '_blank', 'noopener,noreferrer');
   }
+  trackEvent('learn_more_click');
 };
 
 const handleShare = () => {
