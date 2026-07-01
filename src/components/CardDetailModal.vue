@@ -111,6 +111,8 @@ const handleShare = () => {
       })
       .catch(err => console.error('Failed to copy card link:', err));
   }
+  trackEvent('card_detail_share');
+
 };
 </script>
 

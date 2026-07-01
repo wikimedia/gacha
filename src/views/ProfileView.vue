@@ -16,6 +16,7 @@ import {
   PhGridNine, 
   PhPushPin 
 } from '@phosphor-icons/vue';
+import { trackEvent } from '../analytics.ts';
 
 const route = useRoute();
 const router = useRouter();
@@ -268,6 +269,7 @@ const handleShareProfile = () => {
       }, 3000);
     })
     .catch(err => console.error('Failed to copy profile link:', err));
+  trackEvent('profile_share');
 };
 
 const getContrastTextColor = (hexColor?: string) => {
