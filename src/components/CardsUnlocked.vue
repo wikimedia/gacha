@@ -11,6 +11,7 @@ import Stars from './Stars.vue';
 const props = defineProps<{
   unlockedCards: Card[];
   identifiedFakes?: Card[];
+  encounteredCards?: { card: Card; isCorrect: boolean }[];
   gameType: 'fakeout' | 'gacha';
   gameStats: {
     score?: number;
@@ -33,7 +34,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 
-const activeTab = ref(props.lost && props.unlockedCards.length === 0 ? 'stats' : 'cards');
+const activeTab = ref('cards');
 
 const rarityBreakdown = computed(() => {
   const counts = {
@@ -104,6 +105,10 @@ const stackCards = computed(() => {
 });
 
 const cardsInGrid = computed(() => {
+  if (props.gameType === 'fakeout' && props.encounteredCards && props.encounteredCards.length > 0) {
+    return props.encounteredCards;
+  }
+
   const list: { card: Card; isCorrect: boolean }[] = [];
   
   // Add unlocked real cards (correct facts)
@@ -280,16 +285,16 @@ const handleDismiss = () => {
               <CardComp :card="item.card" :show-link="false" />
             </div>
 
-            <!-- Correct/Incorrect badge in top-right corner of the scaled wrapper -->
+            <!-- Correct/Incorrect badge in top-right corner of the scaled wrapper (Only for Fakeout game) -->
             <div 
-              v-if="item.isCorrect"
+              v-if="gameType === 'fakeout' && item.isCorrect"
               class="card-grid-badge card-grid-badge--correct shadow"
               title="Correct"
             >
               <span class="badge-icon">✓</span>
             </div>
             <div 
-              v-else
+              v-else-if="gameType === 'fakeout'"
               class="card-grid-badge card-grid-badge--incorrect shadow"
               title="Incorrect"
             >
@@ -486,7 +491,7 @@ const handleDismiss = () => {
       :show="isDetailModalOpen"
       :cards="detailModalCards"
       :initial-index="detailModalInitialIndex"
-      :is-correct-array="detailModalIsCorrectArray"
+      :is-correct-array="gameType === 'fakeout' ? detailModalIsCorrectArray : undefined"
       @close="isDetailModalOpen = false"
     />
   </div>

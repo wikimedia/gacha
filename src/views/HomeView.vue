@@ -115,6 +115,7 @@ const showGachaSummary = ref(false);
 const showCardsUnlocked = ref(false);
 const cardsUnlockedGameType = ref<'fakeout' | 'gacha'>('fakeout');
 const identifiedFakesThisGame = ref<Card[]>([]);
+const encounteredCardsThisGame = ref<{ card: Card; isCorrect: boolean }[]>([]);
 const gameLost = ref(false);
 const incorrectCount = ref(0);
 const isStartingGame = ref(false);
@@ -320,6 +321,7 @@ const startFakeoutGame = async (category: Category) => {
     gameScore.value = 0;
     collectedThisGame.value = [];
     identifiedFakesThisGame.value = [];
+    encounteredCardsThisGame.value = [];
     gameLost.value = false;
     incorrectCount.value = 0;
     showCardsUnlocked.value = false;
@@ -399,6 +401,9 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
   roundWasCorrect.value = isCorrect;
   stampAngle.value = Math.floor(Math.random() * 30) - 15; // Random angle between -15 and 15 degrees
   
+  // Track all encountered cards
+  encounteredCardsThisGame.value.push({ card, isCorrect });
+
   if (isCorrect) {
 
     gameScore.value += 1;
@@ -915,6 +920,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
         v-if="showCardsUnlocked"
         :unlocked-cards="cardsUnlockedGameType === 'fakeout' ? collectedThisGame : gachaDroppedCards"
         :identified-fakes="cardsUnlockedGameType === 'fakeout' ? identifiedFakesThisGame : []"
+        :encountered-cards="cardsUnlockedGameType === 'fakeout' ? encounteredCardsThisGame : []"
         :game-type="cardsUnlockedGameType"
         :game-stats="{
           score: gameScore,
