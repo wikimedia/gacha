@@ -392,12 +392,17 @@
 }
 
 /* Custom Base resets */
+html {
+    overscroll-behavior-y: contain;
+}
+
 body {
   font-family: var(--font-family-system-sans);
   color: var(--color-base);
   background-color: var(--background-color-neutral-subtle);
   margin: 0;
   padding: 0;
+  overscroll-behavior-y: contain;
 }
 
 .wiki-serif {
