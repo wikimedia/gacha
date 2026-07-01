@@ -134,7 +134,7 @@ const RARITY_LOOPS: Partial<Record<Rarity, FrameLayer[]>> = {
 // of the Legendary stack, under every animated intro/loop layer.
 const GOLD_OVERLAY: FrameLayer = {
   frames: ['/gold-overlay.png'],
-  blend: 'normal',
+  blend: 'overlay',
   fps: 1, // single static frame; rate is irrelevant
 };
 
