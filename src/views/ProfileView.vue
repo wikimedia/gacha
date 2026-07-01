@@ -8,6 +8,7 @@ import CardComp from '../components/Card.vue';
 import CardDetailModal from '../components/CardDetailModal.vue';
 import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
+import { supabase } from '../supabase';
 import { 
   PhPencilSimple,
   PhSquare, 
@@ -69,6 +70,57 @@ const editError = ref('');
 // Usernames must be longer than 3 characters.
 const MIN_USERNAME_LENGTH = 4;
 const showShareToast = ref(false);
+
+const isCheckingUsername = ref(false);
+const isUsernameTaken = ref(false);
+let usernameCheckTimeout: any = null;
+
+const checkUsernameAvailability = async (username: string) => {
+  if (!username) return;
+  if (authStore.user?.username && username.toLowerCase() === authStore.user.username.toLowerCase()) {
+    isUsernameTaken.value = false;
+    return;
+  }
+
+  isCheckingUsername.value = true;
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username_lower', username.toLowerCase())
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking username availability:', error.message);
+      return;
+    }
+
+    isUsernameTaken.value = !!data;
+  } catch (err) {
+    console.error('Error checking username availability:', err);
+  } finally {
+    isCheckingUsername.value = false;
+  }
+};
+
+watch(editInputValue, (newVal) => {
+  if (editingField.value !== 'username') return;
+  
+  if (usernameCheckTimeout) {
+    clearTimeout(usernameCheckTimeout);
+  }
+  
+  isUsernameTaken.value = false;
+  
+  const trimmed = newVal.trim();
+  if (trimmed.length < MIN_USERNAME_LENGTH) {
+    return;
+  }
+
+  usernameCheckTimeout = setTimeout(() => {
+    checkUsernameAvailability(trimmed);
+  }, 400);
+});
 
 // Card detail modal state
 const isDetailModalOpen = ref(false);
@@ -246,6 +298,11 @@ const updateBinderColor = async (color: string) => {
 const startEditing = (field: 'username' | 'bio' | 'binderColor') => {
   editError.value = '';
   editingField.value = field;
+  isUsernameTaken.value = false;
+  isCheckingUsername.value = false;
+  if (usernameCheckTimeout) {
+    clearTimeout(usernameCheckTimeout);
+  }
   if (field === 'username') {
     editInputValue.value = editDisplayName.value;
   } else if (field === 'bio') {
@@ -269,6 +326,11 @@ const cancelEditing = () => {
   editingField.value = null;
   editInputValue.value = '';
   editError.value = '';
+  isUsernameTaken.value = false;
+  isCheckingUsername.value = false;
+  if (usernameCheckTimeout) {
+    clearTimeout(usernameCheckTimeout);
+  }
 };
 
 const saveEditing = async () => {
@@ -279,6 +341,18 @@ const saveEditing = async () => {
       editError.value = `Username must be more than 3 characters.`;
       return;
     }
+    
+    if (usernameCheckTimeout) {
+      clearTimeout(usernameCheckTimeout);
+    }
+    
+    await checkUsernameAvailability(trimmed);
+    
+    if (isUsernameTaken.value) {
+      editError.value = 'Username is already taken.';
+      return;
+    }
+    
     editDisplayName.value = trimmed;
   } else if (editingField.value === 'bio') {
     editBio.value = editInputValue.value.trim();
@@ -697,7 +771,20 @@ const toggleCardShowcase = async (cardId: string) => {
             @keyup.enter="saveEditing"
           />
           <p
-            v-if="editingField === 'username' && editError"
+            v-if="editingField === 'username' && isCheckingUsername"
+            class="text-xs font-sans font-semibold mt-2 opacity-70"
+            :style="{ color: currentContrastColor }"
+          >
+            Checking availability...
+          </p>
+          <p
+            v-else-if="editingField === 'username' && isUsernameTaken"
+            class="text-error text-xs font-sans font-semibold mt-2"
+          >
+            Username is already taken.
+          </p>
+          <p
+            v-else-if="editingField === 'username' && editError"
             class="text-error text-xs font-sans font-semibold mt-2"
           >
             {{ editError }}
@@ -734,9 +821,10 @@ const toggleCardShowcase = async (cardId: string) => {
         <div class="flex gap-3">
           <button 
             @click="saveEditing"
-            class="btn bg-[#fdf4eb] hover:bg-white text-[#3f3f35] border-none btn-sm flex-1 font-bold uppercase tracking-wider cursor-pointer"
+            :disabled="editingField === 'username' && (isUsernameTaken || isCheckingUsername)"
+            class="btn bg-[#fdf4eb] hover:bg-white text-[#3f3f35] border-none btn-sm flex-1 font-bold uppercase tracking-wider cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Save Changes
+            {{ editingField === 'username' && isCheckingUsername ? 'Checking...' : 'Save Changes' }}
           </button>
           <button 
             @click="cancelEditing"
