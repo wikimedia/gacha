@@ -187,13 +187,37 @@ export const useAuthStore = defineStore('auth', () => {
       // setup their profile row
       if (!profileUsername && su.id && !su.id.startsWith('usr_')) {
         for (let attempt = 0; attempt < 3; attempt++) {
-          const { error: usernameError } = await supabase
+          // .select() so we can tell an applied update from a zero-row update.
+          // A zero-row UPDATE is NOT an error in supabase-js, so without this we
+          // could adopt a username locally that was never persisted to any row —
+          // which then makes the /@username profile lookup miss.
+          const { data: updatedRows, error: usernameError } = await supabase
             .from('profiles')
             .update({ username })
-            .eq('id', su.id);
+            .eq('id', su.id)
+            .select('id');
+
+          if (!usernameError && updatedRows && updatedRows.length > 0) {
+            profileUsername = username;
+            break;
+          }
 
           if (!usernameError) {
-            profileUsername = username;
+            // No row to update — the profile row is missing. Create it so the
+            // username we hand back to the UI actually exists in the DB.
+            const { error: insertMissingError } = await supabase
+              .from('profiles')
+              .insert({ id: su.id, username, bio });
+
+            if (!insertMissingError) {
+              profileUsername = username;
+              break;
+            }
+            if (insertMissingError.code === '23505' || insertMissingError.message.toLowerCase().includes('unique')) {
+              username = randomPlaceholderUsername();
+              continue;
+            }
+            console.error('Error creating missing profile row:', insertMissingError.message);
             break;
           }
 
