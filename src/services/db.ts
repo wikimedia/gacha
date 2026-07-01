@@ -84,46 +84,32 @@ export const fetchFakeSample = (sampleSize: number, category?: Category): Promis
 // Load a public user profile from the Supabase "profile" table by username or user id
 export const loadProfileFromDB = async (usernameOrId: string): Promise<{ userProfile: any, cards: CollectedCard[] } | null> => {
   try {
-    // Try matching by username first (case-insensitive) using the lowercase generated column
-    let { data: profileData, error } = await supabase
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(usernameOrId);
+    
+    let query = supabase
       .from('profiles')
-      .select('*')
-      .eq('username_lower', usernameOrId.toLowerCase())
-      .maybeSingle();
+      .select('*, articles_v2(*)')
+      .order('pinned', { foreignTable: 'articles_v2', ascending: false });
 
-    if (error) {
-      console.error('Error fetching profile by username:', error.message);
+    if (isUUID) {
+      query = query.eq('id', usernameOrId);
+    } else {
+      query = query.eq('username_lower', usernameOrId.toLowerCase());
     }
 
-    // If no match by username, try matching by id
-    if (!profileData) {
-      const { data: profileById, error: idError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', usernameOrId)
-        .maybeSingle();
+    const { data: profileData, error } = await query.maybeSingle();
 
-      if (idError) {
-        console.error('Error fetching profile by id:', idError.message);
-      }
-      profileData = profileById;
+    if (error) {
+      console.error('Error fetching profile and articles:', error.message);
+      return null;
     }
 
     if (!profileData) return null;
 
-    // Fetch articles owned by this profile via profile_id join
-    const { data: articlesData, error: articlesError } = await supabase
-      .from('articles_v2')
-      .select('*')
-      .eq('profile_id', profileData.id)
-      .order('pinned', { ascending: false });
-
-    if (articlesError) {
-      console.error('Error fetching profile articles:', articlesError.message);
-    }
+    const articlesData = profileData.articles_v2 || [];
 
     // Map articles to CollectedCard format
-    const cards: CollectedCard[] = (articlesData || []).map((article: any) => ({
+    const cards: CollectedCard[] = articlesData.map((article: any) => ({
       id: article.qid,
       collectedAt: new Date().toISOString(),
       isShowcase: !!article.pinned,

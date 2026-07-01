@@ -111,15 +111,17 @@ export const useAuthStore = defineStore('auth', () => {
       const metadata = su.user_metadata || {};
       
       const email = su.email || '';
-      // Fetch the real username and bio from the Supabase profiles table
+      // Fetch the real username and bio from the Supabase profiles table, joining articles_v2 in one request
       let profileUsername: string | null = null;
       let profileBio: string | null = null;
       let profileBinderColor: string | null = null;
+      let dbCards: any[] = [];
       try {
         const { data: profileData, error: profileFetchError } = await supabase
           .from('profiles')
-          .select('username, bio, binder_color')
+          .select('username, bio, binder_color, articles_v2(*)')
           .eq('id', su.id)
+          .order('pinned', { foreignTable: 'articles_v2', ascending: false })
           .maybeSingle();
 
         if (profileFetchError) {
@@ -135,6 +137,16 @@ export const useAuthStore = defineStore('auth', () => {
           }
           if (profileData.binder_color) {
             profileBinderColor = profileData.binder_color;
+          }
+          
+          if (profileData.articles_v2) {
+            dbCards = profileData.articles_v2.map((article: any) => ({
+              id: article.qid,
+              collectedAt: new Date().toISOString(),
+              isShowcase: !!article.pinned,
+              customSection: null,
+              cardDetails: gameStore.mapArticleRowToCard(article)
+            }));
           }
         } else {
           // If profile row doesn't exist, create it! New users get a fun random
@@ -229,32 +241,6 @@ export const useAuthStore = defineStore('auth', () => {
 
           console.error('Error persisting username to profile:', usernameError.message);
           break;
-        }
-      }
-
-      // Fetch user's collected cards directly from the database articles_v2 table
-      let dbCards: any[] = [];
-      if (su.id && !su.id.startsWith('usr_')) {
-        try {
-          const { data: articlesData, error: articlesError } = await supabase
-            .from('articles_v2')
-            .select('*')
-            .eq('profile_id', su.id)
-            .order('pinned', { ascending: false });
-
-          if (articlesError) {
-            console.error('Error loading user articles from database:', articlesError.message);
-          } else if (articlesData) {
-            dbCards = articlesData.map((article: any) => ({
-              id: article.qid,
-              collectedAt: new Date().toISOString(),
-              isShowcase: !!article.pinned,
-              customSection: null,
-              cardDetails: gameStore.mapArticleRowToCard(article)
-            }));
-          }
-        } catch (err) {
-          console.error('Failed to load user articles from database:', err);
         }
       }
 
