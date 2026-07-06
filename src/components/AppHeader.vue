@@ -469,7 +469,7 @@ defineExpose({
       <Transition name="dialog-fade">
         <div 
           v-if="showInfoModal" 
-          class="fixed inset-0 z-50 bg-[#3f3f35]/95 backdrop-blur-md flex flex-col justify-between py-6 px-6 text-[#fdf4eb]"
+          class="fixed inset-0 z-50 bg-[#3f3f35]/90 backdrop-blur-md flex flex-col justify-between py-6 px-6 text-[#fdf4eb]"
           role="dialog"
           aria-modal="true"
         >

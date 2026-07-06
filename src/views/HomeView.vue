@@ -251,19 +251,17 @@ watch(() => route.name, (name) => {
 });
 
 // ── First-session "How to Play" instructions ─────────────────────
-// Pop the existing How-to-Play modal (owned by AppHeader) on the home screen
-// the first time a guest visits. Logged-in users never see it, and it only
-// fires once per browser (tracked via localStorage). We wait for
-// isAuthResolved so it isn't flashed at a returning user mid session-lookup.
+// Pop the existing How-to-Play modal (owned by AppHeader) the first time a
+// guest presses Play. Logged-in users never see it, and it only fires once
+// per browser (tracked via localStorage).
 const INSTRUCTIONS_SEEN_KEY = 'moonflower_seen_instructions';
 
-watch(() => authStore.isAuthResolved, (resolved) => {
-  if (!resolved) return;
+const maybeShowInstructions = () => {
   if (authStore.isLoggedIn) return;
   if (localStorage.getItem(INSTRUCTIONS_SEEN_KEY)) return;
   localStorage.setItem(INSTRUCTIONS_SEEN_KEY, '1');
   headerRef.value?.openInfoModal();
-}, { immediate: true });
+};
 
 // Game deck configuration
 const DECK_SIZE = 10;
@@ -340,6 +338,7 @@ const startFakeoutGame = async (category: Category) => {
 // (/play/<slug>) take the exact same path.
 const playCategory = (category: Category) => {
   if (gameStore.isCooldownActive(category) || isStartingGame.value) return;
+  maybeShowInstructions();
   router.push(`/play/${categoryToSlug(category)}`);
 };
 
