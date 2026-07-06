@@ -127,7 +127,7 @@
   --color-rarity-legendary-bg: #fdf6e3;
 
   /* Main Category Tint Colors — Applied with hard-light blend on cards */
-  --color-category-civilization: #948877;
+  --color-category-civilization: #9F7262;
   --color-category-civilization-bg: #f5f0e8;
   --color-category-civilization-bg-hover: #ebe4d8;
   --color-category-civilization-dark-bg: #2d2a27;
@@ -211,7 +211,7 @@
   --color-category-animals-icon-bg-dark: var(--color-category-nature-icon-bg-dark);
 
   /* Earth Theme (Desaturated Ochre/Gold) */
-  --color-category-earth: #8C826C;
+  --color-category-earth: #7E8C75;
   --color-category-earth-bg: #f4f0e6;
   --color-category-earth-bg-hover: #ebe5da;
   --color-category-earth-dark-bg: #2d2922;
@@ -263,7 +263,7 @@
   --color-category-physical-science-icon-bg-dark: var(--color-category-science-icon-bg-dark);
 
   /* Society Theme (Warm Tan - Civilization alias) */
-  --color-category-society: var(--color-category-civilization);
+  --color-category-society: #948877;
   --color-category-society-bg: var(--color-category-civilization-bg);
   --color-category-society-bg-hover: var(--color-category-civilization-bg-hover);
   --color-category-society-dark-bg: var(--color-category-civilization-dark-bg);
@@ -276,7 +276,7 @@
   --color-category-society-icon-bg-dark: var(--color-category-civilization-icon-bg-dark);
 
   /* Sports Theme (Desaturated Teal) */
-  --color-category-sports: #5F8A82;
+  --color-category-sports: #6F91A4;
   --color-category-sports-bg: #e9f1ef;
   --color-category-sports-bg-hover: #d7e7e3;
   --color-category-sports-dark-bg: #1f2a28;
