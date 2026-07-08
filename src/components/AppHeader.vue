@@ -121,7 +121,7 @@ const slides = [
   },
   {
     title: 'One of a Kind',
-    description: "Every real card is one-of-a-kind. If you collect it, it's yours and only yours.",
+    description: "Every real card is one-of-a-kind. If you collect it, you're the only one in the world who has it.",
   },
   {
     title: 'Ready?',
