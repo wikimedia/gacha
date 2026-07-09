@@ -326,8 +326,7 @@ defineExpose({
           class="game-progress-segment"
           :class="{
             'game-progress-segment--completed': i < currentRound,
-            'game-progress-segment--current': i === currentRound,
-            'game-progress-segment--upcoming': i > currentRound
+            'game-progress-segment--upcoming': i >= currentRound
           }"
         />
       </div>
@@ -731,10 +730,6 @@ defineExpose({
 }
 
 .game-progress-segment--completed {
-  background-color: #4a6783;
-}
-
-.game-progress-segment--current {
   background-color: #4a6783;
 }
 
