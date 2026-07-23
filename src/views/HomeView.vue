@@ -10,7 +10,9 @@ import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import BaseButton from '../components/BaseButton.vue';
 import { trackEvent } from '../analytics';
-import { PhPlay, PhThumbsUp, PhThumbsDown } from '@phosphor-icons/vue';
+import { PhThumbsUp, PhThumbsDown } from '@phosphor-icons/vue';
+import AppIcon from '../components/AppIcon.vue';
+import { cdxIconPlay } from '@wikimedia/codex-icons';
 
 const route = useRoute();
 const router = useRouter();
@@ -729,7 +731,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             @click="playCategory(activeSubCategory.mainCategory)"
           >
             <template #icon>
-              <PhPlay :size="18" weight="fill" color="#FDF4EB" class="play-icon" />
+              <AppIcon :icon="cdxIconPlay" :size="18" class="play-icon" :style="{ color: '#FDF4EB' }" />
             </template>
             Play
           </BaseButton>

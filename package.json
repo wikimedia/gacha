@@ -12,6 +12,7 @@
   "dependencies": {
     "@phosphor-icons/vue": "^2.2.1",
     "@supabase/supabase-js": "^2.106.2",
+    "@wikimedia/codex-icons": "^2.6.2",
     "pinia": "^3.0.4",
     "roughjs": "^4.6.6",
     "serve": "^14.2.6",

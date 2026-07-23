@@ -18,7 +18,8 @@ fake, earn points, and collect cards into a public "binder" profile.
 ## Architecture
 
 Vue 3 + TypeScript SPA (Vite, Pinia, vue-router, Tailwind 4 + daisyUI themed
-via design tokens in `src/style.css`, Phosphor icons). The only backend is
+via design tokens in `src/style.css`, Codex icon data rendered by
+`AppIcon.vue` plus a few remaining Phosphor icons). The only backend is
 Supabase: Postgres tables plus email-OTP auth. Deployed on Firebase App
 Hosting (`apphosting.yaml`). Note: the baked-in Supabase defaults in
 `src/supabase.ts` point at the live project, so local dev touches the real
@@ -115,4 +116,7 @@ part of the app build. See its README for setup.
   `Card.vue`). Avoid raw hex and arbitrary Tailwind values (`text-[#…]`)
   elsewhere — the remaining ones are legacy. daisyUI theme variables are
   mapped to these tokens in the `:root` block below `@theme`. The app has
-  its own visual language and intentionally does not use Wikimedia Codex.
+  its own visual language and intentionally does not use Wikimedia Codex
+  components or design tokens; of the Codex packages only
+  `@wikimedia/codex-icons` is a dependency, used as raw SVG icon data
+  rendered through `AppIcon.vue`.

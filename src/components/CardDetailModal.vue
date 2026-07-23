@@ -2,7 +2,8 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import type { Card } from '../stores/useGameStore';
 import CardComp from './Card.vue';
-import { PhCaretLeft, PhCaretRight, PhX } from '@phosphor-icons/vue';
+import AppIcon from './AppIcon.vue';
+import { cdxIconClose, cdxIconPrevious, cdxIconNext } from '@wikimedia/codex-icons';
 import { trackEvent } from '../analytics.ts';
 
 const props = withDefaults(defineProps<{
@@ -131,7 +132,7 @@ const handleShare = () => {
           class="absolute top-6 right-6 text-white/80 hover:text-white transition-colors duration-200 cursor-pointer p-2 z-50 outline-none bg-transparent border-none"
           aria-label="Close modal"
         >
-          <PhX :size="28" weight="bold" />
+          <AppIcon :icon="cdxIconClose" :size="28" />
         </button>
 
         <!-- Spacer to push content down -->
@@ -208,7 +209,7 @@ const handleShare = () => {
               class="w-10 h-10 flex items-center justify-center text-white disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed hover:text-white/80 transition-colors outline-none bg-transparent border-none"
               aria-label="Previous card"
             >
-              <PhCaretLeft :size="28" weight="bold" />
+              <AppIcon :icon="cdxIconPrevious" :size="28" />
             </button>
 
             <!-- Dots pagination OR numerical indicator -->
@@ -233,7 +234,7 @@ const handleShare = () => {
               class="w-10 h-10 flex items-center justify-center text-white disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed hover:text-white/80 transition-colors outline-none bg-transparent border-none"
               aria-label="Next card"
             >
-              <PhCaretRight :size="28" weight="bold" />
+              <AppIcon :icon="cdxIconNext" :size="28" />
             </button>
           </div>
 
