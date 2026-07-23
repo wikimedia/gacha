@@ -62,13 +62,13 @@ withDefaults(
   max-width: var(--button-row-max-width);
   height: 44px;
   padding: 0 16px;
-  background-color: var(--color-blue);
+  background-color: #703525;
   font-size: 14px;
   gap: 6px;
 }
 
 .app-btn-primary:hover:not(:disabled) {
-  background-color: var(--color-blue-dark);
+  background-color: #5c2a1d;
 }
 
 .app-btn-primary.is-disabled {
