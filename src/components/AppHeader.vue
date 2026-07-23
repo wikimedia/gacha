@@ -20,6 +20,7 @@ import {
   cdxIconGlobe,
   cdxIconHeart
 } from '@wikimedia/codex-icons';
+import CreditsSheet from './CreditsSheet.vue';
 
 const props = withDefaults(defineProps<{
   displayedPoints?: number;
@@ -100,6 +101,7 @@ const confirmQuitGame = () => {
 // Auth modal state
 const showAuthModal = ref(false);
 const showInfoModal = ref(false);
+const showCreditsModal = ref(false);
 const authEmail = ref('');
 const otpSent = ref(false);
 const isVerifying = ref(false);
@@ -350,10 +352,11 @@ defineExpose({
           <AppIcon :icon="cdxIconShare" :size="18" />
         </button>
       </div>
-      <button 
+      <button
         v-else
         class="header-icon-btn"
-        @click="showInfoModal = true"
+        @click="showCreditsModal = true"
+        aria-label="Credits & attribution"
       >
         <AppIcon :icon="cdxIconInfo" :size="18" />
       </button>
@@ -662,6 +665,13 @@ defineExpose({
         </div>
       </Transition>
     </Teleport>
+
+    <!-- CREDITS / ATTRIBUTION BOTTOM SHEET (opened from the info button) -->
+    <CreditsSheet
+      :open="showCreditsModal"
+      :category="activeMainCategory"
+      @close="showCreditsModal = false"
+    />
 
   </header>
 </template>

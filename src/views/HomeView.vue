@@ -54,14 +54,14 @@ const subCategories: SubCategoryDef[] = [
     name: 'Media',
     mainCategory: 'Media',
     thumbnail: '/entertainment.png',
-    bgCollage: '/media-mainImg.png'
+    bgCollage: '/Media-mainImg.png'
   },
   {
     id: 'earth',
     name: 'Earth',
     mainCategory: 'Earth',
     thumbnail: '/earth.png',
-    bgCollage: '/Earth-mainImg.png'
+    bgCollage: '/earth-mainImg.png'
   },
   {
     id: 'history',
