@@ -333,7 +333,7 @@ defineExpose({
       <router-link 
         v-else
         to="/" 
-        class="font-serif font-black text-xl text-[#fdf4eb] tracking-widest no-underline hover:opacity-85 select-none"
+        class="font-serif font-normal text-[26px] leading-9 text-figma-ink no-underline hover:opacity-85 select-none"
       >
         World of Wikipedia
       </router-link>
@@ -466,7 +466,7 @@ defineExpose({
             <!-- Left spacer to center the title -->
             <div class="w-8 h-8 opacity-0"></div>
             
-            <h3 class="font-serif font-black text-xl text-[#fdf4eb] text-center tracking-wide leading-none m-0">
+            <h3 class="font-serif font-semibold text-xl text-[#fdf4eb] text-center tracking-wide leading-none m-0">
               How to Play
             </h3>
             
@@ -616,7 +616,7 @@ defineExpose({
 
             <!-- Slide details (Text below the card) -->
             <div class="text-center w-full max-w-[280px] mt-6 min-h-[120px] flex flex-col justify-start">
-              <h4 class="font-serif font-black text-xl text-[#fdf4eb] leading-tight mb-2">
+              <h4 class="font-serif font-semibold text-xl text-[#fdf4eb] leading-tight mb-2">
                 {{ slides[currentSlide].title }}
               </h4>
               <p class="text-sm text-[#fdf4eb]/80 leading-relaxed font-sans px-2">
@@ -674,7 +674,7 @@ defineExpose({
   width: 100%;
   max-width: 28rem; /* max-w-md */
   margin: 0 auto;
-  padding: 1rem 1rem 0.5rem 1rem;
+  padding: 1rem;
   background: transparent;
   user-select: none;
 }
@@ -712,8 +712,8 @@ defineExpose({
   flex: 0 0 auto;
   margin: 0 12px;
   height: 26px;
-  border: 1.5px solid #fdf4eb;
-  border-radius: 2px;
+  border: 1.5px solid var(--color-figma-ink);
+  border-radius: 4px;
   overflow: hidden;
   background: transparent;
 }
@@ -722,7 +722,7 @@ defineExpose({
   width: 24px;
   flex-shrink: 0;
   transition: background-color 0.3s ease;
-  border-right: 1.5px solid #fdf4eb;
+  border-right: 1.5px solid var(--color-figma-ink);
 }
 
 .game-progress-segment:last-child {

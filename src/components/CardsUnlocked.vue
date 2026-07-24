@@ -695,7 +695,7 @@ const handleDismiss = () => {
 }
 
 .stat-label {
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 14px;
   line-height: 20px;
@@ -703,7 +703,7 @@ const handleDismiss = () => {
 }
 
 .stat-value {
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 14px;
   line-height: 20px;
@@ -712,7 +712,7 @@ const handleDismiss = () => {
 }
 
 .try-again-message {
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 14px;
   color: #000;
@@ -722,9 +722,9 @@ const handleDismiss = () => {
 }
 
 .try-again-button {
-  background-color: #4a6783;
-  color: #fdf4eb;
-  font-family: 'Linux Libertine', Georgia, serif;
+  background-color: var(--color-progressive);
+  color: var(--color-inverted-fixed);
+  font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 16px;
   line-height: 20px;
@@ -742,7 +742,7 @@ const handleDismiss = () => {
 }
 
 .try-again-button:hover {
-  background-color: #3b526b;
+  background-color: var(--color-progressive--hover);
 }
 
 .try-again-button:active {
@@ -794,7 +794,7 @@ const handleDismiss = () => {
 }
 
 .results-tab-btn {
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 14px;
   line-height: 20px;
@@ -852,7 +852,7 @@ const handleDismiss = () => {
   align-items: center;
   justify-content: center;
   padding: 8px 0;
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 16px;
   color: #3f3f35;
@@ -875,7 +875,7 @@ const handleDismiss = () => {
   justify-content: space-between;
   padding: 4px 15px;
   box-sizing: border-box;
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 14px;
   color: #3f3f35;
@@ -890,7 +890,7 @@ const handleDismiss = () => {
   justify-content: space-between;
   padding: 4px 15px;
   box-sizing: border-box;
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 14px;
   color: #fdf4eb;
@@ -917,16 +917,16 @@ const handleDismiss = () => {
 }
 
 .star-breakdown-count {
-  font-family: 'Linux Libertine', Georgia, serif;
+  font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 16px;
   color: #3f3f35;
 }
 
 .keep-playing-btn {
-  background-color: #4a6783;
-  color: #fdf4eb;
-  font-family: 'Linux Libertine', Georgia, serif;
+  background-color: var(--color-progressive);
+  color: var(--color-inverted-fixed);
+  font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 16px;
   line-height: 20px;
@@ -945,7 +945,7 @@ const handleDismiss = () => {
 }
 
 .keep-playing-btn:hover {
-  background-color: #3b526b;
+  background-color: var(--color-progressive--hover);
 }
 
 .keep-playing-btn:active {

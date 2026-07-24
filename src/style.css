@@ -1,54 +1,34 @@
+/* Codex typography: Inter (base/sans) + Source Serif 4 (serif) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;0,8..60,900;1,8..60,400&display=swap');
 @import '@wikimedia/codex-design-tokens/theme-wikimedia-ui.css';
 @import "tailwindcss";
 @plugin "daisyui";
 
-/* --- Linux Libertine Web Fonts --- */
-@font-face {
-  font-family: 'Linux Libertine';
-  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_R.woff') format('woff');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Linux Libertine';
-  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_RI.woff') format('woff');
-  font-weight: normal;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Linux Libertine';
-  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_RB.woff') format('woff');
-  font-weight: bold;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Linux Libertine';
-  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_RBI.woff') format('woff');
-  font-weight: bold;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Linux Libertine';
-  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_RZ.woff') format('woff');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Linux Libertine';
-  src: url('https://cdn.jsdelivr.net/gh/iliakonnov/linlibertine@adbbf477b8e554087bf8a9856c494d1656b55900/woff/LinLibertine_RZI.woff') format('woff');
-  font-weight: 600;
-  font-style: italic;
-  font-display: swap;
-}
-
 :root {
+  /* --- Project palette from the Figma redesign. These intentionally
+     override the Codex token names imported above; the values are our
+     own and do not exist in any Codex release. --- */
+  --color-progressive: #1d5ee0;
+  --color-progressive--hover: #1a54c7;
+  --color-progressive--active: #1747a8;
+  --color-progressive--focus: #1d5ee0;
+  --background-color-progressive: #1d5ee0;
+  --background-color-progressive--hover: #1a54c7;
+  --background-color-progressive--active: #1747a8;
+  --border-color-progressive: #1d5ee0;
+  --color-base: #171717;
+  --color-subtle: #595959;
+  --border-color-base: #a2a9b1;
+  --border-color-subtle: #c8ccd1;
+  --border-radius-base: 4px;
+  --color-success--hover: #146552; /* Codex defines no success hover token */
+
+  /* App-specific shared sizing */
+  --border-radius-button: 10px;
+  --button-row-max-width: 370px;
+
   /* Map DaisyUI Theme variables to Codex Design Tokens */
-  --color-primary: var(--color-progressive); /* Wikipedia blue (#36c) */
+  --color-primary: var(--color-progressive); /* project blue (#1d5ee0) */
   --color-primary-hover: var(--color-progressive--hover);
   --color-primary-active: var(--color-progressive--active);
   --color-primary-content: var(--color-inverted);
@@ -69,15 +49,15 @@
   --color-warning: var(--color-warning); /* Codex warning (#886425) */
   --color-error: var(--color-error); /* Codex error (#bf3c2c) */
   
-  /* Override default fonts to use Linux Libertine across all selectors */
-  --font-family-system-sans: 'Linux Libertine', Georgia, serif;
-  --font-family-serif: 'Linux Libertine', Georgia, serif;
-  
+  /* Codex fonts: Inter for UI/body, Source Serif 4 for display/headings */
+  --font-family-system-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family-serif: 'Source Serif 4', Georgia, 'Times', serif;
+
   /* Font Family Mappings */
   --font-sans: var(--font-family-system-sans);
   --font-serif: var(--font-family-serif);
-  
-  /* Border Radius variables mapping to Codex base radius (2px) */
+
+  /* Border Radius variables mapping to Codex base radius (4px) */
   --rounded-box: var(--border-radius-base);
   --rounded-btn: var(--border-radius-base);
   --rounded-badge: var(--border-radius-base);
@@ -104,6 +84,12 @@
   --color-figma-sand: #f0e5d5;
   --color-figma-green: #829466;
   --color-figma-charcoal-muted: rgba(63, 63, 53, 0.8);
+
+  /* Newer Figma palette (2026 restyle) — gradually replacing the swatch above */
+  --color-figma-ink: #2f2e2e;
+  --color-figma-ink-dark: #1f1e1e;
+  --color-figma-paper: #f6f0e9;
+  --color-figma-paper-dark: #ebe3d8;
 
   /* Rarity Card Color Palette — Wikipedia homepage section inspired */
   --color-rarity-common: #c8ccd1;
@@ -503,11 +489,7 @@ body {
   min-height: 100dvh;
   font-family: var(--font-family-system-sans);
   color: var(--color-base-content);
-  background-image: linear-gradient(rgba(151, 107, 26, 0.29) 0%, rgba(51, 51, 51, 0) 10%, rgba(77, 77, 77, 0) 62.609%, rgba(151, 107, 26, 0.29) 100%), url('/bg-paperTexture.png') !important;
-  background-size: 100% 100%, 341px !important;
-  background-repeat: no-repeat, repeat !important;
-  background-attachment: fixed, fixed !important;
-  background-blend-mode: multiply, multiply !important;
+  background-image: none !important;
   background-color: #f0e5d5;
   transition: background-color 0.3s ease;
 }
@@ -791,7 +773,7 @@ body {
   display: flex;
   gap: 16px;
   width: 100%;
-  max-width: 326px;
+  max-width: var(--button-row-max-width);
   margin: 0.5rem auto 1rem auto;
   padding: 0 8px;
   box-sizing: border-box;
@@ -800,67 +782,67 @@ body {
 }
 
 
-/* Unifying Design System Overrides (Figma Redesign) */
+/* Unifying Design System Overrides (Codex tokens) */
 .btn {
-  border-radius: 2px !important;
-  font-family: var(--font-family-serif), Georgia, serif;
+  border-radius: var(--border-radius-base) !important;
+  font-family: var(--font-family-system-sans);
   text-transform: none !important;
 }
 
 .btn-primary {
-  background-color: #4a6783 !important;
-  border-color: #4a6783 !important;
-  color: #fdf4eb !important;
+  background-color: var(--color-progressive) !important;
+  border-color: var(--color-progressive) !important;
+  color: var(--color-inverted-fixed) !important;
 }
 
 .btn-primary:hover {
-  background-color: #3b546d !important;
-  border-color: #3b546d !important;
+  background-color: var(--color-progressive--hover) !important;
+  border-color: var(--color-progressive--hover) !important;
 }
 
 .btn-error {
-  background-color: #d9754b !important;
-  border-color: #d9754b !important;
-  color: #fdf4eb !important;
+  background-color: var(--color-error) !important;
+  border-color: var(--color-error) !important;
+  color: var(--color-inverted-fixed) !important;
 }
 
 .btn-error:hover {
-  background-color: #c05c33 !important;
-  border-color: #c05c33 !important;
+  background-color: var(--color-error--hover) !important;
+  border-color: var(--color-error--hover) !important;
 }
 
 .btn-success {
-  background-color: #97a97b !important;
-  border-color: #97a97b !important;
-  color: #fdf4eb !important;
+  background-color: var(--color-success) !important;
+  border-color: var(--color-success) !important;
+  color: var(--color-inverted-fixed) !important;
 }
 
 .btn-success:hover {
-  background-color: #7e9063 !important;
-  border-color: #7e9063 !important;
+  background-color: var(--color-success--hover) !important;
+  border-color: var(--color-success--hover) !important;
 }
 
 .modal-box {
-  background-color: #fdf4eb !important;
-  border: 1.5px solid #c4b69d !important;
-  border-radius: 2px !important;
-  color: #3f3f35 !important;
+  background-color: var(--background-color-base) !important;
+  border: 1px solid var(--border-color-base) !important;
+  border-radius: var(--border-radius-base) !important;
+  color: var(--color-base) !important;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28) !important;
 }
 
 .modal-box h3 {
-  color: #4a6783 !important;
+  color: var(--color-progressive) !important;
 }
 
 .input, .textarea {
-  background-color: #fdf4eb !important;
-  border: 1px solid #c4b69d !important;
-  border-radius: 2px !important;
-  color: #3f3f35 !important;
+  background-color: var(--background-color-base) !important;
+  border: 1px solid var(--border-color-base) !important;
+  border-radius: var(--border-radius-base) !important;
+  color: var(--color-base) !important;
 }
 
 .input:focus, .textarea:focus {
-  outline: 1.5px solid #4a6783 !important;
+  outline: 1.5px solid var(--color-progressive) !important;
 }
 
 /* Shared Header Icon Button Styles */
@@ -871,9 +853,9 @@ body {
   width: 32px;
   height: 32px;
   background: transparent;
-  border: 1.5px solid #fdf4eb;
-  border-radius: 2px;
-  color: #fdf4eb;
+  border: 2px solid var(--color-figma-ink);
+  border-radius: var(--border-radius-button);
+  color: var(--color-figma-ink);
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: opacity 0.2s ease;

@@ -705,7 +705,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             @click="playCategory(activeSubCategory.mainCategory)"
           >
             <template #icon>
-              <PhPlay :size="12" weight="fill" color="#FDF4EB" class="play-icon" />
+              <PhPlay :size="18" weight="fill" class="play-icon" />
             </template>
             Play
           </BaseButton>

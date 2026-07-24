@@ -37,8 +37,9 @@ withDefaults(
   align-items: center;
   justify-content: center;
   border: none;
-  color: #fdf4eb;
-  font-family: var(--font-family-serif), Georgia, serif;
+  border-radius: var(--border-radius-button);
+  color: var(--color-inverted-fixed);
+  font-family: var(--font-family-system-sans);
   font-weight: bold;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -57,50 +58,52 @@ withDefaults(
 
 /* Play button variant (primary) */
 .app-btn-primary {
-  width: 109px;
+  width: 100%;
+  max-width: var(--button-row-max-width);
   height: 44px;
-  background-color: #4a6783;
-  border-radius: 2px;
-  font-size: 16px;
+  padding: 0 16px;
+  background-color: var(--color-progressive);
+  font-size: 14px;
   gap: 6px;
 }
 
 .app-btn-primary:hover:not(:disabled) {
-  background-color: #3b546d;
+  background-color: var(--color-progressive--hover);
 }
 
 .app-btn-primary.is-disabled {
-  color: rgba(253, 244, 235, 0.5);
+  color: rgba(255, 255, 255, 0.5);
 }
 
-/* True button variant */
+/* Fact / "true" button variant (dark, filled) */
 .app-btn-true {
   flex: 1;
-  height: 61px;
-  border-radius: 3px;
-  font-size: 22px;
-  gap: 12px;
-  background-color: #3f3f35;
-  color: #fdf4eb;
+  height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+  gap: 6px;
+  background-color: var(--color-figma-ink);
+  color: var(--color-figma-paper);
 }
 
 .app-btn-true:hover:not(:disabled) {
-  background-color: #4d4d41;
+  background-color: var(--color-figma-ink-dark);
 }
 
-/* False button variant */
+/* Fake / "false" button variant (light, outlined) */
 .app-btn-false {
   flex: 1;
-  height: 61px;
-  border-radius: 3px;
-  font-size: 22px;
-  gap: 12px;
-  background-color: #fdf4eb;
-  color: #3f3f35;
+  height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+  gap: 6px;
+  background-color: var(--color-figma-paper);
+  color: var(--color-figma-ink);
+  border: 1px solid var(--color-figma-ink);
 }
 
 .app-btn-false:hover:not(:disabled) {
-  background-color: #f0e5d5;
+  background-color: var(--color-figma-paper-dark);
 }
 
 .app-btn-icon {
