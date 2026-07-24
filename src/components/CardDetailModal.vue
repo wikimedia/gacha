@@ -357,7 +357,7 @@ const handleShare = () => {
   border: 1.5px solid #c4b69d;
   padding: 10px 20px;
   border-radius: 4px;
-  font-family: var(--font-family-serif, Georgia, serif);
+  font-family: var(--font-serif);
   font-size: 13px;
   font-weight: bold;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);

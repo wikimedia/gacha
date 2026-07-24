@@ -232,7 +232,7 @@ onMounted(async () => {
 }
 
 .card-preview-heading {
-  font-family: var(--font-family-serif, Georgia, serif);
+  font-family: var(--font-serif);
   font-size: 1.75rem;
   font-weight: 900;
   color: #4a6783;
@@ -258,7 +258,7 @@ onMounted(async () => {
 .card-preview-loading-text {
   font-size: 0.85rem;
   color: #888888;
-  font-family: var(--font-family-system-sans, sans-serif);
+  font-family: var(--font-sans);
 }
 
 .card-preview-grid {

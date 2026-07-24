@@ -1,95 +1,57 @@
-/* Codex typography: Inter (base/sans) + Source Serif 4 (serif) */
+/* Typography: Inter (UI/body) + Source Serif 4 (display/headings) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;0,8..60,900;1,8..60,400&display=swap');
-@import '@wikimedia/codex-design-tokens/theme-wikimedia-ui.css';
 @import "tailwindcss";
 @plugin "daisyui";
 
-:root {
-  /* --- Project palette from the Figma redesign. These intentionally
-     override the Codex token names imported above; the values are our
-     own and do not exist in any Codex release. --- */
-  --color-progressive: #1d5ee0;
-  --color-progressive--hover: #1a54c7;
-  --color-progressive--active: #1747a8;
-  --color-progressive--focus: #1d5ee0;
-  --background-color-progressive: #1d5ee0;
-  --background-color-progressive--hover: #1a54c7;
-  --background-color-progressive--active: #1747a8;
-  --border-color-progressive: #1d5ee0;
-  --color-base: #171717;
-  --color-subtle: #595959;
-  --border-color-base: #a2a9b1;
-  --border-color-subtle: #c8ccd1;
-  --border-radius-base: 4px;
-  --color-success--hover: #146552; /* Codex defines no success hover token */
-
-  /* App-specific shared sizing */
-  --border-radius-button: 10px;
-  --button-row-max-width: 370px;
-
-  /* Map DaisyUI Theme variables to Codex Design Tokens */
-  --color-primary: var(--color-progressive); /* project blue (#1d5ee0) */
-  --color-primary-hover: var(--color-progressive--hover);
-  --color-primary-active: var(--color-progressive--active);
-  --color-primary-content: var(--color-inverted);
-  
-  --color-secondary: var(--color-subtle); /* Wikipedia grey (#54595d) */
-  --color-secondary-content: var(--color-inverted);
-  
-  --color-neutral: var(--background-color-neutral); /* Codex light neutral (#eaecf0) */
-  --color-neutral-content: var(--color-base); /* Base text (#202122) */
-  
-  --color-base-100: var(--background-color-base); /* White (#fff) */
-  --color-base-200: var(--background-color-neutral-subtle); /* Off-white (#f8f9fa) */
-  --color-base-300: var(--background-color-neutral); /* Gray-white (#eaecf0) */
-  --color-base-content: var(--color-base); /* Base text (#202122) */
-  
-  --color-info: var(--color-progressive);
-  --color-success: var(--color-success); /* Codex success (#177860) */
-  --color-warning: var(--color-warning); /* Codex warning (#886425) */
-  --color-error: var(--color-error); /* Codex error (#bf3c2c) */
-  
-  /* Codex fonts: Inter for UI/body, Source Serif 4 for display/headings */
-  --font-family-system-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-family-serif: 'Source Serif 4', Georgia, 'Times', serif;
-
-  /* Font Family Mappings */
-  --font-sans: var(--font-family-system-sans);
-  --font-serif: var(--font-family-serif);
-
-  /* Border Radius variables mapping to Codex base radius (4px) */
-  --rounded-box: var(--border-radius-base);
-  --rounded-btn: var(--border-radius-base);
-  --rounded-badge: var(--border-radius-base);
-}
-
+/*
+ * Design tokens. New colors and sizes get a named token here: templates
+ * use the generated utilities (text-ink, bg-paper, rounded-button) and
+ * <style> blocks use the variables (var(--color-ink)). Avoid raw hex
+ * values outside this file.
+ */
 @theme {
-  --font-serif: var(--font-family-serif);
-  --font-sans: var(--font-family-system-sans);
-  
-  --color-wiki-blue: var(--color-progressive);
-  --color-wiki-blue-hover: var(--color-progressive--hover);
-  --color-wiki-red: var(--color-error);
-  --color-wiki-green: var(--color-success);
-  --color-wiki-border: var(--border-color-base);
-  --color-wiki-bg: var(--background-color-neutral-subtle);
-  --color-wiki-dark-bg: var(--background-color-neutral);
-  --color-wiki-text: var(--color-base);
-  --color-wiki-muted: var(--color-subtle);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, 'Times', serif;
 
-  /* Figma Moonflower Color Swatch (Redesign Color Palette) */
-  --color-figma-charcoal: #3f3f35;
-  --color-figma-cream: #fdf4eb;
-  --color-figma-blue: #4a6783;
-  --color-figma-sand: #f0e5d5;
-  --color-figma-green: #829466;
-  --color-figma-charcoal-muted: rgba(63, 63, 53, 0.8);
+  /* Brand blue */
+  --color-blue: #1d5ee0;
+  --color-blue-dark: #1a54c7; /* hover */
+  --color-blue-darker: #1747a8; /* active */
 
-  /* Newer Figma palette (2026 restyle) — gradually replacing the swatch above */
-  --color-figma-ink: #2f2e2e;
-  --color-figma-ink-dark: #1f1e1e;
-  --color-figma-paper: #f6f0e9;
-  --color-figma-paper-dark: #ebe3d8;
+  /* Core neutrals */
+  --color-ink: #2f2e2e;
+  --color-ink-dark: #1f1e1e;
+  --color-paper: #f6f0e9;
+  --color-paper-dark: #ebe3d8;
+
+  /* Legacy palette; prefer the tokens above for new work */
+  --color-charcoal: #3f3f35;
+  --color-charcoal-muted: rgba(63, 63, 53, 0.8);
+  --color-cream: #fdf4eb;
+  --color-slate: #4a6783;
+  --color-sand: #f0e5d5;
+  --color-olive: #829466;
+
+  /* Text, surfaces, borders */
+  --color-white: #fff;
+  --color-text: #171717;
+  --color-text-muted: #595959;
+  --color-surface: #fff;
+  --color-surface-subtle: #f8f9fa;
+  --color-surface-neutral: #eaecf0;
+  --color-border: #a2a9b1;
+  --color-border-subtle: #c8ccd1;
+
+  /* Feedback colors */
+  --color-red: #bf3c2c;
+  --color-red-dark: #9f3526;
+  --color-green: #177860;
+  --color-green-dark: #146552;
+  --color-gold: #886425;
+
+  /* Radii */
+  --radius-base: 4px;
+  --radius-button: 10px;
 
   /* Rarity Card Color Palette — Wikipedia homepage section inspired */
   --color-rarity-common: #c8ccd1;
@@ -377,22 +339,47 @@
   --color-category-space-hp-icon-bg-dark: rgba(105, 112, 138, 0.4);
 }
 
+/* DaisyUI theme variables, mapped to app tokens */
+:root {
+  --color-primary: var(--color-blue);
+  --color-primary-content: var(--color-white);
+
+  --color-secondary: var(--color-text-muted);
+  --color-secondary-content: var(--color-white);
+
+  --color-neutral: var(--color-surface-neutral);
+  --color-neutral-content: var(--color-text);
+
+  --color-base-100: var(--color-surface);
+  --color-base-200: var(--color-surface-subtle);
+  --color-base-300: var(--color-surface-neutral);
+  --color-base-content: var(--color-text);
+
+  --color-info: var(--color-blue);
+  --color-success: var(--color-green);
+  --color-warning: var(--color-gold);
+  --color-error: var(--color-red);
+
+  /* Shared layout */
+  --button-row-max-width: 370px;
+}
+
 /* Custom Base resets */
 html {
     overscroll-behavior-y: contain;
 }
 
 body {
-  font-family: var(--font-family-system-sans);
-  color: var(--color-base);
-  background-color: var(--background-color-neutral-subtle);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background-color: var(--color-surface-subtle);
   margin: 0;
   padding: 0;
   overscroll-behavior-y: contain;
 }
 
 .wiki-serif {
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
 }
 
 /* Scrollbar customizations matching Wikipedia UI */
@@ -401,14 +388,14 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--background-color-neutral-subtle);
+  background: var(--color-surface-subtle);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color-subtle);
+  background: var(--color-border-subtle);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-color-base);
+  background: var(--color-border);
 }
 
 /* --- Game Specific Micro-interactions and Keyframe Animations --- */
@@ -456,7 +443,7 @@ body {
 }
 
 .gacha-gradient-animation {
-  background: linear-gradient(90deg, var(--color-progressive), #4c82f7, var(--color-progressive));
+  background: linear-gradient(90deg, var(--color-blue), #4c82f7, var(--color-blue));
   background-size: 200% auto;
   animation: gradientShift 3.5s ease-out infinite;
 }
@@ -487,7 +474,7 @@ body {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-  font-family: var(--font-family-system-sans);
+  font-family: var(--font-sans);
   color: var(--color-base-content);
   background-image: none !important;
   background-color: #f0e5d5;
@@ -749,7 +736,7 @@ body {
   background-color: #fdf4eb;
   color: #3f3f35;
   border-radius: 1px;
-  font-family: var(--font-family-serif), Georgia, serif;
+  font-family: var(--font-serif);
   font-size: 10px;
   font-weight: 500;
   text-align: center;
@@ -782,67 +769,67 @@ body {
 }
 
 
-/* Unifying Design System Overrides (Codex tokens) */
+/* DaisyUI component overrides */
 .btn {
-  border-radius: var(--border-radius-base) !important;
-  font-family: var(--font-family-system-sans);
+  border-radius: var(--radius-base) !important;
+  font-family: var(--font-sans);
   text-transform: none !important;
 }
 
 .btn-primary {
-  background-color: var(--color-progressive) !important;
-  border-color: var(--color-progressive) !important;
-  color: var(--color-inverted-fixed) !important;
+  background-color: var(--color-blue) !important;
+  border-color: var(--color-blue) !important;
+  color: var(--color-white) !important;
 }
 
 .btn-primary:hover {
-  background-color: var(--color-progressive--hover) !important;
-  border-color: var(--color-progressive--hover) !important;
+  background-color: var(--color-blue-dark) !important;
+  border-color: var(--color-blue-dark) !important;
 }
 
 .btn-error {
-  background-color: var(--color-error) !important;
-  border-color: var(--color-error) !important;
-  color: var(--color-inverted-fixed) !important;
+  background-color: var(--color-red) !important;
+  border-color: var(--color-red) !important;
+  color: var(--color-white) !important;
 }
 
 .btn-error:hover {
-  background-color: var(--color-error--hover) !important;
-  border-color: var(--color-error--hover) !important;
+  background-color: var(--color-red-dark) !important;
+  border-color: var(--color-red-dark) !important;
 }
 
 .btn-success {
-  background-color: var(--color-success) !important;
-  border-color: var(--color-success) !important;
-  color: var(--color-inverted-fixed) !important;
+  background-color: var(--color-green) !important;
+  border-color: var(--color-green) !important;
+  color: var(--color-white) !important;
 }
 
 .btn-success:hover {
-  background-color: var(--color-success--hover) !important;
-  border-color: var(--color-success--hover) !important;
+  background-color: var(--color-green-dark) !important;
+  border-color: var(--color-green-dark) !important;
 }
 
 .modal-box {
-  background-color: var(--background-color-base) !important;
-  border: 1px solid var(--border-color-base) !important;
-  border-radius: var(--border-radius-base) !important;
-  color: var(--color-base) !important;
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-base) !important;
+  color: var(--color-text) !important;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28) !important;
 }
 
 .modal-box h3 {
-  color: var(--color-progressive) !important;
+  color: var(--color-blue) !important;
 }
 
 .input, .textarea {
-  background-color: var(--background-color-base) !important;
-  border: 1px solid var(--border-color-base) !important;
-  border-radius: var(--border-radius-base) !important;
-  color: var(--color-base) !important;
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-base) !important;
+  color: var(--color-text) !important;
 }
 
 .input:focus, .textarea:focus {
-  outline: 1.5px solid var(--color-progressive) !important;
+  outline: 1.5px solid var(--color-blue) !important;
 }
 
 /* Shared Header Icon Button Styles */
@@ -853,9 +840,9 @@ body {
   width: 32px;
   height: 32px;
   background: transparent;
-  border: 2px solid var(--color-figma-ink);
-  border-radius: var(--border-radius-button);
-  color: var(--color-figma-ink);
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius-button);
+  color: var(--color-ink);
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: opacity 0.2s ease;

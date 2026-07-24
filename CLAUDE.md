@@ -18,7 +18,7 @@ fake, earn points, and collect cards into a public "binder" profile.
 ## Architecture
 
 Vue 3 + TypeScript SPA (Vite, Pinia, vue-router, Tailwind 4 + daisyUI themed
-with Wikimedia Codex design tokens, Phosphor icons). The only backend is
+via design tokens in `src/style.css`, Phosphor icons). The only backend is
 Supabase: Postgres tables plus email-OTP auth. Deployed on Firebase App
 Hosting (`apphosting.yaml`). Note: the baked-in Supabase defaults in
 `src/supabase.ts` point at the live project, so local dev touches the real
@@ -100,11 +100,17 @@ part of the app build. See its README for setup.
   remote source of truth is the claimed `articles_v2` rows, reloaded via the
   `profiles → articles_v2` join at login. Per-user localStorage keys cache
   both.
-- `@wikimedia/codex` and `@wikimedia/codex-icons` are installed but unused —
-  only `@wikimedia/codex-design-tokens` (theme CSS) is imported.
 - The store contains many leftover `console.log` debug statements.
 
 ## Conventions
 
 - Hosted on Wikimedia GitLab (`repos/future-audiences/gacha`); branches are
   named `username/topic` and merged into `main`.
+- **Design tokens**: colors, radii, and fonts are defined in the `@theme`
+  block of `src/style.css`. New values get a named token there; templates
+  use the generated utilities (`text-ink`, `rounded-button`) and `<style>`
+  blocks use the variables (`var(--color-ink)`). Avoid raw hex and
+  arbitrary Tailwind values (`text-[#…]`) elsewhere — the remaining ones
+  are legacy. daisyUI theme variables are mapped to these tokens in the
+  `:root` block below `@theme`. The app has its own visual language and
+  intentionally does not use Wikimedia Codex.
