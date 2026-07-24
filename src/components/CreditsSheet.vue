@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue';
-import { PhX, PhUser } from '@phosphor-icons/vue';
+import { computed } from 'vue';
+import { PhUser } from '@phosphor-icons/vue';
+import BaseSheet from './BaseSheet.vue';
 import type { Category } from '../stores/useGameStore';
 
 interface Attribution {
@@ -62,115 +63,61 @@ const CREDITS: Record<Category, Attribution[]> = {
 const credits = computed<Attribution[]>(
   () => (props.category && CREDITS[props.category]) || CREDITS.Media
 );
-
-watch(
-  () => props.open,
-  (isOpen) => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
-  }
-);
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition name="credits-fade">
-      <div v-if="open" class="credits-backdrop" @click="emit('close')"></div>
-    </Transition>
+  <BaseSheet :open="open" title="Credits" @close="emit('close')">
+    <!-- Subtitle -->
+    <p class="px-4 pb-1 text-sm leading-[22px] m-0" :style="{ color: 'var(--color-base)' }">
+      Content adapted from
+      <a
+        href="https://www.wikipedia.org"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="no-underline hover:underline"
+        :style="{ color: 'var(--color-progressive)' }"
+      >Wikipedia</a>
+      and
+      <a
+        href="https://commons.wikimedia.org"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="no-underline hover:underline"
+        :style="{ color: 'var(--color-progressive)' }"
+      >Wikimedia Commons</a>.
+    </p>
 
-    <Transition name="credits-slide">
-      <div v-if="open" class="credits-sheet" role="dialog" aria-modal="true" aria-label="Credits">
-        <!-- Header -->
-        <div class="flex items-start justify-between px-4 pb-2 shrink-0">
-          <p class="flex-1 font-bold text-sm m-0" :style="{ color: 'var(--color-base)' }">
-            Credits
-          </p>
-          <button
-            class="flex items-center justify-center w-8 h-8 -mr-2 rounded bg-transparent border-0 cursor-pointer text-[#2f2e2e] hover:bg-black/5 active:scale-90 transition-all"
-            aria-label="Close credits"
-            @click="emit('close')"
-          >
-            <PhX :size="18" weight="bold" />
-          </button>
+    <!-- Attribution cards -->
+    <div class="flex flex-col gap-2 px-4 py-2">
+      <a
+        v-for="(item, i) in credits"
+        :key="i"
+        :href="item.url"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="credits-card flex gap-3 items-start p-3 rounded-[10px] no-underline cursor-pointer"
+      >
+        <div class="shrink-0 w-[52px] h-[72px] rounded-[10px] overflow-hidden border border-[#2f2e2e]">
+          <img
+            :src="item.thumbnail"
+            :alt="item.title"
+            class="w-full h-full object-cover"
+          />
         </div>
-
-        <!-- Subtitle -->
-        <p class="px-4 text-sm leading-[22px] m-0 shrink-0" :style="{ color: 'var(--color-base)' }">
-          Content adapted from
-          <a
-            href="https://www.wikipedia.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="no-underline hover:underline"
-            :style="{ color: 'var(--color-progressive)' }"
-          >Wikipedia</a>
-          and
-          <a
-            href="https://commons.wikimedia.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="no-underline hover:underline"
-            :style="{ color: 'var(--color-progressive)' }"
-          >Wikimedia Commons</a>.
-        </p>
-
-        <!-- Attribution cards -->
-        <div class="flex flex-col gap-2 px-4 py-2 overflow-y-auto">
-          <a
-            v-for="(item, i) in credits"
-            :key="i"
-            :href="item.url"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="credits-card flex gap-3 items-start p-3 rounded-[10px] no-underline cursor-pointer"
-          >
-            <div class="shrink-0 w-[52px] h-[72px] rounded-[10px] overflow-hidden border border-[#2f2e2e]">
-              <img
-                :src="item.thumbnail"
-                :alt="item.title"
-                class="w-full h-full object-cover"
-              />
-            </div>
-            <div class="flex-1 min-w-0 flex flex-col justify-center gap-1">
-              <p class="font-bold text-sm leading-5 m-0 text-[#2f2e2e]">{{ item.title }}</p>
-              <p class="text-sm leading-5 m-0" :style="{ color: 'var(--color-subtle)' }">{{ item.license }}</p>
-              <div class="flex gap-1 items-start pt-1">
-                <PhUser :size="14" weight="fill" class="shrink-0 mt-0.5" :style="{ color: 'var(--color-subtle)' }" />
-                <p class="flex-1 min-w-0 text-xs leading-5 m-0" :style="{ color: 'var(--color-subtle)' }">{{ item.author }}</p>
-              </div>
-            </div>
-          </a>
+        <div class="flex-1 min-w-0 flex flex-col justify-center gap-1">
+          <p class="font-bold text-sm leading-5 m-0 text-[#2f2e2e]">{{ item.title }}</p>
+          <p class="text-sm leading-5 m-0" :style="{ color: 'var(--color-subtle)' }">{{ item.license }}</p>
+          <div class="flex gap-1 items-start pt-1">
+            <PhUser :size="14" weight="fill" class="shrink-0 mt-0.5" :style="{ color: 'var(--color-subtle)' }" />
+            <p class="flex-1 min-w-0 text-xs leading-5 m-0" :style="{ color: 'var(--color-subtle)' }">{{ item.author }}</p>
+          </div>
         </div>
-      </div>
-    </Transition>
-  </Teleport>
+      </a>
+    </div>
+  </BaseSheet>
 </template>
 
 <style scoped>
-.credits-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  background: rgba(0, 0, 0, 0.65);
-}
-
-.credits-sheet {
-  position: fixed;
-  left: 50%;
-  bottom: 0;
-  transform: translateX(-50%);
-  z-index: 61;
-  width: 100%;
-  max-width: 28rem; /* max-w-md — matches the app content column */
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  padding: 10px 0;
-  background-color: #f0e5d5;
-  border-radius: 12px 12px 0 0;
-  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.28);
-  font-family: var(--font-family-system-sans);
-}
-
 .credits-card {
   background-color: #e5d8c6;
   transition: background-color 0.15s ease, transform 0.1s ease;
@@ -182,27 +129,5 @@ watch(
 
 .credits-card:active {
   transform: scale(0.99);
-}
-
-/* Backdrop fade */
-.credits-fade-enter-active,
-.credits-fade-leave-active {
-  transition: opacity 0.25s ease;
-}
-.credits-fade-enter-from,
-.credits-fade-leave-to {
-  opacity: 0;
-}
-
-/* Sheet slide-up */
-.credits-slide-enter-active {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.credits-slide-leave-active {
-  transition: transform 0.25s ease;
-}
-.credits-slide-enter-from,
-.credits-slide-leave-to {
-  transform: translate(-50%, 100%);
 }
 </style>
