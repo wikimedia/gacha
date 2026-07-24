@@ -106,11 +106,13 @@ part of the app build. See its README for setup.
 
 - Hosted on Wikimedia GitLab (`repos/future-audiences/gacha`); branches are
   named `username/topic` and merged into `main`.
-- **Design tokens**: colors, radii, and fonts are defined in the `@theme`
-  block of `src/style.css`. New values get a named token there; templates
-  use the generated utilities (`text-ink`, `rounded-button`) and `<style>`
-  blocks use the variables (`var(--color-ink)`). Avoid raw hex and
-  arbitrary Tailwind values (`text-[#…]`) elsewhere — the remaining ones
-  are legacy. daisyUI theme variables are mapped to these tokens in the
-  `:root` block below `@theme`. The app has its own visual language and
-  intentionally does not use Wikimedia Codex.
+- **Design tokens**: shared colors, radii, and fonts are defined in the
+  `@theme` block of `src/style.css`. New values get a named token there;
+  templates use the generated utilities (`text-ink`, `rounded-button`) and
+  `<style>` blocks use the variables (`var(--color-ink)`). Values
+  meaningful to only one component live in that component as local custom
+  properties instead (e.g. star colors in `Stars.vue`, category theming in
+  `Card.vue`). Avoid raw hex and arbitrary Tailwind values (`text-[#…]`)
+  elsewhere — the remaining ones are legacy. daisyUI theme variables are
+  mapped to these tokens in the `:root` block below `@theme`. The app has
+  its own visual language and intentionally does not use Wikimedia Codex.
