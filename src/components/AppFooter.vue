@@ -63,7 +63,7 @@ const DONATE_URL = 'https://donate.wikimedia.org/w/index.php';
   font-size: 12px;
   font-weight: 400;
   line-height: 20px;
-  color: #2f2e2e;
+  color: var(--color-ink);
   opacity: 0.8;
   cursor: pointer;
   text-decoration: none;

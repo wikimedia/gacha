@@ -26,6 +26,10 @@
   --color-paper: #f6f0e9;
   --color-paper-dark: #ebe3d8;
 
+  /* Home "Play" button rust */
+  --color-rust: #703525;
+  --color-rust-dark: #5c2a1d; /* hover */
+
   /* Legacy palette; prefer the tokens above for new work */
   --color-charcoal: #3f3f35;
   --color-charcoal-muted: rgba(63, 63, 53, 0.8);
@@ -728,7 +732,7 @@ body {
   flex-grow: 1;
   min-height: 40px;
   padding: 4px 4px;
-  color: #2f2e2e;
+  color: var(--color-ink);
   font-family: var(--font-sans);
   font-size: 11.5px;
   font-weight: 400;

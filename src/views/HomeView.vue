@@ -731,7 +731,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             @click="playCategory(activeSubCategory.mainCategory)"
           >
             <template #icon>
-              <AppIcon :icon="cdxIconPlay" :size="18" class="play-icon" :style="{ color: '#FDF4EB' }" />
+              <AppIcon :icon="cdxIconPlay" :size="18" class="play-icon" />
             </template>
             Play
           </BaseButton>
