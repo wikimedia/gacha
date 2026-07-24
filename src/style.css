@@ -5,8 +5,9 @@
 @plugin "daisyui";
 
 :root {
-  /* --- Adopt the current Codex token values (the installed theme still
-     ships the older palette; the Figma redesign targets the newer set) --- */
+  /* --- Project palette from the Figma redesign. These intentionally
+     override the Codex token names imported above; the values are our
+     own and do not exist in any Codex release. --- */
   --color-progressive: #1d5ee0;
   --color-progressive--hover: #1a54c7;
   --color-progressive--active: #1747a8;
@@ -20,9 +21,14 @@
   --border-color-base: #a2a9b1;
   --border-color-subtle: #c8ccd1;
   --border-radius-base: 4px;
+  --color-success--hover: #146552; /* Codex defines no success hover token */
+
+  /* App-specific shared sizing */
+  --border-radius-button: 10px;
+  --button-row-max-width: 370px;
 
   /* Map DaisyUI Theme variables to Codex Design Tokens */
-  --color-primary: var(--color-progressive); /* Codex progressive blue (#1d5ee0) */
+  --color-primary: var(--color-progressive); /* project blue (#1d5ee0) */
   --color-primary-hover: var(--color-progressive--hover);
   --color-primary-active: var(--color-progressive--active);
   --color-primary-content: var(--color-inverted);
@@ -78,6 +84,12 @@
   --color-figma-sand: #f0e5d5;
   --color-figma-green: #829466;
   --color-figma-charcoal-muted: rgba(63, 63, 53, 0.8);
+
+  /* Newer Figma palette (2026 restyle) — gradually replacing the swatch above */
+  --color-figma-ink: #2f2e2e;
+  --color-figma-ink-dark: #1f1e1e;
+  --color-figma-paper: #f6f0e9;
+  --color-figma-paper-dark: #ebe3d8;
 
   /* Rarity Card Color Palette — Wikipedia homepage section inspired */
   --color-rarity-common: #c8ccd1;
@@ -761,7 +773,7 @@ body {
   display: flex;
   gap: 16px;
   width: 100%;
-  max-width: 370px;
+  max-width: var(--button-row-max-width);
   margin: 0.5rem auto 1rem auto;
   padding: 0 8px;
   box-sizing: border-box;
@@ -806,8 +818,8 @@ body {
 }
 
 .btn-success:hover {
-  background-color: #146552 !important;
-  border-color: #146552 !important;
+  background-color: var(--color-success--hover) !important;
+  border-color: var(--color-success--hover) !important;
 }
 
 .modal-box {
@@ -841,9 +853,9 @@ body {
   width: 32px;
   height: 32px;
   background: transparent;
-  border: 2px solid #2f2e2e;
-  border-radius: 10px;
-  color: #2f2e2e;
+  border: 2px solid var(--color-figma-ink);
+  border-radius: var(--border-radius-button);
+  color: var(--color-figma-ink);
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: opacity 0.2s ease;

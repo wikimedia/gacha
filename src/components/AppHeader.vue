@@ -333,7 +333,7 @@ defineExpose({
       <router-link 
         v-else
         to="/" 
-        class="font-serif font-normal text-[26px] leading-9 text-[#2f2e2e] no-underline hover:opacity-85 select-none"
+        class="font-serif font-normal text-[26px] leading-9 text-figma-ink no-underline hover:opacity-85 select-none"
       >
         World of Wikipedia
       </router-link>
@@ -712,7 +712,7 @@ defineExpose({
   flex: 0 0 auto;
   margin: 0 12px;
   height: 26px;
-  border: 1.5px solid #2f2e2e;
+  border: 1.5px solid var(--color-figma-ink);
   border-radius: 4px;
   overflow: hidden;
   background: transparent;
@@ -722,7 +722,7 @@ defineExpose({
   width: 24px;
   flex-shrink: 0;
   transition: background-color 0.3s ease;
-  border-right: 1.5px solid #2f2e2e;
+  border-right: 1.5px solid var(--color-figma-ink);
 }
 
 .game-progress-segment:last-child {

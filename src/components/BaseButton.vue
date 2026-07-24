@@ -37,7 +37,7 @@ withDefaults(
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--border-radius-button);
   color: var(--color-inverted-fixed);
   font-family: var(--font-family-system-sans);
   font-weight: bold;
@@ -59,7 +59,7 @@ withDefaults(
 /* Play button variant (primary) */
 .app-btn-primary {
   width: 100%;
-  max-width: 370px;
+  max-width: var(--button-row-max-width);
   height: 44px;
   padding: 0 16px;
   background-color: var(--color-progressive);
@@ -82,12 +82,12 @@ withDefaults(
   padding: 0 16px;
   font-size: 14px;
   gap: 6px;
-  background-color: #2f2e2e;
-  color: #f6f0e9;
+  background-color: var(--color-figma-ink);
+  color: var(--color-figma-paper);
 }
 
 .app-btn-true:hover:not(:disabled) {
-  background-color: #1f1e1e;
+  background-color: var(--color-figma-ink-dark);
 }
 
 /* Fake / "false" button variant (light, outlined) */
@@ -97,13 +97,13 @@ withDefaults(
   padding: 0 16px;
   font-size: 14px;
   gap: 6px;
-  background-color: #f6f0e9;
-  color: #2f2e2e;
-  border: 1px solid #2f2e2e;
+  background-color: var(--color-figma-paper);
+  color: var(--color-figma-ink);
+  border: 1px solid var(--color-figma-ink);
 }
 
 .app-btn-false:hover:not(:disabled) {
-  background-color: #ebe3d8;
+  background-color: var(--color-figma-paper-dark);
 }
 
 .app-btn-icon {

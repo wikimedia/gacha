@@ -722,8 +722,8 @@ const handleDismiss = () => {
 }
 
 .try-again-button {
-  background-color: #4a6783;
-  color: #fdf4eb;
+  background-color: var(--color-progressive);
+  color: var(--color-inverted-fixed);
   font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 16px;
@@ -742,7 +742,7 @@ const handleDismiss = () => {
 }
 
 .try-again-button:hover {
-  background-color: #3b526b;
+  background-color: var(--color-progressive--hover);
 }
 
 .try-again-button:active {
@@ -924,8 +924,8 @@ const handleDismiss = () => {
 }
 
 .keep-playing-btn {
-  background-color: #4a6783;
-  color: #fdf4eb;
+  background-color: var(--color-progressive);
+  color: var(--color-inverted-fixed);
   font-family: var(--font-family-serif);
   font-weight: bold;
   font-size: 16px;
@@ -945,7 +945,7 @@ const handleDismiss = () => {
 }
 
 .keep-playing-btn:hover {
-  background-color: #3b526b;
+  background-color: var(--color-progressive--hover);
 }
 
 .keep-playing-btn:active {
