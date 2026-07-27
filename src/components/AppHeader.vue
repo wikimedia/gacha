@@ -9,17 +9,10 @@ import {
   cdxIconClose,
   cdxIconUserAvatarOutline,
   cdxIconInfo,
-  cdxIconImage,
-  cdxIconArrowNext,
-  cdxIconAlert,
-  cdxIconArrowPrevious,
-  cdxIconPrevious,
-  cdxIconNext,
-  cdxIconCheck,
   cdxIconShare,
-  cdxIconGlobe,
-  cdxIconHeart
+  cdxIconPrevious
 } from '@wikimedia/codex-icons';
+import InstructionsBody from './InstructionsBody.vue';
 import CreditsSheet from './CreditsSheet.vue';
 
 const props = withDefaults(defineProps<{
@@ -106,79 +99,6 @@ const authEmail = ref('');
 const otpSent = ref(false);
 const isVerifying = ref(false);
 const authError = ref('');
-
-// Info modal slideshow state
-const currentSlide = ref(0);
-const slides = [
-  {
-    title: 'Find & Collect',
-    description: 'Find real Wikipedia articles and collect them!',
-  },
-  {
-    title: 'Real or Fake?',
-    description: "Swipe right if a card is a real Wikipedia article. Swipe left if it's a made-up one.",
-  },
-  {
-    title: 'Spot the Fakes',
-    description: 'Made-up articles have a clue in the text or image.',
-  },
-  {
-    title: 'One of a Kind',
-    description: "Every real card is one-of-a-kind. If you collect it, you're the only one in the world who has it.",
-  },
-  {
-    title: 'Ready?',
-    description: 'You get 3 mistakes each round. Good luck!',
-  },
-];
-
-const nextSlide = () => {
-  if (currentSlide.value < slides.length - 1) {
-    currentSlide.value++;
-  }
-};
-
-const prevSlide = () => {
-  if (currentSlide.value > 0) {
-    currentSlide.value--;
-  }
-};
-
-// Swipe navigation for the info slideshow (in addition to the arrow buttons).
-// Works for touch and mouse drag; pointer handlers are gated to mouse so a
-// touch swipe doesn't get counted twice (touch fires both event families).
-const SWIPE_THRESHOLD = 40;
-let swipeStartX = 0;
-let swipeActive = false;
-
-const beginSwipe = (x: number) => {
-  swipeStartX = x;
-  swipeActive = true;
-};
-
-const endSwipe = (x: number) => {
-  if (!swipeActive) return;
-  swipeActive = false;
-  const dx = x - swipeStartX;
-  if (Math.abs(dx) < SWIPE_THRESHOLD) return;
-  if (dx < 0) nextSlide();
-  else prevSlide();
-};
-
-const onSwipeTouchStart = (e: TouchEvent) => beginSwipe(e.changedTouches[0].clientX);
-const onSwipeTouchEnd = (e: TouchEvent) => endSwipe(e.changedTouches[0].clientX);
-const onSwipePointerDown = (e: PointerEvent) => { if (e.pointerType === 'mouse') beginSwipe(e.clientX); };
-const onSwipePointerUp = (e: PointerEvent) => { if (e.pointerType === 'mouse') endSwipe(e.clientX); };
-
-watch(showInfoModal, (isOpen) => {
-  if (isOpen) {
-    currentSlide.value = 0;
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = '';
-  }
-});
-
 
 const closeModal = () => {
   showAuthModal.value = false;
@@ -455,212 +375,31 @@ defineExpose({
       </form>
     </dialog>
 
-    <!-- INFO HOW TO PLAY DIALOG (Custom Fullscreen Overlay) -->
+    <!-- HOW TO PLAY — full-screen modal shown once on the first game (Rules
+         heading + Start button). The footer's "Rules" link shows the same
+         content in a bottom sheet instead (see AppFooter). -->
     <Teleport to="body">
       <Transition name="dialog-fade">
-        <div 
-          v-if="showInfoModal" 
-          class="fixed inset-0 z-50 bg-[#3f3f35]/95 backdrop-blur-md flex flex-col justify-between py-6 px-6 text-[#fdf4eb]"
+        <div
+          v-if="showInfoModal"
+          class="rules-modal"
           role="dialog"
           aria-modal="true"
+          aria-label="How to play"
         >
-          <!-- Top bar -->
-          <div class="flex items-center justify-between w-full max-w-sm mx-auto flex-shrink-0">
-            <!-- Left spacer to center the title -->
-            <div class="w-8 h-8 opacity-0"></div>
-            
-            <h3 class="font-serif font-semibold text-xl text-[#fdf4eb] text-center tracking-wide leading-none m-0">
-              How to Play
-            </h3>
-            
-            <!-- Close button -->
-            <button 
-              @click="showInfoModal = false"
-              class="flex items-center justify-center w-8 h-8 rounded-full border border-transparent hover:bg-white/10 text-[#fdf4eb] active:scale-90 transition-all cursor-pointer"
-              aria-label="Close dialog"
-            >
-              <AppIcon :icon="cdxIconClose" :size="20" />
-            </button>
-          </div>
-
-          <!-- Middle: Illustration + Text (swipe left/right to navigate) -->
-          <div
-            class="flex-grow flex flex-col items-center justify-center w-full max-w-sm mx-auto my-auto py-2 touch-pan-y"
-            @touchstart.passive="onSwipeTouchStart"
-            @touchend="onSwipeTouchEnd"
-            @pointerdown="onSwipePointerDown"
-            @pointerup="onSwipePointerUp"
+          <button
+            class="rules-modal__back"
+            aria-label="Close How to Play"
+            @click="showInfoModal = false"
           >
-            <!-- Slide illustration container -->
-            <div class="w-full max-w-[246px] h-[229px] flex items-center justify-center bg-[#eaecf0]/10 border border-[#c4b69d]/20 rounded-md relative overflow-hidden select-none">
-              <!-- Slide 1: Find & Collect (collection fan) -->
-              <div v-if="currentSlide === 0" class="flex items-center justify-center w-full h-full relative">
-                <div class="collection-fan relative w-[150px] h-[112px]">
-                  <div class="mini-card mini-card-fake !w-[64px] !h-[92px] absolute left-1/2 top-2 -translate-x-1/2 -rotate-[20deg] origin-bottom">
-                    <div class="mini-card-header bg-[#4a6783]"></div>
-                    <div class="mini-card-img bg-slate-200"></div>
-                    <div class="mini-card-line w-full bg-slate-300"></div>
-                  </div>
-                  <div class="mini-card mini-card-real !w-[64px] !h-[92px] absolute left-1/2 top-2 -translate-x-1/2 rotate-[20deg] origin-bottom">
-                    <div class="mini-card-header bg-[#4a6783]"></div>
-                    <div class="mini-card-img bg-slate-200"></div>
-                    <div class="mini-card-line w-full bg-slate-300"></div>
-                  </div>
-                  <div class="mini-card mini-card-gacha !w-[68px] !h-[96px] absolute left-1/2 top-0 -translate-x-1/2 z-10">
-                    <div class="mini-card-header bg-[#d4a843]"></div>
-                    <div class="mini-card-img bg-[#fdf6e3] text-[#d4a843] flex items-center justify-center">
-                      <AppIcon :icon="cdxIconGlobe" :size="18" />
-                    </div>
-                    <div class="mini-card-line w-full bg-[#d4a843]/30"></div>
-                  </div>
-                </div>
-                <div class="star-particle absolute top-4 left-10 text-[#d4a843] animate-ping">✦</div>
-                <div class="star-particle absolute top-10 right-10 text-[#d4a843] animate-ping" style="animation-delay: 0.4s">★</div>
-                <div class="star-particle absolute bottom-5 left-1/2 text-[#d4a843] animate-ping" style="animation-delay: 0.8s">✦</div>
-              </div>
-
-              <!-- Slide 2: Swipe Right for Real -->
-              <div v-if="currentSlide === 1" class="flex items-center justify-center w-full h-full relative">
-                <div class="mini-card mini-card-real">
-                  <div class="mini-card-header bg-[#4a6783]"></div>
-                  <div class="mini-card-img bg-slate-200">
-                    <AppIcon :icon="cdxIconImage" :size="20" :style="{ color: '#718096' }" />
-                  </div>
-                  <div class="mini-card-line w-full bg-slate-300"></div>
-                  <div class="mini-card-line w-5/6 bg-slate-300"></div>
-                  <div class="mini-card-line w-2/3 bg-slate-300"></div>
-                  <div class="real-badge font-sans font-black uppercase text-[8px] tracking-wider text-[#177860] border border-[#177860] px-1 py-0.5 rounded bg-[#fdf4eb] shadow-md absolute top-12 left-1/2 -translate-x-1/2 rotate-[-12deg] flex items-center gap-0.5">
-                    ✓ Fact
-                  </div>
-                </div>
-                <!-- Swipe arrow pointing right -->
-                <div class="absolute right-3 text-[#177860]/80 animate-pulse flex flex-col items-center select-none">
-                  <AppIcon :icon="cdxIconArrowNext" :size="24" />
-                  <span class="text-[8px] font-bold uppercase tracking-wider mt-0.5">Real</span>
-                </div>
-              </div>
-
-              <!-- Slide 3: Made-up articles have a clue (fake card) -->
-              <div v-if="currentSlide === 2" class="flex items-center justify-center w-full h-full relative">
-                <div class="mini-card mini-card-fake">
-                  <div class="mini-card-header bg-[#4a6783]"></div>
-                  <div class="mini-card-img bg-slate-200">
-                    <AppIcon :icon="cdxIconAlert" :size="20" :style="{ color: '#718096' }" />
-                  </div>
-                  <div class="mini-card-line w-full bg-slate-300"></div>
-                  <div class="mini-card-line w-5/6 bg-slate-300"></div>
-                  <div class="mini-card-line w-2/3 bg-slate-300"></div>
-                  <div class="fake-badge font-sans font-black uppercase text-[8px] tracking-wider text-[#bf3c2c] border border-[#bf3c2c] px-1 py-0.5 rounded bg-[#fdf4eb] shadow-md absolute top-12 left-1/2 -translate-x-1/2 rotate-[12deg] flex items-center gap-0.5">
-                    ✗ Fake
-                  </div>
-                </div>
-                <!-- Swipe arrow pointing left -->
-                <div class="absolute left-3 text-[#bf3c2c]/80 animate-pulse flex flex-col items-center select-none">
-                  <AppIcon :icon="cdxIconArrowPrevious" :size="24" />
-                  <span class="text-[8px] font-bold uppercase tracking-wider mt-0.5">Fake</span>
-                </div>
-              </div>
-
-              <!-- Slide 4: One of a Kind (unique 1/1 card) -->
-              <div v-if="currentSlide === 3" class="flex items-center justify-center w-full h-full relative">
-                <div class="mini-card mini-card-float">
-                  <div class="mini-card-header bg-[#4a6783]"></div>
-                  <div class="mini-card-img bg-slate-200">
-                    <AppIcon :icon="cdxIconGlobe" :size="22" :style="{ color: '#4a6783' }" />
-                  </div>
-                  <div class="mini-card-line w-full bg-slate-300"></div>
-                  <div class="mini-card-line w-5/6 bg-slate-300"></div>
-                  <div class="mini-card-line w-2/3 bg-slate-300"></div>
-                  <div class="unique-badge font-sans font-black uppercase text-[8px] tracking-wider text-[#d4a843] border border-[#d4a843] px-1 py-0.5 rounded bg-[#fdf4eb] shadow-md absolute -top-2 -right-2 rotate-[10deg]">
-                    1 / 1
-                  </div>
-                </div>
-                <!-- Sparkles -->
-                <div class="star-particle absolute top-6 right-14 text-[#d4a843] animate-ping">✦</div>
-                <div class="star-particle absolute bottom-7 left-14 text-[#d4a843] animate-ping" style="animation-delay: 0.6s">✦</div>
-              </div>
-
-              <!-- Slide 5: 3 mistakes each round -->
-              <div v-if="currentSlide === 4" class="flex flex-col items-center justify-center w-full h-full gap-6 select-none">
-                <!-- Fanned deck of 10 -->
-                <div class="relative w-[120px] h-[112px]">
-                  <div class="mini-card !w-[72px] !h-[100px] absolute left-1/2 top-1.5 -translate-x-1/2 -rotate-[14deg] origin-bottom">
-                    <div class="mini-card-header bg-[#4a6783]"></div>
-                    <div class="mini-card-img bg-slate-200"></div>
-                    <div class="mini-card-line w-full bg-slate-300"></div>
-                    <div class="mini-card-line w-2/3 bg-slate-300"></div>
-                  </div>
-                  <div class="mini-card !w-[72px] !h-[100px] absolute left-1/2 top-0 -translate-x-1/2 rotate-[14deg] origin-bottom">
-                    <div class="mini-card-header bg-[#4a6783]"></div>
-                    <div class="mini-card-img bg-slate-200"></div>
-                    <div class="mini-card-line w-full bg-slate-300"></div>
-                    <div class="mini-card-line w-2/3 bg-slate-300"></div>
-                  </div>
-                  <div class="mini-card !w-[72px] !h-[100px] absolute left-1/2 top-0 -translate-x-1/2">
-                    <div class="mini-card-header bg-[#4a6783]"></div>
-                    <div class="mini-card-img bg-slate-200"></div>
-                    <div class="mini-card-line w-full bg-slate-300"></div>
-                    <div class="mini-card-line w-2/3 bg-slate-300"></div>
-                  </div>
-                </div>
-                <!-- 3 chances -->
-                <div class="flex items-center gap-2">
-                  <AppIcon
-                    v-for="n in 3"
-                    :key="n"
-                    :icon="cdxIconHeart"
-                    :size="16"
-                    class="heart-pop text-[#bf3c2c]"
-                    :style="{ animationDelay: (n * 0.2) + 's' }"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- Slide details (Text below the card) -->
-            <div class="text-center w-full max-w-[280px] mt-6 min-h-[120px] flex flex-col justify-start">
-              <h4 class="font-serif font-semibold text-xl text-[#fdf4eb] leading-tight mb-2">
-                {{ slides[currentSlide].title }}
-              </h4>
-              <p class="text-sm text-[#fdf4eb]/80 leading-relaxed font-sans px-2">
-                {{ slides[currentSlide].description }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Bottom Navigation controller -->
-          <div class="flex items-center justify-between w-full max-w-xs mx-auto px-4 mt-auto flex-shrink-0">
-            <!-- Prev button -->
-            <button 
-              @click="prevSlide"
-              class="w-10 h-10 flex items-center justify-center rounded-full border border-[#fdf4eb]/20 text-[#fdf4eb] hover:bg-white/10 active:scale-90 transition-all cursor-pointer disabled:opacity-20 disabled:pointer-events-none"
-              :disabled="currentSlide === 0"
-              aria-label="Previous step"
-            >
-              <AppIcon :icon="cdxIconPrevious" :size="20" />
-            </button>
-
-            <!-- Step indicator dots -->
-            <div class="flex gap-3">
-              <button 
-                v-for="(_, index) in slides" 
-                :key="index"
-                @click="currentSlide = index"
-                class="w-2.5 h-2.5 rounded-full transition-all cursor-pointer"
-                :class="currentSlide === index ? 'bg-[#fdf4eb] scale-125' : 'bg-[#fdf4eb]/40 hover:bg-[#fdf4eb]/60'"
-                :aria-label="'Go to step ' + (index + 1)"
-              ></button>
-            </div>
-
-            <!-- Next button / Done -->
-            <button 
-              @click="currentSlide === slides.length - 1 ? showInfoModal = false : nextSlide()"
-              class="w-10 h-10 flex items-center justify-center rounded-full border border-[#fdf4eb]/20 text-[#fdf4eb] hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
-              aria-label="Next step"
-            >
-              <AppIcon v-if="currentSlide < slides.length - 1" :icon="cdxIconNext" :size="20" />
-              <AppIcon v-else :icon="cdxIconCheck" :size="20" />
-            </button>
+            <AppIcon :icon="cdxIconPrevious" :size="18" />
+          </button>
+          <div class="rules-modal__content">
+            <InstructionsBody
+              show-heading
+              show-start-button
+              @start="showInfoModal = false"
+            />
           </div>
         </div>
       </Transition>
@@ -747,7 +486,7 @@ defineExpose({
   background-color: rgba(74, 103, 131, 0.25);
 }
 
-/* --- How to Play Slideshow Animations & Custom Dialog --- */
+/* --- How to Play modal (full-screen; content shared via InstructionsBody) --- */
 .dialog-fade-enter-active,
 .dialog-fade-leave-active {
   transition: opacity 0.25s ease;
@@ -758,186 +497,44 @@ defineExpose({
   opacity: 0;
 }
 
-.mini-card {
-  position: relative;
-  width: 80px;
-  height: 112px;
-  background-color: #fdf4eb;
-  border: 1.5px solid #c4b69d;
-  border-radius: 4px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+.rules-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background-color: var(--color-sand);
   display: flex;
   flex-direction: column;
-  padding: 6px;
-  user-select: none;
-  box-sizing: border-box;
+  /* The content is sized to fit the viewport — never scroll (matches the
+     Figma frame, which clips rather than scrolls). */
+  overflow: hidden;
 }
 
-.mini-card-header {
-  width: 24px;
-  height: 4px;
-  border-radius: 1px;
-  margin-bottom: 6px;
-  flex-shrink: 0;
-}
-
-.mini-card-img {
+.rules-modal__content {
   width: 100%;
-  height: 44px;
-  border-radius: 2px;
+  max-width: 28rem; /* match the app content column */
+  margin: auto; /* center vertically within the viewport */
+}
+
+.rules-modal__back {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 6px;
-  flex-shrink: 0;
-}
-
-.mini-card-line {
-  height: 3px;
-  border-radius: 1px;
-  margin-bottom: 4px;
-  flex-shrink: 0;
-}
-
-.mini-card-line:last-child {
-  margin-bottom: 0;
-}
-
-.mini-card-real {
-  animation: swipeRight 2.2s ease-in-out infinite;
-}
-
-.mini-card-fake {
-  animation: swipeLeft 2.2s ease-in-out infinite;
-}
-
-.mini-card-gacha {
-  background-color: #fdf6e3;
-  border-color: #d4a843;
-  box-shadow: 0 0 15px rgba(212, 168, 67, 0.5);
-  animation: floatGlow 3s ease-in-out infinite;
-}
-
-@keyframes swipeRight {
-  0%, 100% {
-    transform: translateX(0) rotate(0deg);
-    border-color: #c4b69d;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  50% {
-    transform: translateX(24px) rotate(8deg);
-    border-color: #177860;
-    box-shadow: 0 4px 12px rgba(23, 120, 96, 0.4);
-  }
-}
-
-@keyframes swipeLeft {
-  0%, 100% {
-    transform: translateX(0) rotate(0deg);
-    border-color: #c4b69d;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-  50% {
-    transform: translateX(-24px) rotate(-8deg);
-    border-color: #bf3c2c;
-    box-shadow: 0 4px 12px rgba(191, 60, 44, 0.4);
-  }
-}
-
-@keyframes floatGlow {
-  0%, 100% {
-    transform: translateY(0);
-    box-shadow: 0 0 12px rgba(212, 168, 67, 0.4);
-  }
-  50% {
-    transform: translateY(-8px);
-    box-shadow: 0 0 24px rgba(212, 168, 67, 0.8);
-  }
-}
-
-.star-particle {
-  pointer-events: none;
-  font-size: 14px;
-}
-
-/* Slide 1 — unique card gently floats (no gold glow; that's the gacha card) */
-.mini-card-float {
-  animation: floatGentle 3s ease-in-out infinite;
-}
-
-@keyframes floatGentle {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-7px) rotate(2deg); }
-}
-
-/* Slide 2 — stars pop in sequence (staggered via inline animation-delay) */
-.star-pop {
-  animation: starPop 1.8s ease-in-out infinite;
-}
-
-@keyframes starPop {
-  0%, 100% {
-    transform: scale(0.78);
-    opacity: 0.45;
-  }
-  50% {
-    transform: scale(1.12);
-    opacity: 1;
-  }
-}
-
-/* Slide 5 — chance hearts pulse in sequence */
-.heart-pop {
-  animation: heartPop 1.6s ease-in-out infinite;
-}
-
-@keyframes heartPop {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.25);
-    opacity: 1;
-  }
-}
-
-/* Slide 6 — Fact Frenzy tap: a finger that taps with an expanding ripple */
-.tap-bob {
-  animation: tapBob 1.2s ease-in-out infinite;
-}
-
-@keyframes tapBob {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(3px) scale(0.9); }
-}
-
-.tap-ripple {
-  position: absolute;
-  width: 26px;
-  height: 26px;
+  width: 2rem;
+  height: 2rem;
+  border: none;
   border-radius: 9999px;
-  border: 2px solid #d4a843;
-  animation: tapRipple 1.2s ease-out infinite;
+  background: transparent;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
-@keyframes tapRipple {
-  0% { transform: scale(0.5); opacity: 0.8; }
-  70% { transform: scale(2.1); opacity: 0; }
-  100% { transform: scale(2.1); opacity: 0; }
-}
-
-/* Slide 7 — collection fan does a celebratory wobble */
-.collection-fan {
-  animation: celebrateWobble 3s ease-in-out infinite;
-  transform-origin: bottom center;
-}
-
-@keyframes celebrateWobble {
-  0%, 100% { transform: rotate(0deg) translateY(0); }
-  25% { transform: rotate(-2deg) translateY(-3px); }
-  75% { transform: rotate(2deg) translateY(-3px); }
-}
+.rules-modal__back:hover { background-color: rgba(0, 0, 0, 0.06); }
+.rules-modal__back:active { transform: scale(0.9); }
 
 /* Edit Menu Dropdown Options Panel */
 .edit-dropdown-menu {

@@ -1,20 +1,26 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import BaseSheet from './BaseSheet.vue';
+import InstructionsBody from './InstructionsBody.vue';
+
 // Site-wide footer rendered below all page content (home/category selection,
 // in-game, post-game results, and profile) via PageLayout.
 //
 // Layout (Figma "Bot Nav"): Rules · Privacy & Notices · Contact Us · [Donate].
-// "Rules" and "Privacy & Notices" are placeholders that will open an in-app
-// sheet later — no-ops for now. "Contact Us" opens the feedback Google Form;
-// "Donate to Wikipedia" links to the WMF donation page.
+// "Rules" opens the how-to-play instructions in a bottom sheet (the same
+// content the first-game modal shows, minus its heading/Start button).
+// "Privacy & Notices" is still a placeholder. "Contact Us" opens the feedback
+// Google Form; "Donate to Wikipedia" links to the WMF donation page.
 const CONTACT_FORM_URL = 'https://forms.gle/NvSXJbr8nyVFsFZy8';
 const DONATE_URL = 'https://donate.wikimedia.org/w/index.php';
+
+const showRules = ref(false);
 </script>
 
 <template>
   <footer class="app-footer">
     <div class="app-footer__row">
-      <!-- TODO: open an in-app sheet (no-op for now) -->
-      <button type="button" class="app-footer__link">Rules</button>
+      <button type="button" class="app-footer__link" @click="showRules = true">Rules</button>
       <!-- TODO: open an in-app sheet (no-op for now) -->
       <button type="button" class="app-footer__link">Privacy &amp; Notices</button>
       <a
@@ -34,6 +40,11 @@ const DONATE_URL = 'https://donate.wikimedia.org/w/index.php';
         Donate to Wikipedia
       </a>
     </div>
+
+    <!-- Rules bottom sheet (shares its content with the first-game modal) -->
+    <BaseSheet :open="showRules" title="Rules" @close="showRules = false">
+      <InstructionsBody />
+    </BaseSheet>
   </footer>
 </template>
 
