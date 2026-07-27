@@ -887,7 +887,7 @@ const toggleCardShowcase = async (cardId: string) => {
   color: #fdf4eb;
   padding: 8px 16px;
   border-radius: 4px;
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
   font-size: 12px;
   font-weight: bold;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
@@ -1165,7 +1165,7 @@ const toggleCardShowcase = async (cardId: string) => {
 .edit-dropdown-item {
   padding: 11px 16px;
   color: var(--binder-dropdown-text, #fdf4eb);
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
   font-size: 13px;
   font-weight: bold;
   text-align: left;

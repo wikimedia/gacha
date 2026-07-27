@@ -695,7 +695,7 @@ const handleDismiss = () => {
 }
 
 .stat-label {
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
   font-weight: bold;
   font-size: 14px;
   line-height: 20px;
@@ -703,7 +703,7 @@ const handleDismiss = () => {
 }
 
 .stat-value {
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
   font-weight: bold;
   font-size: 14px;
   line-height: 20px;
@@ -712,7 +712,7 @@ const handleDismiss = () => {
 }
 
 .try-again-message {
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
   font-weight: bold;
   font-size: 14px;
   color: #000;
@@ -722,9 +722,9 @@ const handleDismiss = () => {
 }
 
 .try-again-button {
-  background-color: var(--color-progressive);
-  color: var(--color-inverted-fixed);
-  font-family: var(--font-family-serif);
+  background-color: var(--color-blue);
+  color: var(--color-white);
+  font-family: var(--font-serif);
   font-weight: bold;
   font-size: 16px;
   line-height: 20px;
@@ -742,7 +742,7 @@ const handleDismiss = () => {
 }
 
 .try-again-button:hover {
-  background-color: var(--color-progressive--hover);
+  background-color: var(--color-blue-dark);
 }
 
 .try-again-button:active {
@@ -794,7 +794,7 @@ const handleDismiss = () => {
 }
 
 .results-tab-btn {
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
   font-weight: bold;
   font-size: 14px;
   line-height: 20px;
@@ -852,7 +852,7 @@ const handleDismiss = () => {
   align-items: center;
   justify-content: center;
   padding: 8px 0;
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
   font-weight: bold;
   font-size: 16px;
   color: #3f3f35;
@@ -875,7 +875,7 @@ const handleDismiss = () => {
   justify-content: space-between;
   padding: 4px 15px;
   box-sizing: border-box;
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
   font-weight: bold;
   font-size: 14px;
   color: #3f3f35;
@@ -890,7 +890,7 @@ const handleDismiss = () => {
   justify-content: space-between;
   padding: 4px 15px;
   box-sizing: border-box;
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
   font-weight: bold;
   font-size: 14px;
   color: #fdf4eb;
@@ -917,16 +917,16 @@ const handleDismiss = () => {
 }
 
 .star-breakdown-count {
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
   font-weight: bold;
   font-size: 16px;
   color: #3f3f35;
 }
 
 .keep-playing-btn {
-  background-color: var(--color-progressive);
-  color: var(--color-inverted-fixed);
-  font-family: var(--font-family-serif);
+  background-color: var(--color-blue);
+  color: var(--color-white);
+  font-family: var(--font-serif);
   font-weight: bold;
   font-size: 16px;
   line-height: 20px;
@@ -945,7 +945,7 @@ const handleDismiss = () => {
 }
 
 .keep-playing-btn:hover {
-  background-color: var(--color-progressive--hover);
+  background-color: var(--color-blue-dark);
 }
 
 .keep-playing-btn:active {

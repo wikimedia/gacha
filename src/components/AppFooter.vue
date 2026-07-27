@@ -55,28 +55,28 @@
 
 .app-footer__divider {
   font-size: 0.6875rem;
-  color: var(--color-figma-charcoal-muted, rgba(63, 63, 53, 0.8));
+  color: var(--color-charcoal-muted, rgba(63, 63, 53, 0.8));
 }
 
 .app-footer__contact {
   margin: 0;
-  font-family: var(--font-family-system-sans);
+  font-family: var(--font-sans);
   font-size: 0.5875rem;
   font-weight: 500;
-  color: var(--color-figma-charcoal-muted, rgba(63, 63, 53, 0.8));
+  color: var(--color-charcoal-muted, rgba(63, 63, 53, 0.8));
 }
 
 .app-footer__link {
-  font-family: var(--font-family-system-sans);
+  font-family: var(--font-sans);
   font-size: 0.5875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: var(--color-figma-charcoal-muted, rgba(63, 63, 53, 0.8));
+  color: var(--color-charcoal-muted, rgba(63, 63, 53, 0.8));
   text-decoration: none;
 }
 
 .app-footer__link:hover {
-  color: var(--color-figma-charcoal, #3f3f35);
+  color: var(--color-charcoal, #3f3f35);
   text-decoration: underline;
 }
 </style>

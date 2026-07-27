@@ -1,380 +1,354 @@
-/* Codex typography: Inter (base/sans) + Source Serif 4 (serif) */
+/* Typography: Inter (UI/body) + Source Serif 4 (display/headings) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;0,8..60,900;1,8..60,400&display=swap');
-@import '@wikimedia/codex-design-tokens/theme-wikimedia-ui.css';
 @import "tailwindcss";
 @plugin "daisyui";
 
-:root {
-  /* --- Project palette from the Figma redesign. These intentionally
-     override the Codex token names imported above; the values are our
-     own and do not exist in any Codex release. --- */
-  --color-progressive: #1d5ee0;
-  --color-progressive--hover: #1a54c7;
-  --color-progressive--active: #1747a8;
-  --color-progressive--focus: #1d5ee0;
-  --background-color-progressive: #1d5ee0;
-  --background-color-progressive--hover: #1a54c7;
-  --background-color-progressive--active: #1747a8;
-  --border-color-progressive: #1d5ee0;
-  --color-base: #171717;
-  --color-subtle: #595959;
-  --border-color-base: #a2a9b1;
-  --border-color-subtle: #c8ccd1;
-  --border-radius-base: 4px;
-  --color-success--hover: #146552; /* Codex defines no success hover token */
+/*
+ * Design tokens. New colors and sizes get a named token here: templates
+ * use the generated utilities (text-ink, bg-paper, rounded-button) and
+ * <style> blocks use the variables (var(--color-ink)).
+ *
+ * Values meaningful to only one component live in that component instead,
+ * as local custom properties (e.g. star colors in Stars.vue, category
+ * theming in Card.vue). Otherwise, avoid raw hex values outside this file.
+ */
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, 'Times', serif;
 
-  /* App-specific shared sizing */
-  --border-radius-button: 10px;
-  --button-row-max-width: 370px;
+  /* Brand blue */
+  --color-blue: #1d5ee0;
+  --color-blue-dark: #1a54c7; /* hover */
 
-  /* Map DaisyUI Theme variables to Codex Design Tokens */
-  --color-primary: var(--color-progressive); /* project blue (#1d5ee0) */
-  --color-primary-hover: var(--color-progressive--hover);
-  --color-primary-active: var(--color-progressive--active);
-  --color-primary-content: var(--color-inverted);
-  
-  --color-secondary: var(--color-subtle); /* Wikipedia grey (#54595d) */
-  --color-secondary-content: var(--color-inverted);
-  
-  --color-neutral: var(--background-color-neutral); /* Codex light neutral (#eaecf0) */
-  --color-neutral-content: var(--color-base); /* Base text (#202122) */
-  
-  --color-base-100: var(--background-color-base); /* White (#fff) */
-  --color-base-200: var(--background-color-neutral-subtle); /* Off-white (#f8f9fa) */
-  --color-base-300: var(--background-color-neutral); /* Gray-white (#eaecf0) */
-  --color-base-content: var(--color-base); /* Base text (#202122) */
-  
-  --color-info: var(--color-progressive);
-  --color-success: var(--color-success); /* Codex success (#177860) */
-  --color-warning: var(--color-warning); /* Codex warning (#886425) */
-  --color-error: var(--color-error); /* Codex error (#bf3c2c) */
-  
-  /* Codex fonts: Inter for UI/body, Source Serif 4 for display/headings */
-  --font-family-system-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-family-serif: 'Source Serif 4', Georgia, 'Times', serif;
+  /* Core neutrals */
+  --color-ink: #2f2e2e;
+  --color-ink-dark: #1f1e1e;
+  --color-paper: #f6f0e9;
+  --color-paper-dark: #ebe3d8;
 
-  /* Font Family Mappings */
-  --font-sans: var(--font-family-system-sans);
-  --font-serif: var(--font-family-serif);
+  /* Legacy palette; prefer the tokens above for new work */
+  --color-charcoal: #3f3f35;
+  --color-charcoal-muted: rgba(63, 63, 53, 0.8);
+  --color-cream: #fdf4eb;
+  --color-slate: #4a6783;
+  --color-sand: #f0e5d5;
+  --color-olive: #829466;
 
-  /* Border Radius variables mapping to Codex base radius (4px) */
-  --rounded-box: var(--border-radius-base);
-  --rounded-btn: var(--border-radius-base);
-  --rounded-badge: var(--border-radius-base);
+  /* Text, surfaces, borders */
+  --color-white: #fff;
+  --color-text: #171717;
+  --color-text-muted: #595959;
+  --color-surface: #fff;
+  --color-surface-subtle: #f8f9fa;
+  --color-surface-neutral: #eaecf0;
+  --color-border: #a2a9b1;
+  --color-border-subtle: #c8ccd1;
+
+  /* Feedback colors */
+  --color-red: #bf3c2c;
+  --color-red-dark: #9f3526;
+  --color-green: #177860;
+  --color-green-dark: #146552;
+  --color-gold: #886425;
+
+  /* Radii */
+  --radius-base: 4px;
+  --radius-button: 10px;
+
+  /*
+   * Category card palette — unused. Card.vue inlines the tint/background
+   * values it needs; nothing reads these tokens. Kept commented out for
+   * reference; delete if still unneeded once the style migration is done.
+   *
+   *  Main Category Tint Colors — Applied with hard-light blend on cards
+   * --color-category-civilization: #9F7262;
+   * --color-category-civilization-bg: #f5f0e8;
+   * --color-category-civilization-bg-hover: #ebe4d8;
+   * --color-category-civilization-dark-bg: #2d2a27;
+   * --color-category-civilization-dark-bg-hover: #3b3733;
+   * --color-category-civilization-border: #C8CCD1;
+   * --color-category-civilization-border-hover: #A2A9B1;
+   * --color-category-civilization-text: #5c5346;
+   * --color-category-civilization-text-dark: #e3dacd;
+   * --color-category-civilization-icon-bg: rgba(148, 136, 119, 0.15);
+   * --color-category-civilization-icon-bg-dark: rgba(148, 136, 119, 0.3);
+   *
+   * --color-category-nature: #7E8C75;
+   * --color-category-nature-bg: #eef3eb;
+   * --color-category-nature-bg-hover: #deebd7;
+   * --color-category-nature-dark-bg: #262924;
+   * --color-category-nature-dark-bg-hover: #31362e;
+   * --color-category-nature-border: #b8cbb0;
+   * --color-category-nature-border-hover: #8da283;
+   * --color-category-nature-text: #4f5b48;
+   * --color-category-nature-text-dark: #dbe5d7;
+   * --color-category-nature-icon-bg: rgba(126, 140, 117, 0.15);
+   * --color-category-nature-icon-bg-dark: rgba(126, 140, 117, 0.3);
+   *
+   * --color-category-science: #787F9B;
+   * --color-category-science-bg: #eef1f6;
+   * --color-category-science-bg-hover: #dee4ee;
+   * --color-category-science-dark-bg: #24262c;
+   * --color-category-science-dark-bg-hover: #2e313a;
+   * --color-category-science-border: #b4c1db;
+   * --color-category-science-border-hover: #8592b1;
+   * --color-category-science-text: #49506a;
+   * --color-category-science-text-dark: #dbe1ec;
+   * --color-category-science-icon-bg: rgba(120, 127, 155, 0.15);
+   * --color-category-science-icon-bg-dark: rgba(120, 127, 155, 0.3);
+   *
+   *  Homepage Brighter Category Variations
+   * --color-category-civilization-hp-bg: #fdf3db;
+   * --color-category-civilization-hp-bg-hover: #fbe7be;
+   * --color-category-civilization-hp-dark-bg: #3a3224;
+   * --color-category-civilization-hp-dark-bg-hover: #4c412f;
+   * --color-category-civilization-hp-border: #f5d595;
+   * --color-category-civilization-hp-border-hover: #e2ba65;
+   * --color-category-civilization-hp-text: #825e1c;
+   * --color-category-civilization-hp-text-dark: #fcdb9b;
+   * --color-category-civilization-hp-icon-bg: rgba(212, 168, 67, 0.2);
+   * --color-category-civilization-hp-icon-bg-dark: rgba(212, 168, 67, 0.4);
+   *
+   * --color-category-nature-hp-bg: #e8f7e2;
+   * --color-category-nature-hp-bg-hover: #d3f0c7;
+   * --color-category-nature-hp-dark-bg: #243020;
+   * --color-category-nature-hp-dark-bg-hover: #2e3e29;
+   * --color-category-nature-hp-border: #addd9b;
+   * --color-category-nature-hp-border-hover: #81c667;
+   * --color-category-nature-hp-text: #2b6d19;
+   * --color-category-nature-hp-text-dark: #b6efa3;
+   * --color-category-nature-hp-icon-bg: rgba(43, 109, 25, 0.15);
+   * --color-category-nature-hp-icon-bg-dark: rgba(43, 109, 25, 0.35);
+   *
+   * --color-category-science-hp-bg: #e7f1fd;
+   * --color-category-science-hp-bg-hover: #cbe0fa;
+   * --color-category-science-hp-dark-bg: #1d2836;
+   * --color-category-science-hp-dark-bg-hover: #27364a;
+   * --color-category-science-hp-border: #9dc3f7;
+   * --color-category-science-hp-border-hover: #6aa2f2;
+   * --color-category-science-hp-text: #1d52a2;
+   * --color-category-science-hp-text-dark: #a6c9fb;
+   * --color-category-science-hp-icon-bg: rgba(29, 82, 162, 0.15);
+   * --color-category-science-hp-icon-bg-dark: rgba(29, 82, 162, 0.35);
+   *
+   *  Animals Theme (Olive/Sage Green - desaturated)
+   * --color-category-animals: var(--color-category-nature);
+   * --color-category-animals-bg: var(--color-category-nature-bg);
+   * --color-category-animals-bg-hover: var(--color-category-nature-bg-hover);
+   * --color-category-animals-dark-bg: var(--color-category-nature-dark-bg);
+   * --color-category-animals-dark-bg-hover: var(--color-category-nature-dark-bg-hover);
+   * --color-category-animals-border: var(--color-category-nature-border);
+   * --color-category-animals-border-hover: var(--color-category-nature-border-hover);
+   * --color-category-animals-text: var(--color-category-nature-text);
+   * --color-category-animals-text-dark: var(--color-category-nature-text-dark);
+   * --color-category-animals-icon-bg: var(--color-category-nature-icon-bg);
+   * --color-category-animals-icon-bg-dark: var(--color-category-nature-icon-bg-dark);
+   *
+   *  Earth Theme (Desaturated Ochre/Gold)
+   * --color-category-earth: #7E8C75;
+   * --color-category-earth-bg: #f4f0e6;
+   * --color-category-earth-bg-hover: #ebe5da;
+   * --color-category-earth-dark-bg: #2d2922;
+   * --color-category-earth-dark-bg-hover: #3a352c;
+   * --color-category-earth-border: #d2c6b4;
+   * --color-category-earth-border-hover: #b4a896;
+   * --color-category-earth-text: #594f3d;
+   * --color-category-earth-text-dark: #e6dec5;
+   * --color-category-earth-icon-bg: rgba(140, 130, 108, 0.15);
+   * --color-category-earth-icon-bg-dark: rgba(140, 130, 108, 0.3);
+   *
+   *  Entertainment Theme (Desaturated Plum/Rose)
+   * --color-category-entertainment: #917D8A;
+   * --color-category-entertainment-bg: #f3ecf1;
+   * --color-category-entertainment-bg-hover: #e7dde5;
+   * --color-category-entertainment-dark-bg: #2d262a;
+   * --color-category-entertainment-dark-bg-hover: #3a3137;
+   * --color-category-entertainment-border: #d4c4d0;
+   * --color-category-entertainment-border-hover: #b8a6b4;
+   * --color-category-entertainment-text: #5e4c58;
+   * --color-category-entertainment-text-dark: #e6dae3;
+   * --color-category-entertainment-icon-bg: rgba(145, 125, 138, 0.15);
+   * --color-category-entertainment-icon-bg-dark: rgba(145, 125, 138, 0.3);
+   *
+   *  History Theme (Warm Tan - Civilization alias)
+   * --color-category-history: var(--color-category-civilization);
+   * --color-category-history-bg: var(--color-category-civilization-bg);
+   * --color-category-history-bg-hover: var(--color-category-civilization-bg-hover);
+   * --color-category-history-dark-bg: var(--color-category-civilization-dark-bg);
+   * --color-category-history-dark-bg-hover: var(--color-category-civilization-dark-bg-hover);
+   * --color-category-history-border: var(--color-category-civilization-border);
+   * --color-category-history-border-hover: var(--color-category-civilization-border-hover);
+   * --color-category-history-text: var(--color-category-civilization-text);
+   * --color-category-history-text-dark: var(--color-category-civilization-text-dark);
+   * --color-category-history-icon-bg: var(--color-category-civilization-icon-bg);
+   * --color-category-history-icon-bg-dark: var(--color-category-civilization-icon-bg-dark);
+   *
+   *  Physical Science Theme (Dusty Slate Blue - Science alias)
+   * --color-category-physical-science: var(--color-category-science);
+   * --color-category-physical-science-bg: var(--color-category-science-bg);
+   * --color-category-physical-science-bg-hover: var(--color-category-science-bg-hover);
+   * --color-category-physical-science-dark-bg: var(--color-category-science-dark-bg);
+   * --color-category-physical-science-dark-bg-hover: var(--color-category-science-dark-bg-hover);
+   * --color-category-physical-science-border: var(--color-category-science-border);
+   * --color-category-physical-science-border-hover: var(--color-category-science-border-hover);
+   * --color-category-physical-science-text: var(--color-category-science-text);
+   * --color-category-physical-science-text-dark: var(--color-category-science-text-dark);
+   * --color-category-physical-science-icon-bg: var(--color-category-science-icon-bg);
+   * --color-category-physical-science-icon-bg-dark: var(--color-category-science-icon-bg-dark);
+   *
+   *  Society Theme (Warm Tan - Civilization alias)
+   * --color-category-society: #948877;
+   * --color-category-society-bg: var(--color-category-civilization-bg);
+   * --color-category-society-bg-hover: var(--color-category-civilization-bg-hover);
+   * --color-category-society-dark-bg: var(--color-category-civilization-dark-bg);
+   * --color-category-society-dark-bg-hover: var(--color-category-civilization-dark-bg-hover);
+   * --color-category-society-border: var(--color-category-civilization-border);
+   * --color-category-society-border-hover: var(--color-category-civilization-border-hover);
+   * --color-category-society-text: var(--color-category-civilization-text);
+   * --color-category-society-text-dark: var(--color-category-civilization-text-dark);
+   * --color-category-society-icon-bg: var(--color-category-civilization-icon-bg);
+   * --color-category-society-icon-bg-dark: var(--color-category-civilization-icon-bg-dark);
+   *
+   *  Sports Theme (Desaturated Teal)
+   * --color-category-sports: #6F91A4;
+   * --color-category-sports-bg: #e9f1ef;
+   * --color-category-sports-bg-hover: #d7e7e3;
+   * --color-category-sports-dark-bg: #1f2a28;
+   * --color-category-sports-dark-bg-hover: #293734;
+   * --color-category-sports-border: #aecbc5;
+   * --color-category-sports-border-hover: #7fa9a1;
+   * --color-category-sports-text: #3a5751;
+   * --color-category-sports-text-dark: #cfe3df;
+   * --color-category-sports-icon-bg: rgba(95, 138, 130, 0.15);
+   * --color-category-sports-icon-bg-dark: rgba(95, 138, 130, 0.3);
+   *
+   *  Space Theme (Slate Indigo/Cosmic Blue)
+   * --color-category-space: #69708A;
+   * --color-category-space-bg: #ebedf2;
+   * --color-category-space-bg-hover: #dbe0ea;
+   * --color-category-space-dark-bg: #202126;
+   * --color-category-space-dark-bg-hover: #292a31;
+   * --color-category-space-border: #b0b7cc;
+   * --color-category-space-border-hover: #838ca8;
+   * --color-category-space-text: #3c4257;
+   * --color-category-space-text-dark: #d6dbe9;
+   * --color-category-space-icon-bg: rgba(105, 112, 138, 0.15);
+   * --color-category-space-icon-bg-dark: rgba(105, 112, 138, 0.3);
+   *
+   *  Homepage Brighter Category Variations for 7 Categories
+   * --color-category-animals-hp-bg: var(--color-category-nature-hp-bg);
+   * --color-category-animals-hp-bg-hover: var(--color-category-nature-hp-bg-hover);
+   * --color-category-animals-hp-dark-bg: var(--color-category-nature-hp-dark-bg);
+   * --color-category-animals-hp-dark-bg-hover: var(--color-category-nature-hp-dark-bg-hover);
+   * --color-category-animals-hp-border: var(--color-category-nature-hp-border);
+   * --color-category-animals-hp-border-hover: var(--color-category-nature-hp-border-hover);
+   * --color-category-animals-hp-text: var(--color-category-nature-hp-text);
+   * --color-category-animals-hp-text-dark: var(--color-category-nature-hp-text-dark);
+   * --color-category-animals-hp-icon-bg: var(--color-category-nature-hp-icon-bg);
+   * --color-category-animals-hp-icon-bg-dark: var(--color-category-nature-hp-icon-bg-dark);
+   *
+   * --color-category-earth-hp-bg: #fdf6e2;
+   * --color-category-earth-hp-bg-hover: #faeac1;
+   * --color-category-earth-hp-dark-bg: #3a3524;
+   * --color-category-earth-hp-dark-bg-hover: #4c462f;
+   * --color-category-earth-hp-border: #ecd99a;
+   * --color-category-earth-hp-border-hover: #dac16d;
+   * --color-category-earth-hp-text: #7b621e;
+   * --color-category-earth-hp-text-dark: #fbe6ad;
+   * --color-category-earth-hp-icon-bg: rgba(140, 130, 108, 0.2);
+   * --color-category-earth-hp-icon-bg-dark: rgba(140, 130, 108, 0.4);
+   *
+   * --color-category-entertainment-hp-bg: #faf0f5;
+   * --color-category-entertainment-hp-bg-hover: #f3dbe8;
+   * --color-category-entertainment-hp-dark-bg: #362831;
+   * --color-category-entertainment-hp-dark-bg-hover: #483541;
+   * --color-category-entertainment-hp-border: #e6bbd5;
+   * --color-category-entertainment-hp-border-hover: #d195bb;
+   * --color-category-entertainment-hp-text: #82476d;
+   * --color-category-entertainment-hp-text-dark: #fbd6ed;
+   * --color-category-entertainment-hp-icon-bg: rgba(145, 125, 138, 0.2);
+   * --color-category-entertainment-hp-icon-bg-dark: rgba(145, 125, 138, 0.4);
+   *
+   * --color-category-history-hp-bg: var(--color-category-civilization-hp-bg);
+   * --color-category-history-hp-bg-hover: var(--color-category-civilization-hp-bg-hover);
+   * --color-category-history-hp-dark-bg: var(--color-category-civilization-hp-dark-bg);
+   * --color-category-history-hp-dark-bg-hover: var(--color-category-civilization-hp-dark-bg-hover);
+   * --color-category-history-hp-border: var(--color-category-civilization-hp-border);
+   * --color-category-history-hp-border-hover: var(--color-category-civilization-hp-border-hover);
+   * --color-category-history-hp-text: var(--color-category-civilization-hp-text);
+   * --color-category-history-hp-text-dark: var(--color-category-civilization-hp-text-dark);
+   * --color-category-history-hp-icon-bg: var(--color-category-civilization-hp-icon-bg);
+   * --color-category-history-hp-icon-bg-dark: var(--color-category-civilization-hp-icon-bg-dark);
+   *
+   * --color-category-physical-science-hp-bg: var(--color-category-science-hp-bg);
+   * --color-category-physical-science-hp-bg-hover: var(--color-category-science-hp-bg-hover);
+   * --color-category-physical-science-hp-dark-bg: var(--color-category-science-hp-dark-bg);
+   * --color-category-physical-science-hp-dark-bg-hover: var(--color-category-science-hp-dark-bg-hover);
+   * --color-category-physical-science-hp-border: var(--color-category-science-hp-border);
+   * --color-category-physical-science-hp-border-hover: var(--color-category-science-hp-border-hover);
+   * --color-category-physical-science-hp-text: var(--color-category-science-hp-text);
+   * --color-category-physical-science-hp-text-dark: var(--color-category-science-hp-text-dark);
+   * --color-category-physical-science-hp-icon-bg: var(--color-category-science-hp-icon-bg);
+   * --color-category-physical-science-hp-icon-bg-dark: var(--color-category-science-hp-icon-bg-dark);
+   *
+   * --color-category-society-hp-bg: var(--color-category-civilization-hp-bg);
+   * --color-category-society-hp-bg-hover: var(--color-category-civilization-hp-bg-hover);
+   * --color-category-society-hp-dark-bg: var(--color-category-civilization-hp-dark-bg);
+   * --color-category-society-hp-dark-bg-hover: var(--color-category-civilization-hp-dark-bg-hover);
+   * --color-category-society-hp-border: var(--color-category-civilization-hp-border);
+   * --color-category-society-hp-border-hover: var(--color-category-civilization-hp-border-hover);
+   * --color-category-society-hp-text: var(--color-category-civilization-hp-text);
+   * --color-category-society-hp-text-dark: var(--color-category-civilization-hp-text-dark);
+   * --color-category-society-hp-icon-bg: var(--color-category-civilization-hp-icon-bg);
+   * --color-category-society-hp-icon-bg-dark: var(--color-category-civilization-hp-icon-bg-dark);
+   *
+   * --color-category-sports-hp-bg: #e3f4ef;
+   * --color-category-sports-hp-bg-hover: #c8ebe2;
+   * --color-category-sports-hp-dark-bg: #1d302b;
+   * --color-category-sports-hp-dark-bg-hover: #274038;
+   * --color-category-sports-hp-border: #97d9c7;
+   * --color-category-sports-hp-border-hover: #66c2ab;
+   * --color-category-sports-hp-text: #1f6d57;
+   * --color-category-sports-hp-text-dark: #a3efd9;
+   * --color-category-sports-hp-icon-bg: rgba(95, 138, 130, 0.2);
+   * --color-category-sports-hp-icon-bg-dark: rgba(95, 138, 130, 0.4);
+   *
+   * --color-category-space-hp-bg: #eaf1fb;
+   * --color-category-space-hp-bg-hover: #cfdffa;
+   * --color-category-space-hp-dark-bg: #1d2536;
+   * --color-category-space-hp-dark-bg-hover: #263248;
+   * --color-category-space-hp-border: #a1bffa;
+   * --color-category-space-hp-border-hover: #6e9bf7;
+   * --color-category-space-hp-text: #2151a6;
+   * --color-category-space-hp-text-dark: #adc7fc;
+   * --color-category-space-hp-icon-bg: rgba(105, 112, 138, 0.2);
+   * --color-category-space-hp-icon-bg-dark: rgba(105, 112, 138, 0.4);
+   */
 }
 
-@theme {
-  --font-serif: var(--font-family-serif);
-  --font-sans: var(--font-family-system-sans);
-  
-  --color-wiki-blue: var(--color-progressive);
-  --color-wiki-blue-hover: var(--color-progressive--hover);
-  --color-wiki-red: var(--color-error);
-  --color-wiki-green: var(--color-success);
-  --color-wiki-border: var(--border-color-base);
-  --color-wiki-bg: var(--background-color-neutral-subtle);
-  --color-wiki-dark-bg: var(--background-color-neutral);
-  --color-wiki-text: var(--color-base);
-  --color-wiki-muted: var(--color-subtle);
+/* DaisyUI theme variables, mapped to app tokens */
+:root {
+  --color-primary: var(--color-blue);
+  --color-primary-content: var(--color-white);
 
-  /* Figma Moonflower Color Swatch (Redesign Color Palette) */
-  --color-figma-charcoal: #3f3f35;
-  --color-figma-cream: #fdf4eb;
-  --color-figma-blue: #4a6783;
-  --color-figma-sand: #f0e5d5;
-  --color-figma-green: #829466;
-  --color-figma-charcoal-muted: rgba(63, 63, 53, 0.8);
+  --color-secondary: var(--color-text-muted);
+  --color-secondary-content: var(--color-white);
 
-  /* Newer Figma palette (2026 restyle) — gradually replacing the swatch above */
-  --color-figma-ink: #2f2e2e;
-  --color-figma-ink-dark: #1f1e1e;
-  --color-figma-paper: #f6f0e9;
-  --color-figma-paper-dark: #ebe3d8;
+  --color-neutral: var(--color-surface-neutral);
+  --color-neutral-content: var(--color-text);
 
-  /* Rarity Card Color Palette — Wikipedia homepage section inspired */
-  --color-rarity-common: #c8ccd1;
-  --color-rarity-common-light: #eaecf0;
-  --color-rarity-common-dark: #a2a9b1;
-  --color-rarity-common-bg: #f8f9fa;
+  --color-base-100: var(--color-surface);
+  --color-base-200: var(--color-surface-subtle);
+  --color-base-300: var(--color-surface-neutral);
+  --color-base-content: var(--color-text);
 
-  --color-rarity-rare: #6690b5;
-  --color-rarity-rare-light: #cee0f2;
-  --color-rarity-rare-dark: #4a7396;
-  --color-rarity-rare-bg: #eaf3fb;
+  --color-info: var(--color-blue);
+  --color-success: var(--color-green);
+  --color-warning: var(--color-gold);
+  --color-error: var(--color-red);
 
-  --color-rarity-epic: #9b7bb8;
-  --color-rarity-epic-light: #d7c5e8;
-  --color-rarity-epic-dark: #7b5a9a;
-  --color-rarity-epic-bg: #f3edf9;
-
-  --color-rarity-legendary: #d4a843;
-  --color-rarity-legendary-light: #f0dba8;
-  --color-rarity-legendary-dark: #b8912e;
-  --color-rarity-legendary-bg: #fdf6e3;
-
-  /* Main Category Tint Colors — Applied with hard-light blend on cards */
-  --color-category-civilization: #9F7262;
-  --color-category-civilization-bg: #f5f0e8;
-  --color-category-civilization-bg-hover: #ebe4d8;
-  --color-category-civilization-dark-bg: #2d2a27;
-  --color-category-civilization-dark-bg-hover: #3b3733;
-  --color-category-civilization-border: #C8CCD1;
-  --color-category-civilization-border-hover: #A2A9B1;
-  --color-category-civilization-text: #5c5346;
-  --color-category-civilization-text-dark: #e3dacd;
-  --color-category-civilization-icon-bg: rgba(148, 136, 119, 0.15);
-  --color-category-civilization-icon-bg-dark: rgba(148, 136, 119, 0.3);
-
-  --color-category-nature: #7E8C75;
-  --color-category-nature-bg: #eef3eb;
-  --color-category-nature-bg-hover: #deebd7;
-  --color-category-nature-dark-bg: #262924;
-  --color-category-nature-dark-bg-hover: #31362e;
-  --color-category-nature-border: #b8cbb0;
-  --color-category-nature-border-hover: #8da283;
-  --color-category-nature-text: #4f5b48;
-  --color-category-nature-text-dark: #dbe5d7;
-  --color-category-nature-icon-bg: rgba(126, 140, 117, 0.15);
-  --color-category-nature-icon-bg-dark: rgba(126, 140, 117, 0.3);
-
-  --color-category-science: #787F9B;
-  --color-category-science-bg: #eef1f6;
-  --color-category-science-bg-hover: #dee4ee;
-  --color-category-science-dark-bg: #24262c;
-  --color-category-science-dark-bg-hover: #2e313a;
-  --color-category-science-border: #b4c1db;
-  --color-category-science-border-hover: #8592b1;
-  --color-category-science-text: #49506a;
-  --color-category-science-text-dark: #dbe1ec;
-  --color-category-science-icon-bg: rgba(120, 127, 155, 0.15);
-  --color-category-science-icon-bg-dark: rgba(120, 127, 155, 0.3);
-
-  /* Homepage Brighter Category Variations */
-  --color-category-civilization-hp-bg: #fdf3db;
-  --color-category-civilization-hp-bg-hover: #fbe7be;
-  --color-category-civilization-hp-dark-bg: #3a3224;
-  --color-category-civilization-hp-dark-bg-hover: #4c412f;
-  --color-category-civilization-hp-border: #f5d595;
-  --color-category-civilization-hp-border-hover: #e2ba65;
-  --color-category-civilization-hp-text: #825e1c;
-  --color-category-civilization-hp-text-dark: #fcdb9b;
-  --color-category-civilization-hp-icon-bg: rgba(212, 168, 67, 0.2);
-  --color-category-civilization-hp-icon-bg-dark: rgba(212, 168, 67, 0.4);
-
-  --color-category-nature-hp-bg: #e8f7e2;
-  --color-category-nature-hp-bg-hover: #d3f0c7;
-  --color-category-nature-hp-dark-bg: #243020;
-  --color-category-nature-hp-dark-bg-hover: #2e3e29;
-  --color-category-nature-hp-border: #addd9b;
-  --color-category-nature-hp-border-hover: #81c667;
-  --color-category-nature-hp-text: #2b6d19;
-  --color-category-nature-hp-text-dark: #b6efa3;
-  --color-category-nature-hp-icon-bg: rgba(43, 109, 25, 0.15);
-  --color-category-nature-hp-icon-bg-dark: rgba(43, 109, 25, 0.35);
-
-  --color-category-science-hp-bg: #e7f1fd;
-  --color-category-science-hp-bg-hover: #cbe0fa;
-  --color-category-science-hp-dark-bg: #1d2836;
-  --color-category-science-hp-dark-bg-hover: #27364a;
-  --color-category-science-hp-border: #9dc3f7;
-  --color-category-science-hp-border-hover: #6aa2f2;
-  --color-category-science-hp-text: #1d52a2;
-  --color-category-science-hp-text-dark: #a6c9fb;
-  --color-category-science-hp-icon-bg: rgba(29, 82, 162, 0.15);
-  --color-category-science-hp-icon-bg-dark: rgba(29, 82, 162, 0.35);
-
-  /* Animals Theme (Olive/Sage Green - desaturated) */
-  --color-category-animals: var(--color-category-nature);
-  --color-category-animals-bg: var(--color-category-nature-bg);
-  --color-category-animals-bg-hover: var(--color-category-nature-bg-hover);
-  --color-category-animals-dark-bg: var(--color-category-nature-dark-bg);
-  --color-category-animals-dark-bg-hover: var(--color-category-nature-dark-bg-hover);
-  --color-category-animals-border: var(--color-category-nature-border);
-  --color-category-animals-border-hover: var(--color-category-nature-border-hover);
-  --color-category-animals-text: var(--color-category-nature-text);
-  --color-category-animals-text-dark: var(--color-category-nature-text-dark);
-  --color-category-animals-icon-bg: var(--color-category-nature-icon-bg);
-  --color-category-animals-icon-bg-dark: var(--color-category-nature-icon-bg-dark);
-
-  /* Earth Theme (Desaturated Ochre/Gold) */
-  --color-category-earth: #7E8C75;
-  --color-category-earth-bg: #f4f0e6;
-  --color-category-earth-bg-hover: #ebe5da;
-  --color-category-earth-dark-bg: #2d2922;
-  --color-category-earth-dark-bg-hover: #3a352c;
-  --color-category-earth-border: #d2c6b4;
-  --color-category-earth-border-hover: #b4a896;
-  --color-category-earth-text: #594f3d;
-  --color-category-earth-text-dark: #e6dec5;
-  --color-category-earth-icon-bg: rgba(140, 130, 108, 0.15);
-  --color-category-earth-icon-bg-dark: rgba(140, 130, 108, 0.3);
-
-  /* Entertainment Theme (Desaturated Plum/Rose) */
-  --color-category-entertainment: #917D8A;
-  --color-category-entertainment-bg: #f3ecf1;
-  --color-category-entertainment-bg-hover: #e7dde5;
-  --color-category-entertainment-dark-bg: #2d262a;
-  --color-category-entertainment-dark-bg-hover: #3a3137;
-  --color-category-entertainment-border: #d4c4d0;
-  --color-category-entertainment-border-hover: #b8a6b4;
-  --color-category-entertainment-text: #5e4c58;
-  --color-category-entertainment-text-dark: #e6dae3;
-  --color-category-entertainment-icon-bg: rgba(145, 125, 138, 0.15);
-  --color-category-entertainment-icon-bg-dark: rgba(145, 125, 138, 0.3);
-
-  /* History Theme (Warm Tan - Civilization alias) */
-  --color-category-history: var(--color-category-civilization);
-  --color-category-history-bg: var(--color-category-civilization-bg);
-  --color-category-history-bg-hover: var(--color-category-civilization-bg-hover);
-  --color-category-history-dark-bg: var(--color-category-civilization-dark-bg);
-  --color-category-history-dark-bg-hover: var(--color-category-civilization-dark-bg-hover);
-  --color-category-history-border: var(--color-category-civilization-border);
-  --color-category-history-border-hover: var(--color-category-civilization-border-hover);
-  --color-category-history-text: var(--color-category-civilization-text);
-  --color-category-history-text-dark: var(--color-category-civilization-text-dark);
-  --color-category-history-icon-bg: var(--color-category-civilization-icon-bg);
-  --color-category-history-icon-bg-dark: var(--color-category-civilization-icon-bg-dark);
-
-  /* Physical Science Theme (Dusty Slate Blue - Science alias) */
-  --color-category-physical-science: var(--color-category-science);
-  --color-category-physical-science-bg: var(--color-category-science-bg);
-  --color-category-physical-science-bg-hover: var(--color-category-science-bg-hover);
-  --color-category-physical-science-dark-bg: var(--color-category-science-dark-bg);
-  --color-category-physical-science-dark-bg-hover: var(--color-category-science-dark-bg-hover);
-  --color-category-physical-science-border: var(--color-category-science-border);
-  --color-category-physical-science-border-hover: var(--color-category-science-border-hover);
-  --color-category-physical-science-text: var(--color-category-science-text);
-  --color-category-physical-science-text-dark: var(--color-category-science-text-dark);
-  --color-category-physical-science-icon-bg: var(--color-category-science-icon-bg);
-  --color-category-physical-science-icon-bg-dark: var(--color-category-science-icon-bg-dark);
-
-  /* Society Theme (Warm Tan - Civilization alias) */
-  --color-category-society: #948877;
-  --color-category-society-bg: var(--color-category-civilization-bg);
-  --color-category-society-bg-hover: var(--color-category-civilization-bg-hover);
-  --color-category-society-dark-bg: var(--color-category-civilization-dark-bg);
-  --color-category-society-dark-bg-hover: var(--color-category-civilization-dark-bg-hover);
-  --color-category-society-border: var(--color-category-civilization-border);
-  --color-category-society-border-hover: var(--color-category-civilization-border-hover);
-  --color-category-society-text: var(--color-category-civilization-text);
-  --color-category-society-text-dark: var(--color-category-civilization-text-dark);
-  --color-category-society-icon-bg: var(--color-category-civilization-icon-bg);
-  --color-category-society-icon-bg-dark: var(--color-category-civilization-icon-bg-dark);
-
-  /* Sports Theme (Desaturated Teal) */
-  --color-category-sports: #6F91A4;
-  --color-category-sports-bg: #e9f1ef;
-  --color-category-sports-bg-hover: #d7e7e3;
-  --color-category-sports-dark-bg: #1f2a28;
-  --color-category-sports-dark-bg-hover: #293734;
-  --color-category-sports-border: #aecbc5;
-  --color-category-sports-border-hover: #7fa9a1;
-  --color-category-sports-text: #3a5751;
-  --color-category-sports-text-dark: #cfe3df;
-  --color-category-sports-icon-bg: rgba(95, 138, 130, 0.15);
-  --color-category-sports-icon-bg-dark: rgba(95, 138, 130, 0.3);
-
-  /* Space Theme (Slate Indigo/Cosmic Blue) */
-  --color-category-space: #69708A;
-  --color-category-space-bg: #ebedf2;
-  --color-category-space-bg-hover: #dbe0ea;
-  --color-category-space-dark-bg: #202126;
-  --color-category-space-dark-bg-hover: #292a31;
-  --color-category-space-border: #b0b7cc;
-  --color-category-space-border-hover: #838ca8;
-  --color-category-space-text: #3c4257;
-  --color-category-space-text-dark: #d6dbe9;
-  --color-category-space-icon-bg: rgba(105, 112, 138, 0.15);
-  --color-category-space-icon-bg-dark: rgba(105, 112, 138, 0.3);
-
-  /* Homepage Brighter Category Variations for 7 Categories */
-  --color-category-animals-hp-bg: var(--color-category-nature-hp-bg);
-  --color-category-animals-hp-bg-hover: var(--color-category-nature-hp-bg-hover);
-  --color-category-animals-hp-dark-bg: var(--color-category-nature-hp-dark-bg);
-  --color-category-animals-hp-dark-bg-hover: var(--color-category-nature-hp-dark-bg-hover);
-  --color-category-animals-hp-border: var(--color-category-nature-hp-border);
-  --color-category-animals-hp-border-hover: var(--color-category-nature-hp-border-hover);
-  --color-category-animals-hp-text: var(--color-category-nature-hp-text);
-  --color-category-animals-hp-text-dark: var(--color-category-nature-hp-text-dark);
-  --color-category-animals-hp-icon-bg: var(--color-category-nature-hp-icon-bg);
-  --color-category-animals-hp-icon-bg-dark: var(--color-category-nature-hp-icon-bg-dark);
-
-  --color-category-earth-hp-bg: #fdf6e2;
-  --color-category-earth-hp-bg-hover: #faeac1;
-  --color-category-earth-hp-dark-bg: #3a3524;
-  --color-category-earth-hp-dark-bg-hover: #4c462f;
-  --color-category-earth-hp-border: #ecd99a;
-  --color-category-earth-hp-border-hover: #dac16d;
-  --color-category-earth-hp-text: #7b621e;
-  --color-category-earth-hp-text-dark: #fbe6ad;
-  --color-category-earth-hp-icon-bg: rgba(140, 130, 108, 0.2);
-  --color-category-earth-hp-icon-bg-dark: rgba(140, 130, 108, 0.4);
-
-  --color-category-entertainment-hp-bg: #faf0f5;
-  --color-category-entertainment-hp-bg-hover: #f3dbe8;
-  --color-category-entertainment-hp-dark-bg: #362831;
-  --color-category-entertainment-hp-dark-bg-hover: #483541;
-  --color-category-entertainment-hp-border: #e6bbd5;
-  --color-category-entertainment-hp-border-hover: #d195bb;
-  --color-category-entertainment-hp-text: #82476d;
-  --color-category-entertainment-hp-text-dark: #fbd6ed;
-  --color-category-entertainment-hp-icon-bg: rgba(145, 125, 138, 0.2);
-  --color-category-entertainment-hp-icon-bg-dark: rgba(145, 125, 138, 0.4);
-
-  --color-category-history-hp-bg: var(--color-category-civilization-hp-bg);
-  --color-category-history-hp-bg-hover: var(--color-category-civilization-hp-bg-hover);
-  --color-category-history-hp-dark-bg: var(--color-category-civilization-hp-dark-bg);
-  --color-category-history-hp-dark-bg-hover: var(--color-category-civilization-hp-dark-bg-hover);
-  --color-category-history-hp-border: var(--color-category-civilization-hp-border);
-  --color-category-history-hp-border-hover: var(--color-category-civilization-hp-border-hover);
-  --color-category-history-hp-text: var(--color-category-civilization-hp-text);
-  --color-category-history-hp-text-dark: var(--color-category-civilization-hp-text-dark);
-  --color-category-history-hp-icon-bg: var(--color-category-civilization-hp-icon-bg);
-  --color-category-history-hp-icon-bg-dark: var(--color-category-civilization-hp-icon-bg-dark);
-
-  --color-category-physical-science-hp-bg: var(--color-category-science-hp-bg);
-  --color-category-physical-science-hp-bg-hover: var(--color-category-science-hp-bg-hover);
-  --color-category-physical-science-hp-dark-bg: var(--color-category-science-hp-dark-bg);
-  --color-category-physical-science-hp-dark-bg-hover: var(--color-category-science-hp-dark-bg-hover);
-  --color-category-physical-science-hp-border: var(--color-category-science-hp-border);
-  --color-category-physical-science-hp-border-hover: var(--color-category-science-hp-border-hover);
-  --color-category-physical-science-hp-text: var(--color-category-science-hp-text);
-  --color-category-physical-science-hp-text-dark: var(--color-category-science-hp-text-dark);
-  --color-category-physical-science-hp-icon-bg: var(--color-category-science-hp-icon-bg);
-  --color-category-physical-science-hp-icon-bg-dark: var(--color-category-science-hp-icon-bg-dark);
-
-  --color-category-society-hp-bg: var(--color-category-civilization-hp-bg);
-  --color-category-society-hp-bg-hover: var(--color-category-civilization-hp-bg-hover);
-  --color-category-society-hp-dark-bg: var(--color-category-civilization-hp-dark-bg);
-  --color-category-society-hp-dark-bg-hover: var(--color-category-civilization-hp-dark-bg-hover);
-  --color-category-society-hp-border: var(--color-category-civilization-hp-border);
-  --color-category-society-hp-border-hover: var(--color-category-civilization-hp-border-hover);
-  --color-category-society-hp-text: var(--color-category-civilization-hp-text);
-  --color-category-society-hp-text-dark: var(--color-category-civilization-hp-text-dark);
-  --color-category-society-hp-icon-bg: var(--color-category-civilization-hp-icon-bg);
-  --color-category-society-hp-icon-bg-dark: var(--color-category-civilization-hp-icon-bg-dark);
-
-  --color-category-sports-hp-bg: #e3f4ef;
-  --color-category-sports-hp-bg-hover: #c8ebe2;
-  --color-category-sports-hp-dark-bg: #1d302b;
-  --color-category-sports-hp-dark-bg-hover: #274038;
-  --color-category-sports-hp-border: #97d9c7;
-  --color-category-sports-hp-border-hover: #66c2ab;
-  --color-category-sports-hp-text: #1f6d57;
-  --color-category-sports-hp-text-dark: #a3efd9;
-  --color-category-sports-hp-icon-bg: rgba(95, 138, 130, 0.2);
-  --color-category-sports-hp-icon-bg-dark: rgba(95, 138, 130, 0.4);
-
-  --color-category-space-hp-bg: #eaf1fb;
-  --color-category-space-hp-bg-hover: #cfdffa;
-  --color-category-space-hp-dark-bg: #1d2536;
-  --color-category-space-hp-dark-bg-hover: #263248;
-  --color-category-space-hp-border: #a1bffa;
-  --color-category-space-hp-border-hover: #6e9bf7;
-  --color-category-space-hp-text: #2151a6;
-  --color-category-space-hp-text-dark: #adc7fc;
-  --color-category-space-hp-icon-bg: rgba(105, 112, 138, 0.2);
-  --color-category-space-hp-icon-bg-dark: rgba(105, 112, 138, 0.4);
+  /* Shared layout */
+  --button-row-max-width: 370px;
 }
 
 /* Custom Base resets */
@@ -383,16 +357,16 @@ html {
 }
 
 body {
-  font-family: var(--font-family-system-sans);
-  color: var(--color-base);
-  background-color: var(--background-color-neutral-subtle);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background-color: var(--color-surface-subtle);
   margin: 0;
   padding: 0;
   overscroll-behavior-y: contain;
 }
 
 .wiki-serif {
-  font-family: var(--font-family-serif);
+  font-family: var(--font-serif);
 }
 
 /* Scrollbar customizations matching Wikipedia UI */
@@ -401,14 +375,14 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--background-color-neutral-subtle);
+  background: var(--color-surface-subtle);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-color-subtle);
+  background: var(--color-border-subtle);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-color-base);
+  background: var(--color-border);
 }
 
 /* --- Game Specific Micro-interactions and Keyframe Animations --- */
@@ -456,7 +430,7 @@ body {
 }
 
 .gacha-gradient-animation {
-  background: linear-gradient(90deg, var(--color-progressive), #4c82f7, var(--color-progressive));
+  background: linear-gradient(90deg, var(--color-blue), #4c82f7, var(--color-blue));
   background-size: 200% auto;
   animation: gradientShift 3.5s ease-out infinite;
 }
@@ -487,7 +461,7 @@ body {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-  font-family: var(--font-family-system-sans);
+  font-family: var(--font-sans);
   color: var(--color-base-content);
   background-image: none !important;
   background-color: #f0e5d5;
@@ -749,7 +723,7 @@ body {
   background-color: #fdf4eb;
   color: #3f3f35;
   border-radius: 1px;
-  font-family: var(--font-family-serif), Georgia, serif;
+  font-family: var(--font-serif);
   font-size: 10px;
   font-weight: 500;
   text-align: center;
@@ -782,67 +756,67 @@ body {
 }
 
 
-/* Unifying Design System Overrides (Codex tokens) */
+/* DaisyUI component overrides */
 .btn {
-  border-radius: var(--border-radius-base) !important;
-  font-family: var(--font-family-system-sans);
+  border-radius: var(--radius-base) !important;
+  font-family: var(--font-sans);
   text-transform: none !important;
 }
 
 .btn-primary {
-  background-color: var(--color-progressive) !important;
-  border-color: var(--color-progressive) !important;
-  color: var(--color-inverted-fixed) !important;
+  background-color: var(--color-blue) !important;
+  border-color: var(--color-blue) !important;
+  color: var(--color-white) !important;
 }
 
 .btn-primary:hover {
-  background-color: var(--color-progressive--hover) !important;
-  border-color: var(--color-progressive--hover) !important;
+  background-color: var(--color-blue-dark) !important;
+  border-color: var(--color-blue-dark) !important;
 }
 
 .btn-error {
-  background-color: var(--color-error) !important;
-  border-color: var(--color-error) !important;
-  color: var(--color-inverted-fixed) !important;
+  background-color: var(--color-red) !important;
+  border-color: var(--color-red) !important;
+  color: var(--color-white) !important;
 }
 
 .btn-error:hover {
-  background-color: var(--color-error--hover) !important;
-  border-color: var(--color-error--hover) !important;
+  background-color: var(--color-red-dark) !important;
+  border-color: var(--color-red-dark) !important;
 }
 
 .btn-success {
-  background-color: var(--color-success) !important;
-  border-color: var(--color-success) !important;
-  color: var(--color-inverted-fixed) !important;
+  background-color: var(--color-green) !important;
+  border-color: var(--color-green) !important;
+  color: var(--color-white) !important;
 }
 
 .btn-success:hover {
-  background-color: var(--color-success--hover) !important;
-  border-color: var(--color-success--hover) !important;
+  background-color: var(--color-green-dark) !important;
+  border-color: var(--color-green-dark) !important;
 }
 
 .modal-box {
-  background-color: var(--background-color-base) !important;
-  border: 1px solid var(--border-color-base) !important;
-  border-radius: var(--border-radius-base) !important;
-  color: var(--color-base) !important;
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-base) !important;
+  color: var(--color-text) !important;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28) !important;
 }
 
 .modal-box h3 {
-  color: var(--color-progressive) !important;
+  color: var(--color-blue) !important;
 }
 
 .input, .textarea {
-  background-color: var(--background-color-base) !important;
-  border: 1px solid var(--border-color-base) !important;
-  border-radius: var(--border-radius-base) !important;
-  color: var(--color-base) !important;
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-base) !important;
+  color: var(--color-text) !important;
 }
 
 .input:focus, .textarea:focus {
-  outline: 1.5px solid var(--color-progressive) !important;
+  outline: 1.5px solid var(--color-blue) !important;
 }
 
 /* Shared Header Icon Button Styles */
@@ -853,9 +827,9 @@ body {
   width: 32px;
   height: 32px;
   background: transparent;
-  border: 2px solid var(--color-figma-ink);
-  border-radius: var(--border-radius-button);
-  color: var(--color-figma-ink);
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius-button);
+  color: var(--color-ink);
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: opacity 0.2s ease;
