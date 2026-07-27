@@ -37,9 +37,9 @@ withDefaults(
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: var(--border-radius-button);
-  color: var(--color-inverted-fixed);
-  font-family: var(--font-family-system-sans);
+  border-radius: var(--radius-button);
+  color: var(--color-white);
+  font-family: var(--font-sans);
   font-weight: bold;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -62,13 +62,13 @@ withDefaults(
   max-width: var(--button-row-max-width);
   height: 44px;
   padding: 0 16px;
-  background-color: var(--color-progressive);
+  background-color: var(--color-blue);
   font-size: 14px;
   gap: 6px;
 }
 
 .app-btn-primary:hover:not(:disabled) {
-  background-color: var(--color-progressive--hover);
+  background-color: var(--color-blue-dark);
 }
 
 .app-btn-primary.is-disabled {
@@ -82,12 +82,12 @@ withDefaults(
   padding: 0 16px;
   font-size: 14px;
   gap: 6px;
-  background-color: var(--color-figma-ink);
-  color: var(--color-figma-paper);
+  background-color: var(--color-ink);
+  color: var(--color-paper);
 }
 
 .app-btn-true:hover:not(:disabled) {
-  background-color: var(--color-figma-ink-dark);
+  background-color: var(--color-ink-dark);
 }
 
 /* Fake / "false" button variant (light, outlined) */
@@ -97,13 +97,13 @@ withDefaults(
   padding: 0 16px;
   font-size: 14px;
   gap: 6px;
-  background-color: var(--color-figma-paper);
-  color: var(--color-figma-ink);
-  border: 1px solid var(--color-figma-ink);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  border: 1px solid var(--color-ink);
 }
 
 .app-btn-false:hover:not(:disabled) {
-  background-color: var(--color-figma-paper-dark);
+  background-color: var(--color-paper-dark);
 }
 
 .app-btn-icon {

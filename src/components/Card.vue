@@ -257,8 +257,8 @@ const grainPosition = computed(() => {
 
 <style scoped>
 /* ============================================================
-   Trading Card — Figma Redesign
-   Full-bleed image, category tinting, Codex stars, rough border
+   Trading Card
+   Full-bleed image, category tinting, star rating, rough border
    ============================================================ */
 
 .trading-card-wrapper {
@@ -291,71 +291,57 @@ const grainPosition = computed(() => {
 }
 
 /* ── Category theme configurations ───────────────────────────── */
+/* Tint is blended over the card image; bg fills the text areas.
+   These colors are specific to card theming and local to this component. */
 /* Default / fallback */
 .trading-card,
 .trading-card--civilization {
-  --_tint: var(--color-category-civilization);
-  --_bg: var(--color-category-civilization-bg);
-  --_bevel-tr: var(--color-category-civilization-bevel-tr);
-  --_bevel-bl: var(--color-category-civilization-bevel-bl);
+  --_tint: #9F7262;
+  --_bg: #f5f0e8;
 }
 
 /* 6 active categories (slugs from CATEGORY_SLUG) */
 .trading-card--sports {
-  --_tint: var(--color-category-sports);
-  --_bg: var(--color-category-sports-bg);
-  --_bevel-tr: var(--color-category-sports-bevel-tr);
-  --_bevel-bl: var(--color-category-sports-bevel-bl);
+  --_tint: #6F91A4;
+  --_bg: #e9f1ef;
 }
 
 .trading-card--society {
-  --_tint: var(--color-category-society);
-  --_bg: var(--color-category-society-bg);
-  --_bevel-tr: var(--color-category-society-bevel-tr);
-  --_bevel-bl: var(--color-category-society-bevel-bl);
+  --_tint: #948877;
+  --_bg: #f5f0e8; /* shares the civilization background */
 }
 
 .trading-card--entertainment {
-  --_tint: var(--color-category-entertainment);
-  --_bg: var(--color-category-entertainment-bg);
-  --_bevel-tr: var(--color-category-entertainment-bevel-tr);
-  --_bevel-bl: var(--color-category-entertainment-bevel-bl);
+  --_tint: #917D8A;
+  --_bg: #f3ecf1;
 }
 
 .trading-card--earth {
-  --_tint: var(--color-category-earth);
-  --_bg: var(--color-category-earth-bg);
-  --_bevel-tr: var(--color-category-earth-bevel-tr);
-  --_bevel-bl: var(--color-category-earth-bevel-bl);
+  --_tint: #7E8C75;
+  --_bg: #f4f0e6;
 }
 
 .trading-card--history {
-  --_tint: var(--color-category-history);
-  --_bg: var(--color-category-history-bg);
-  --_bevel-tr: var(--color-category-history-bevel-tr);
-  --_bevel-bl: var(--color-category-history-bevel-bl);
+  /* shares the civilization palette */
+  --_tint: #9F7262;
+  --_bg: #f5f0e8;
 }
 
 .trading-card--physical-science {
-  --_tint: var(--color-category-physical-science);
-  --_bg: var(--color-category-physical-science-bg);
-  --_bevel-tr: var(--color-category-physical-science-bevel-tr);
-  --_bevel-bl: var(--color-category-physical-science-bevel-bl);
+  /* shares the science palette */
+  --_tint: #787F9B;
+  --_bg: #eef1f6;
 }
 
 /* Legacy aliases */
 .trading-card--nature {
-  --_tint: var(--color-category-nature);
-  --_bg: var(--color-category-nature-bg);
-  --_bevel-tr: var(--color-category-nature-bevel-tr);
-  --_bevel-bl: var(--color-category-nature-bevel-bl);
+  --_tint: #7E8C75;
+  --_bg: #eef3eb;
 }
 
 .trading-card--science {
-  --_tint: var(--color-category-science);
-  --_bg: var(--color-category-science-bg);
-  --_bevel-tr: var(--color-category-science-bevel-tr);
-  --_bevel-bl: var(--color-category-science-bevel-bl);
+  --_tint: #787F9B;
+  --_bg: #eef1f6;
 }
 
 
@@ -506,7 +492,7 @@ const grainPosition = computed(() => {
 /* Style properties are handled dynamically/inline via template SVG attributes */
 
 .trading-card__category-label {
-  font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
+  font-family: var(--font-serif);
   font-size: 11px;
   font-weight: 700;
   color: #000;
@@ -521,7 +507,7 @@ const grainPosition = computed(() => {
 }
 
 .trading-card__description p {
-  font-family: var(--font-family-serif, 'Linux Libertine', Georgia, serif);
+  font-family: var(--font-serif);
   font-size: 11px;
   line-height: 1.4;
   color: #000;
@@ -542,7 +528,7 @@ const grainPosition = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-family-system-sans, sans-serif);
+  font-family: var(--font-sans);
   font-size: 5.5px;
 
   margin: 0;
@@ -561,7 +547,7 @@ const grainPosition = computed(() => {
 }
 
 .trading-card__credit-link:hover {
-  color: var(--color-progressive, #36c);
+  color: var(--color-blue);
   text-decoration: underline;
 }
 
@@ -604,7 +590,7 @@ const grainPosition = computed(() => {
 
 .trading-card__retry-message {
   color: #ffffff;
-  font-family: var(--font-family-system-sans, sans-serif);
+  font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 500;
   margin: 0 0 12px 0;
@@ -621,7 +607,7 @@ const grainPosition = computed(() => {
   border: 1.5px solid #a2a9b1;
   padding: 6px 14px;
   border-radius: 4px;
-  font-family: var(--font-family-system-sans, sans-serif);
+  font-family: var(--font-sans);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
