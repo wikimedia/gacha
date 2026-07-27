@@ -2,8 +2,9 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
-import { useGameStore, CATEGORIES, categoryToSlug, slugToCategory } from '../stores/useGameStore';
+import { useGameStore, CATEGORIES, CATEGORY_SLUG, categoryToSlug, slugToCategory } from '../stores/useGameStore';
 import type { Card, Category } from '../stores/useGameStore';
+import { CATEGORY_HOME_CONFIG } from '../data/categories';
 import CardComp from '../components/Card.vue';
 import CardsUnlocked from '../components/CardsUnlocked.vue';
 import PageLayout from '../components/PageLayout.vue';
@@ -34,50 +35,18 @@ interface SubCategoryDef {
   bgCollage: string;
 }
 
-const subCategories: SubCategoryDef[] = [
-  {
-    id: 'sports',
-    name: 'Sports',
-    mainCategory: 'Sports',
-    thumbnail: '/sports.png',
-    bgCollage: '/sports-mainImg.png'
-  },
-  {
-    id: 'society',
-    name: 'People & Culture',
-    mainCategory: 'People / Culture',
-    thumbnail: '/society.png',
-    bgCollage: '/People-mainImg.png'
-  },
-  {
-    id: 'entertainment',
-    name: 'Media',
-    mainCategory: 'Media',
-    thumbnail: '/entertainment.png',
-    bgCollage: '/media-mainImg.png'
-  },
-  {
-    id: 'earth',
-    name: 'Earth',
-    mainCategory: 'Earth',
-    thumbnail: '/earth.png',
-    bgCollage: '/Earth-mainImg.png'
-  },
-  {
-    id: 'history',
-    name: 'History & Society',
-    mainCategory: 'History / Society',
-    thumbnail: '/history.png',
-    bgCollage: '/History-mainImg.png'
-  },
-  {
-    id: 'physical-science',
-    name: 'Physical Science',
-    mainCategory: 'Physical Science',
-    thumbnail: '/physical-science.png',
-    bgCollage: '/physicalScience-mainImg.png'
-  }
-];
+// Selector entries in CATEGORIES order; display data lives in
+// src/data/categories.ts, and `id` is the category's CSS-palette slug.
+const subCategories: SubCategoryDef[] = CATEGORIES.map((cat) => {
+  const config = CATEGORY_HOME_CONFIG[cat];
+  return {
+    id: CATEGORY_SLUG[cat],
+    name: config.name,
+    mainCategory: cat,
+    thumbnail: config.thumbnail,
+    bgCollage: config.bgCollage
+  };
+});
 
 // Active subcategory on the home screen (Sports by default)
 const activeSubCategory = ref<SubCategoryDef>(subCategories[0]);
