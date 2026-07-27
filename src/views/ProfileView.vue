@@ -9,13 +9,14 @@ import CardDetailModal from '../components/CardDetailModal.vue';
 import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import { supabase } from '../supabase';
-import { 
-  PhPencilSimple,
-  PhSquare, 
-  PhColumns, 
-  PhGridNine, 
-  PhPushPin 
-} from '@phosphor-icons/vue';
+import AppIcon from '../components/AppIcon.vue';
+import {
+  cdxIconEdit,
+  cdxIconImageLayoutFrame,
+  cdxIconImageLayoutThumbnail,
+  cdxIconImageGallery,
+  cdxIconPushPin
+} from '@wikimedia/codex-icons';
 import { trackEvent } from '../analytics.ts';
 
 const route = useRoute();
@@ -501,7 +502,7 @@ const toggleCardShowcase = async (cardId: string) => {
       <!-- SHOWCASE MODE HEADER BANNER -->
       <div v-if="isPrivateMode && isShowcaseMode" class="showcase-edit-banner flex justify-between items-center bg-[#d9754b] text-[#fdf4eb] px-4 py-2.5 text-xs font-serif font-black shadow-md rounded-[2px] mb-4 mx-4 sm:mx-0">
         <span class="flex items-center gap-1.5">
-          <PhPencilSimple :size="12" weight="bold" class="animate-pulse" />
+          <AppIcon :icon="cdxIconEdit" :size="12" class="animate-pulse" />
           Tap a card pin to highlight it as your profile picture.
         </span>
         <button @click="isShowcaseMode = false" class="btn btn-xs bg-[#fdf4eb] hover:bg-white text-[#d9754b] border-none font-bold tracking-wider">Done</button>
@@ -580,7 +581,7 @@ const toggleCardShowcase = async (cardId: string) => {
               :class="{ 'header-icon-btn--active': showEditDropdown }"
               title="Edit Profile Options"
             >
-              <PhPencilSimple :size="18" weight="bold" class="pb-[2px]" />
+              <AppIcon :icon="cdxIconEdit" :size="18" class="pb-[2px]" />
             </button>
 
             <!-- EDIT DROPDOWN MENU -->
@@ -645,7 +646,7 @@ const toggleCardShowcase = async (cardId: string) => {
                   class="column-switcher-btn"
                   title="1 Column View"
                 >
-                  <PhSquare :size="14" weight="bold" />
+                  <AppIcon :icon="cdxIconImageLayoutFrame" :size="14" />
                 </button>
                 <button 
                   @click="gridColumns = 2" 
@@ -653,7 +654,7 @@ const toggleCardShowcase = async (cardId: string) => {
                   class="column-switcher-btn"
                   title="2 Columns View"
                 >
-                  <PhColumns :size="14" weight="bold" />
+                  <AppIcon :icon="cdxIconImageLayoutThumbnail" :size="14" />
                 </button>
                 <button 
                   @click="gridColumns = 3" 
@@ -661,7 +662,7 @@ const toggleCardShowcase = async (cardId: string) => {
                   class="column-switcher-btn"
                   title="3 Columns View"
                 >
-                  <PhGridNine :size="14" weight="bold" />
+                  <AppIcon :icon="cdxIconImageGallery" :size="14" />
                 </button>
               </div>
             </div>
@@ -713,7 +714,7 @@ const toggleCardShowcase = async (cardId: string) => {
                           ]"
                           :title="card.isShowcase ? 'Remove from Showcase' : 'Set as Showcase Pinned Card'"
                         >
-                          <PhPushPin :size="14" :weight="card.isShowcase ? 'fill' : 'bold'" />
+                          <AppIcon :icon="cdxIconPushPin" :size="14" />
                         </button>
                       </div>
                     </div>

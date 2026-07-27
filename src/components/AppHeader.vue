@@ -4,21 +4,22 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Category } from '../stores/useGameStore';
-import { 
-  PhX, 
-  PhUser, 
-  PhInfo, 
-  PhMonitor, 
-  PhArrowRight, 
-  PhWarningCircle, 
-  PhArrowLeft, 
-  PhCaretLeft,
-  PhCaretRight,
-  PhCheck,
-  PhExport,
-  PhGlobeHemisphereWest,
-  PhHeart
-} from '@phosphor-icons/vue';
+import AppIcon from './AppIcon.vue';
+import {
+  cdxIconClose,
+  cdxIconUserAvatarOutline,
+  cdxIconInfo,
+  cdxIconImage,
+  cdxIconArrowNext,
+  cdxIconAlert,
+  cdxIconArrowPrevious,
+  cdxIconPrevious,
+  cdxIconNext,
+  cdxIconCheck,
+  cdxIconShare,
+  cdxIconGlobe,
+  cdxIconHeart
+} from '@wikimedia/codex-icons';
 
 const props = withDefaults(defineProps<{
   displayedPoints?: number;
@@ -235,7 +236,7 @@ defineExpose({
           aria-label="Quit Game"
         >
           <!-- 'X' close Phosphor icon -->
-          <PhX :size="18" weight="bold" />
+          <AppIcon :icon="cdxIconClose" :size="18" />
         </button>
       </div>
       <div v-else-if="route.name === 'profile'" class="z-50">
@@ -245,7 +246,7 @@ defineExpose({
           aria-label="Back to Home"
         >
           <!-- 'X' close Phosphor icon -->
-          <PhX :size="18" weight="bold" />
+          <AppIcon :icon="cdxIconClose" :size="18" />
         </router-link>
       </div>
       <div v-else class="dropdown dropdown-bottom dropdown-start z-50">
@@ -256,7 +257,7 @@ defineExpose({
           @focusin="clearBadge"
         >
           <!-- User Profile Silhouette icon -->
-          <PhUser :size="18" weight="bold" />
+          <AppIcon :icon="cdxIconUserAvatarOutline" :size="18" />
           <span 
             v-if="gameStore.hasNewCards" 
             class="profile-badge-dot"
@@ -346,7 +347,7 @@ defineExpose({
           aria-label="Share Profile Link"
           title="Share Profile Link"
         >
-          <PhExport :size="18" weight="bold" />
+          <AppIcon :icon="cdxIconShare" :size="18" />
         </button>
       </div>
       <button 
@@ -354,8 +355,7 @@ defineExpose({
         class="header-icon-btn"
         @click="showInfoModal = true"
       >
-        <!-- 'i' info Phosphor icon -->
-        <PhInfo :size="18" weight="bold" />
+        <AppIcon :icon="cdxIconInfo" :size="18" />
       </button>
 
     </div>
@@ -476,7 +476,7 @@ defineExpose({
               class="flex items-center justify-center w-8 h-8 rounded-full border border-transparent hover:bg-white/10 text-[#fdf4eb] active:scale-90 transition-all cursor-pointer"
               aria-label="Close dialog"
             >
-              <PhX :size="20" weight="bold" />
+              <AppIcon :icon="cdxIconClose" :size="20" />
             </button>
           </div>
 
@@ -506,7 +506,7 @@ defineExpose({
                   <div class="mini-card mini-card-gacha !w-[68px] !h-[96px] absolute left-1/2 top-0 -translate-x-1/2 z-10">
                     <div class="mini-card-header bg-[#d4a843]"></div>
                     <div class="mini-card-img bg-[#fdf6e3] text-[#d4a843] flex items-center justify-center">
-                      <PhGlobeHemisphereWest :size="18" weight="regular" />
+                      <AppIcon :icon="cdxIconGlobe" :size="18" />
                     </div>
                     <div class="mini-card-line w-full bg-[#d4a843]/30"></div>
                   </div>
@@ -521,7 +521,7 @@ defineExpose({
                 <div class="mini-card mini-card-real">
                   <div class="mini-card-header bg-[#4a6783]"></div>
                   <div class="mini-card-img bg-slate-200">
-                    <PhMonitor :size="20" weight="regular" color="#718096" />
+                    <AppIcon :icon="cdxIconImage" :size="20" :style="{ color: '#718096' }" />
                   </div>
                   <div class="mini-card-line w-full bg-slate-300"></div>
                   <div class="mini-card-line w-5/6 bg-slate-300"></div>
@@ -532,7 +532,7 @@ defineExpose({
                 </div>
                 <!-- Swipe arrow pointing right -->
                 <div class="absolute right-3 text-[#177860]/80 animate-pulse flex flex-col items-center select-none">
-                  <PhArrowRight :size="24" weight="bold" />
+                  <AppIcon :icon="cdxIconArrowNext" :size="24" />
                   <span class="text-[8px] font-bold uppercase tracking-wider mt-0.5">Real</span>
                 </div>
               </div>
@@ -542,7 +542,7 @@ defineExpose({
                 <div class="mini-card mini-card-fake">
                   <div class="mini-card-header bg-[#4a6783]"></div>
                   <div class="mini-card-img bg-slate-200">
-                    <PhWarningCircle :size="20" weight="regular" color="#718096" />
+                    <AppIcon :icon="cdxIconAlert" :size="20" :style="{ color: '#718096' }" />
                   </div>
                   <div class="mini-card-line w-full bg-slate-300"></div>
                   <div class="mini-card-line w-5/6 bg-slate-300"></div>
@@ -553,7 +553,7 @@ defineExpose({
                 </div>
                 <!-- Swipe arrow pointing left -->
                 <div class="absolute left-3 text-[#bf3c2c]/80 animate-pulse flex flex-col items-center select-none">
-                  <PhArrowLeft :size="24" weight="bold" />
+                  <AppIcon :icon="cdxIconArrowPrevious" :size="24" />
                   <span class="text-[8px] font-bold uppercase tracking-wider mt-0.5">Fake</span>
                 </div>
               </div>
@@ -563,7 +563,7 @@ defineExpose({
                 <div class="mini-card mini-card-float">
                   <div class="mini-card-header bg-[#4a6783]"></div>
                   <div class="mini-card-img bg-slate-200">
-                    <PhGlobeHemisphereWest :size="22" weight="regular" color="#4a6783" />
+                    <AppIcon :icon="cdxIconGlobe" :size="22" :style="{ color: '#4a6783' }" />
                   </div>
                   <div class="mini-card-line w-full bg-slate-300"></div>
                   <div class="mini-card-line w-5/6 bg-slate-300"></div>
@@ -602,11 +602,11 @@ defineExpose({
                 </div>
                 <!-- 3 chances -->
                 <div class="flex items-center gap-2">
-                  <PhHeart
+                  <AppIcon
                     v-for="n in 3"
                     :key="n"
+                    :icon="cdxIconHeart"
                     :size="16"
-                    weight="fill"
                     class="heart-pop text-[#bf3c2c]"
                     :style="{ animationDelay: (n * 0.2) + 's' }"
                   />
@@ -634,7 +634,7 @@ defineExpose({
               :disabled="currentSlide === 0"
               aria-label="Previous step"
             >
-              <PhCaretLeft :size="20" weight="bold" />
+              <AppIcon :icon="cdxIconPrevious" :size="20" />
             </button>
 
             <!-- Step indicator dots -->
@@ -655,8 +655,8 @@ defineExpose({
               class="w-10 h-10 flex items-center justify-center rounded-full border border-[#fdf4eb]/20 text-[#fdf4eb] hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
               aria-label="Next step"
             >
-              <PhCaretRight v-if="currentSlide < slides.length - 1" :size="20" weight="bold" />
-              <PhCheck v-else :size="20" weight="bold" />
+              <AppIcon v-if="currentSlide < slides.length - 1" :icon="cdxIconNext" :size="20" />
+              <AppIcon v-else :icon="cdxIconCheck" :size="20" />
             </button>
           </div>
         </div>

@@ -26,6 +26,10 @@
   --color-paper: #f6f0e9;
   --color-paper-dark: #ebe3d8;
 
+  /* Home "Play" button rust */
+  --color-rust: #703525;
+  --color-rust-dark: #5c2a1d; /* hover */
+
   /* Legacy palette; prefer the tokens above for new work */
   --color-charcoal: #3f3f35;
   --color-charcoal-muted: rgba(63, 63, 53, 0.8);
@@ -625,8 +629,8 @@ body {
 }
 
 .play-button-wrapper {
-  margin-top: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-top: 24px;
+  margin-bottom: 10px;
   flex-shrink: 0;
   z-index: 20;
   display: flex;
@@ -662,7 +666,6 @@ body {
   padding-left: max(1rem, calc((100cqw - 28rem) / 2 + 1rem));
   padding-right: max(1rem, calc((100cqw - 28rem) / 2 + 1rem));
   padding-top: 0;
-  padding-bottom: 1rem;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
@@ -672,74 +675,76 @@ body {
   display: none; /* Safari and Chrome */
 }
 
+/* Category card (Figma "gameCategory"): bordered vertical card with a
+   desaturated image that goes full-colour + bold + dark-bordered when active. */
 .category-slider-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  align-items: stretch;
   flex-shrink: 0;
+  width: 91.5px;
+  height: 141px;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  border: 1px solid rgba(155, 155, 155, 0.6);
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: transparent;
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
 .category-slider-item:active {
-  transform: scale(0.95);
+  transform: scale(0.96);
+}
+
+.category-slider-item.is-active {
+  border-color: #262525;
 }
 
 .category-slider-thumbnail-wrapper {
   position: relative;
-  width: 95px;
-  height: 102px;
-  border-radius: 1px;
+  width: 100%;
+  height: 99px;
   overflow: hidden;
-  border: 0px solid transparent;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: all 0.25s ease;
+  border-radius: 9px 9px 0 0;
   background-color: var(--color-base-300);
-}
-
-.category-slider-item.is-active .category-slider-thumbnail-wrapper {
-  border: 2.184px solid #fdf4eb;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 6px 14px rgba(0, 0, 0, 0.22);
 }
 
 .category-slider-thumbnail {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  filter: grayscale(1);
+  transition: filter 0.25s ease, transform 0.3s ease;
+}
+
+.category-slider-item.is-active .category-slider-thumbnail {
+  filter: grayscale(0);
 }
 
 .category-slider-item:hover .category-slider-thumbnail {
-  transform: scale(1.08);
+  transform: scale(1.05);
 }
 
 .category-slider-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 95px;
-  height: 20px;
-  background-color: #fdf4eb;
-  color: #3f3f35;
-  border-radius: 1px;
-  font-family: var(--font-serif);
-  font-size: 10px;
-  font-weight: 500;
+  flex-grow: 1;
+  min-height: 40px;
+  padding: 4px 4px;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.2;
   text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 0 4px;
+  white-space: normal;
   box-sizing: border-box;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: font-weight 0.2s ease;
 }
 
 .category-slider-item.is-active .category-slider-label {
-  background-color: #516d8c;
-  color: #fdf4eb;
-  font-weight: bold;
+  font-weight: 700;
 }
 
 /* Redesigned Gameplay True/False Buttons (Figma Mock Frame 52) */

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from 'vue';
-import { PhX } from '@phosphor-icons/vue';
+import AppIcon from './AppIcon.vue';
+import { cdxIconClose } from '@wikimedia/codex-icons';
 
 const props = withDefaults(defineProps<{
   show: boolean;
@@ -80,7 +81,7 @@ watch(() => props.show, (newShow) => {
                 aria-label="Close dialog"
               >
                 <!-- Custom close 'X' Phosphor icon -->
-                <PhX :size="16" weight="bold" />
+                <AppIcon :icon="cdxIconClose" :size="16" />
               </button>
             </header>
 

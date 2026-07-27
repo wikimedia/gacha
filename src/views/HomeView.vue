@@ -10,7 +10,9 @@ import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import BaseButton from '../components/BaseButton.vue';
 import { trackEvent } from '../analytics';
-import { PhPlay, PhThumbsUp, PhThumbsDown } from '@phosphor-icons/vue';
+import { PhThumbsUp, PhThumbsDown } from '@phosphor-icons/vue';
+import AppIcon from '../components/AppIcon.vue';
+import { cdxIconPlay } from '@wikimedia/codex-icons';
 
 const route = useRoute();
 const router = useRouter();
@@ -42,7 +44,7 @@ const subCategories: SubCategoryDef[] = [
   },
   {
     id: 'society',
-    name: 'People / Culture',
+    name: 'People & Culture',
     mainCategory: 'People / Culture',
     thumbnail: '/society.png',
     bgCollage: '/People-mainImg.png'
@@ -63,7 +65,7 @@ const subCategories: SubCategoryDef[] = [
   },
   {
     id: 'history',
-    name: 'History / Society',
+    name: 'History & Society',
     mainCategory: 'History / Society',
     thumbnail: '/history.png',
     bgCollage: '/History-mainImg.png'
@@ -696,28 +698,6 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
           />
         </div>
 
-        <!-- Play/Cooldown Button -->
-        <div class="play-button-wrapper">
-          <BaseButton 
-            v-if="!cooldownTimers[activeSubCategory.mainCategory]"
-            variant="primary"
-            :loading="isStartingGame"
-            @click="playCategory(activeSubCategory.mainCategory)"
-          >
-            <template #icon>
-              <PhPlay :size="18" weight="fill" class="play-icon" />
-            </template>
-            Play
-          </BaseButton>
-          <BaseButton 
-            v-else
-            disabled
-            variant="primary"
-          >
-            {{ cooldownTimers[activeSubCategory.mainCategory] }} Seconds
-          </BaseButton>
-        </div>
-
         <!-- Horizontal Category Slider -->
         <div class="category-slider-wrapper">
           <div class="category-slider-carousel">
@@ -741,6 +721,27 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
               </span>
             </div>
           </div>
+        </div>
+        <!-- Play/Cooldown Button -->
+        <div class="play-button-wrapper">
+          <BaseButton 
+            v-if="!cooldownTimers[activeSubCategory.mainCategory]"
+            variant="primary"
+            :loading="isStartingGame"
+            @click="playCategory(activeSubCategory.mainCategory)"
+          >
+            <template #icon>
+              <AppIcon :icon="cdxIconPlay" :size="18" class="play-icon" />
+            </template>
+            Play
+          </BaseButton>
+          <BaseButton 
+            v-else
+            disabled
+            variant="primary"
+          >
+            {{ cooldownTimers[activeSubCategory.mainCategory] }} Seconds
+          </BaseButton>
         </div>
 
       </section>
