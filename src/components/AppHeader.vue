@@ -10,13 +10,9 @@ import {
   cdxIconUserAvatarOutline,
   cdxIconInfo,
   cdxIconShare,
-  cdxIconBook,
-  cdxIconHand,
-  cdxIconHelp,
-  cdxIconHeartOutline,
-  cdxIconMagicWand
+  cdxIconPrevious
 } from '@wikimedia/codex-icons';
-import BaseSheet from './BaseSheet.vue';
+import InstructionsBody from './InstructionsBody.vue';
 import CreditsSheet from './CreditsSheet.vue';
 
 const props = withDefaults(defineProps<{
@@ -379,58 +375,35 @@ defineExpose({
       </form>
     </dialog>
 
-    <!-- HOW TO PLAY — single-frame tutorial in a bottom sheet -->
-    <BaseSheet
-      :open="showInfoModal"
-      title="How to Play"
-      @close="showInfoModal = false"
-    >
-      <div class="tutorial">
-        <!-- Card fan illustration (cards + Fact/Fake badges baked in) -->
-        <img
-          src="/tutorial.png"
-          alt="Example real and fake article cards"
-          class="tutorial-cards"
-        />
-
-        <ul class="tutorial-steps">
-          <li class="tutorial-step">
-            <span class="tutorial-step-icon">
-              <AppIcon :icon="cdxIconBook" :size="18" />
-            </span>
-            <span class="tutorial-step-text">Collect real Wikipedia articles</span>
-          </li>
-          <li class="tutorial-step">
-            <span class="tutorial-step-icon">
-              <AppIcon :icon="cdxIconHand" :size="18" />
-            </span>
-            <span class="tutorial-step-text">Swipe right for facts and left for fakes</span>
-          </li>
-          <li class="tutorial-step">
-            <span class="tutorial-step-icon">
-              <AppIcon :icon="cdxIconHelp" :size="18" />
-            </span>
-            <span class="tutorial-step-text">Every fake card has a clue</span>
-          </li>
-          <li class="tutorial-step">
-            <span class="tutorial-step-icon">
-              <AppIcon :icon="cdxIconHeartOutline" :size="18" />
-            </span>
-            <span class="tutorial-step-text">You get 3 lives total</span>
-          </li>
-          <li class="tutorial-step">
-            <span class="tutorial-step-icon">
-              <AppIcon :icon="cdxIconMagicWand" :size="18" />
-            </span>
-            <span class="tutorial-step-text">Only one version of each card exists</span>
-          </li>
-        </ul>
-
-        <button class="tutorial-start" @click="showInfoModal = false">
-          Start
-        </button>
-      </div>
-    </BaseSheet>
+    <!-- HOW TO PLAY — full-screen modal shown once on the first game (Rules
+         heading + Start button). The footer's "Rules" link shows the same
+         content in a bottom sheet instead (see AppFooter). -->
+    <Teleport to="body">
+      <Transition name="dialog-fade">
+        <div
+          v-if="showInfoModal"
+          class="rules-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-label="How to play"
+        >
+          <button
+            class="rules-modal__back"
+            aria-label="Close How to Play"
+            @click="showInfoModal = false"
+          >
+            <AppIcon :icon="cdxIconPrevious" :size="18" />
+          </button>
+          <div class="rules-modal__content">
+            <InstructionsBody
+              show-heading
+              show-start-button
+              @start="showInfoModal = false"
+            />
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- CREDITS / ATTRIBUTION BOTTOM SHEET (opened from the info button) -->
     <CreditsSheet
@@ -513,82 +486,55 @@ defineExpose({
   background-color: rgba(74, 103, 131, 0.25);
 }
 
-/* --- How to Play tutorial (rendered inside BaseSheet) --- */
-.tutorial {
+/* --- How to Play modal (full-screen; content shared via InstructionsBody) --- */
+.dialog-fade-enter-active,
+.dialog-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.dialog-fade-enter-from,
+.dialog-fade-leave-to {
+  opacity: 0;
+}
+
+.rules-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background-color: var(--color-sand);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  padding: 8px 24px 24px;
+  /* The content is sized to fit the viewport — never scroll (matches the
+     Figma frame, which clips rather than scrolls). */
+  overflow: hidden;
 }
 
-/* Card fan illustration (cards + Fact/Fake badges baked into the export) */
-.tutorial-cards {
-  width: 292px;
-  max-width: 100%;
-  height: auto;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-
-.tutorial-steps {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.rules-modal__content {
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  max-width: 28rem; /* match the app content column */
+  margin: auto; /* center vertically within the viewport */
 }
 
-.tutorial-step {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.tutorial-step-icon {
-  /* Warm tan chip that lifts the icon off the sheet's paper background. */
-  --tutorial-icon-bg: #e5d8c6;
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+.rules-modal__back {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  background-color: var(--tutorial-icon-bg);
-  color: var(--color-ink);
-}
-
-.tutorial-step-text {
-  flex: 1 0 0;
-  min-width: 0;
-  font-family: var(--font-sans);
-  font-weight: 400;
-  font-size: 14px;
-  line-height: 22px;
-  color: var(--color-ink);
-}
-
-.tutorial-start {
-  width: 100%;
-  height: 44px;
+  width: 2rem;
+  height: 2rem;
   border: none;
-  border-radius: var(--radius-button);
-  background-color: var(--color-rust);
-  color: var(--color-white);
-  font-family: var(--font-serif);
-  font-weight: 700;
-  font-size: 14px;
-  line-height: 20px;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--color-ink);
   cursor: pointer;
   transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
-.tutorial-start:hover { background-color: var(--color-rust-dark); }
-.tutorial-start:active { transform: scale(0.98); }
-
+.rules-modal__back:hover { background-color: rgba(0, 0, 0, 0.06); }
+.rules-modal__back:active { transform: scale(0.9); }
 
 /* Edit Menu Dropdown Options Panel */
 .edit-dropdown-menu {
