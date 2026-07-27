@@ -68,7 +68,7 @@ const credits = computed<Attribution[]>(
 <template>
   <BaseSheet :open="open" title="Credits" @close="emit('close')">
     <!-- Subtitle -->
-    <p class="px-4 pb-1 text-sm leading-[22px] m-0 text-ink">
+    <p class="credits-intro px-4 pb-1 text-sm m-0 text-ink">
       Content adapted from
       <a
         href="https://www.wikipedia.org"
@@ -93,9 +93,9 @@ const credits = computed<Attribution[]>(
         :href="item.url"
         target="_blank"
         rel="noopener noreferrer"
-        class="credits-card flex gap-3 items-start p-3 rounded-[10px] no-underline cursor-pointer"
+        class="credits-card flex gap-3 items-start p-3 no-underline cursor-pointer"
       >
-        <div class="shrink-0 w-[52px] h-[72px] rounded-[10px] overflow-hidden border border-ink">
+        <div class="credits-card__thumb shrink-0 border border-ink">
           <img
             :src="item.thumbnail"
             :alt="item.title"
@@ -116,12 +116,25 @@ const credits = computed<Attribution[]>(
 </template>
 
 <style scoped>
+.credits-intro {
+  line-height: 22px;
+}
+
 /* Warm tan specific to the credits cards; not part of the shared palette. */
 .credits-card {
   --credits-card-bg: #e5d8c6;
   --credits-card-bg-hover: #ddcdb8;
+  --credits-card-radius: 10px;
+  border-radius: var(--credits-card-radius);
   background-color: var(--credits-card-bg);
   transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.credits-card__thumb {
+  width: 52px;
+  height: 72px;
+  border-radius: var(--credits-card-radius);
+  overflow: hidden;
 }
 
 .credits-card:hover {
