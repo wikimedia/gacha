@@ -68,22 +68,20 @@ const credits = computed<Attribution[]>(
 <template>
   <BaseSheet :open="open" title="Credits" @close="emit('close')">
     <!-- Subtitle -->
-    <p class="px-4 pb-1 text-sm leading-[22px] m-0" :style="{ color: 'var(--color-base)' }">
+    <p class="px-4 pb-1 text-sm leading-[22px] m-0 text-ink">
       Content adapted from
       <a
         href="https://www.wikipedia.org"
         target="_blank"
         rel="noopener noreferrer"
-        class="no-underline hover:underline"
-        :style="{ color: 'var(--color-progressive)' }"
+        class="text-primary no-underline hover:underline"
       >Wikipedia</a>
       and
       <a
         href="https://commons.wikimedia.org"
         target="_blank"
         rel="noopener noreferrer"
-        class="no-underline hover:underline"
-        :style="{ color: 'var(--color-progressive)' }"
+        class="text-primary no-underline hover:underline"
       >Wikimedia Commons</a>.
     </p>
 
@@ -97,7 +95,7 @@ const credits = computed<Attribution[]>(
         rel="noopener noreferrer"
         class="credits-card flex gap-3 items-start p-3 rounded-[10px] no-underline cursor-pointer"
       >
-        <div class="shrink-0 w-[52px] h-[72px] rounded-[10px] overflow-hidden border border-[#2f2e2e]">
+        <div class="shrink-0 w-[52px] h-[72px] rounded-[10px] overflow-hidden border border-ink">
           <img
             :src="item.thumbnail"
             :alt="item.title"
@@ -105,11 +103,11 @@ const credits = computed<Attribution[]>(
           />
         </div>
         <div class="flex-1 min-w-0 flex flex-col justify-center gap-1">
-          <p class="font-bold text-sm leading-5 m-0 text-[#2f2e2e]">{{ item.title }}</p>
-          <p class="text-sm leading-5 m-0" :style="{ color: 'var(--color-subtle)' }">{{ item.license }}</p>
+          <p class="font-bold text-sm leading-5 m-0 text-ink">{{ item.title }}</p>
+          <p class="text-sm leading-5 m-0 text-secondary">{{ item.license }}</p>
           <div class="flex gap-1 items-start pt-1">
-            <PhUser :size="14" weight="fill" class="shrink-0 mt-0.5" :style="{ color: 'var(--color-subtle)' }" />
-            <p class="flex-1 min-w-0 text-xs leading-5 m-0" :style="{ color: 'var(--color-subtle)' }">{{ item.author }}</p>
+            <PhUser :size="14" weight="fill" class="shrink-0 mt-0.5 text-secondary" />
+            <p class="flex-1 min-w-0 text-xs leading-5 m-0 text-secondary">{{ item.author }}</p>
           </div>
         </div>
       </a>
@@ -118,13 +116,16 @@ const credits = computed<Attribution[]>(
 </template>
 
 <style scoped>
+/* Warm tan specific to the credits cards; not part of the shared palette. */
 .credits-card {
-  background-color: #e5d8c6;
+  --credits-card-bg: #e5d8c6;
+  --credits-card-bg-hover: #ddcdb8;
+  background-color: var(--credits-card-bg);
   transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
 .credits-card:hover {
-  background-color: #ddcdb8;
+  background-color: var(--credits-card-bg-hover);
 }
 
 .credits-card:active {

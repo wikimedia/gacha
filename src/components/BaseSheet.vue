@@ -88,10 +88,10 @@ onUnmounted(() => lockScroll(false));
   display: flex;
   flex-direction: column;
   padding: 10px 0 calc(10px + var(--sheet-fill));
-  background-color: #f0e5d5;
+  background-color: var(--color-sand);
   border-radius: 12px 12px 0 0;
   box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.28);
-  font-family: var(--font-family-system-sans);
+  font-family: var(--font-sans);
 }
 
 .base-sheet__header {
@@ -107,7 +107,7 @@ onUnmounted(() => lockScroll(false));
   margin: 0;
   font-size: 14px;
   font-weight: 700;
-  color: var(--color-base);
+  color: var(--color-ink);
 }
 
 .base-sheet__close {
@@ -120,7 +120,7 @@ onUnmounted(() => lockScroll(false));
   border: 0;
   border-radius: 4px;
   background: transparent;
-  color: #2f2e2e;
+  color: var(--color-ink);
   cursor: pointer;
   transition: background-color 0.15s ease, transform 0.1s ease;
 }
