@@ -4,7 +4,7 @@ import type { Card } from '../stores/useGameStore';
 import CardComp from './Card.vue';
 import AppIcon from './AppIcon.vue';
 import ShareCardSheet from './ShareCardSheet.vue';
-import { cdxIconClose, cdxIconPrevious, cdxIconNext } from '@wikimedia/codex-icons';
+import { cdxIconClose, cdxIconPrevious, cdxIconNext, cdxIconCheck } from '@wikimedia/codex-icons';
 import { trackEvent } from '../analytics.ts';
 import { lockBodyScroll, unlockBodyScroll } from '../utils/scrollLock';
 
@@ -46,6 +46,20 @@ watch(() => props.show, (newVal) => {
 });
 
 const activeCard = computed(() => props.cards[activeIndex.value] || null);
+
+// Answer status for the active card (results screen only). Null when the modal
+// is opened from a context without correctness info (e.g. the binder).
+const answerStatus = computed<'correct' | 'incorrect' | null>(() => {
+  const v = props.isCorrectArray?.[activeIndex.value];
+  if (v === true) return 'correct';
+  if (v === false) return 'incorrect';
+  return null;
+});
+
+// Codex glyph (raw SVG inner markup) knocked out of the status badge circle.
+const statusGlyph = computed<string>(() =>
+  (answerStatus.value === 'correct' ? cdxIconCheck : cdxIconClose) as string
+);
 
 const handlePrev = () => {
   if (activeIndex.value > 0) {
@@ -130,21 +144,40 @@ const handleShare = () => {
     <Transition name="modal-fade">
       <div 
         v-if="show" 
-        class="fixed inset-0 z-50 flex flex-col justify-between items-center py-8 select-none bg-[#3f3f35]/90 backdrop-blur-md"
+        class="modal-scrim fixed inset-0 z-50 flex flex-col justify-between items-center py-8 select-none bg-charcoal/65"
         role="dialog"
         aria-modal="true"
       >
-        <!-- Close Button (✕) -->
-        <button 
-          @click="emit('close')" 
-          class="absolute top-6 right-6 text-white/80 hover:text-white transition-colors duration-200 cursor-pointer p-2 z-50 outline-none bg-transparent border-none"
-          aria-label="Close modal"
-        >
-          <AppIcon :icon="cdxIconClose" :size="28" />
-        </button>
+        <!-- Top bar: answer status (centered) + close (aligned right) -->
+        <div class="relative flex items-center justify-center w-full h-9 shrink-0 px-6">
+          <!-- Answer status indicator (results only) -->
+          <div
+            v-if="answerStatus"
+            class="answer-badge flex items-center gap-2 select-none"
+            :class="answerStatus === 'correct' ? 'answer-badge--correct' : 'answer-badge--incorrect'"
+          >
+            <!-- Filled circle with the codex glyph knocked out (transparent) -->
+            <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" class="block shrink-0">
+              <mask id="answerStatusMask">
+                <circle cx="10" cy="10" r="10" fill="white" />
+                <g fill="black" transform="translate(4 4) scale(0.6)" v-html="statusGlyph" />
+              </mask>
+              <circle cx="10" cy="10" r="10" fill="currentColor" mask="url(#answerStatusMask)" />
+            </svg>
+            <span class="text-white/90 font-sans text-sm font-medium">
+              {{ answerStatus === 'correct' ? 'answered correct' : 'answered incorrect' }}
+            </span>
+          </div>
 
-        <!-- Spacer to push content down -->
-        <div class="h-6"></div>
+          <!-- Close Button (✕) -->
+          <button
+            @click="emit('close')"
+            class="absolute right-6 top-1/2 -translate-y-1/2 text-white/80 hover:text-white transition-colors duration-200 cursor-pointer p-2 z-50 outline-none bg-transparent border-none"
+            aria-label="Close modal"
+          >
+            <AppIcon :icon="cdxIconClose" :size="28" />
+          </button>
+        </div>
 
         <!-- Carousel Container -->
         <div class="relative w-full overflow-hidden flex items-center py-4 flex-grow">
@@ -166,28 +199,6 @@ const handleShare = () => {
             >
               <!-- Card component itself -->
               <CardComp :card="card" :show-link="false" />
-
-              <!-- Correct/Incorrect badge overlays (Results Page) -->
-              <div 
-                v-if="isCorrectArray && isCorrectArray[index] === true"
-                class="modal-badge modal-badge--correct"
-                title="Correct"
-              >
-                <svg class="modal-badge-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-                  <path d="M8 12.5l3 3 5-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </div>
-              <div 
-                v-else-if="isCorrectArray && isCorrectArray[index] === false"
-                class="modal-badge modal-badge--incorrect"
-                title="Incorrect"
-              >
-                <svg class="modal-badge-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-                  <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </div>
 
               <!-- Fake Card Overlay (stamp) -->
               <div 
@@ -261,6 +272,13 @@ const handleShare = () => {
             >
               Share
             </button>
+            <button
+              @click="handleLearnMore"
+              :disabled="!activeCard?.wikipediaLink"
+              class="flex-1 bg-paper text-rust rounded-button py-3 px-4 font-sans font-bold text-sm shadow-[0px_0px_6px_rgba(0,0,0,0.25)] hover:bg-paper-dark active:scale-[0.98] transition-all cursor-pointer text-center outline-none border-none select-none disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 disabled:hover:bg-paper"
+            >
+              Open article
+            </button>
           </div>
         </div>
 
@@ -278,6 +296,22 @@ const handleShare = () => {
 </template>
 
 <style scoped>
+/* Backdrop blur amount — local to this modal, not a shared token */
+.modal-scrim {
+  --scrim-blur: 2.6px;
+  backdrop-filter: blur(var(--scrim-blur));
+  -webkit-backdrop-filter: blur(var(--scrim-blur));
+}
+
+/* Answer status badge colors — local to this component (not shared tokens) */
+.answer-badge--correct {
+  color: #9dac80;
+}
+
+.answer-badge--incorrect {
+  color: #db8059;
+}
+
 .carousel-track {
   display: flex;
   gap: 20px;
@@ -292,35 +326,12 @@ const handleShare = () => {
     0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Modal Check/Cross Badges */
-.modal-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 80px;
-  height: 80px;
-  border-top-right-radius: 11.5px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  z-index: 30;
-  pointer-events: none;
+.answer-status-icon--correct {
+  color: var(--color-green);
 }
 
-.modal-badge--correct {
-  background: linear-gradient(225deg, #8ea885 50%, transparent 50%);
-}
-
-.modal-badge--incorrect {
-  background: linear-gradient(225deg, #d06a4c 50%, transparent 50%);
-}
-
-.modal-badge-svg {
-  width: 30px;
-  height: 30px;
-  margin-top: 10px;
-  margin-right: 10px;
-  color: #ffffff;
+.answer-status-icon--incorrect {
+  color: var(--color-red);
 }
 
 /* FAKE Overlay and Stamp */
