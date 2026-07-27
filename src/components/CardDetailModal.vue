@@ -71,11 +71,15 @@ const statusGlyph = computed<string>(() =>
   (answerStatus.value === 'correct' ? cdxIconCheck : cdxIconClose) as string
 );
 
-// Tapping a non-active card selects it; tapping the active card flips it.
+// Fake cards have no real article: they can't flip and their actions are disabled.
+const actionsDisabled = computed(() => !activeCard.value?.isReal);
+
+// Tapping a non-active card selects it; tapping the active card flips it —
+// but only real cards have a back to flip to.
 const handleCardClick = (index: number) => {
   if (index !== activeIndex.value) {
     activeIndex.value = index;
-  } else {
+  } else if (props.cards[index]?.isReal) {
     isFlipped.value = !isFlipped.value;
   }
 };
@@ -212,7 +216,8 @@ const handleShare = () => {
               class="card-flip-scene relative w-[315px] h-[440px] flex-shrink-0 transition-all duration-300"
               :class="{
                 'opacity-40 scale-95 cursor-pointer': index !== activeIndex,
-                'scale-100 active-card-shadow cursor-pointer': index === activeIndex
+                'scale-100 active-card-shadow': index === activeIndex,
+                'cursor-pointer': index !== activeIndex || card.isReal
               }"
               @click="handleCardClick(index)"
             >
@@ -236,9 +241,11 @@ const handleShare = () => {
                   </div>
                 </div>
 
-                <!-- Back face (placeholder) -->
+                <!-- Back face (placeholder). Only real cards have a back, and it
+                     is mounted only for the active card so the signals fetch
+                     fires for the card actually being viewed. -->
                 <div class="card-flip__face card-flip__face--back">
-                  <CardBack :card="card" />
+                  <CardBack v-if="index === activeIndex && card.isReal" :card="card" />
                 </div>
               </div>
             </div>
@@ -295,14 +302,14 @@ const handleShare = () => {
             </button>
             <button
               @click="handleShare"
-              :disabled="!activeCard?.isReal"
-              class="flex-1 bg-slate text-cream border-none py-3.5 px-4 rounded-[2px] font-serif font-black text-sm uppercase tracking-wider shadow-[0px_0px_6px_rgba(0,0,0,0.25)] hover:bg-slate-light active:scale-[0.98] transition-all cursor-pointer text-center outline-none select-none disabled:opacity-40 disabled:pointer-events-none"
+              :disabled="actionsDisabled"
+              class="flex-1 bg-paper text-rust rounded-button py-3 px-4 font-sans font-bold text-sm shadow-[0px_0px_6px_rgba(0,0,0,0.25)] hover:bg-paper-dark active:scale-[0.98] transition-all cursor-pointer text-center outline-none border-none select-none disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 disabled:hover:bg-paper"
             >
               Share
             </button>
             <button
               @click="handleLearnMore"
-              :disabled="!activeCard?.wikipediaLink"
+              :disabled="actionsDisabled"
               class="flex-1 bg-paper text-rust rounded-button py-3 px-4 font-sans font-bold text-sm shadow-[0px_0px_6px_rgba(0,0,0,0.25)] hover:bg-paper-dark active:scale-[0.98] transition-all cursor-pointer text-center outline-none border-none select-none disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 disabled:hover:bg-paper"
             >
               Open article
@@ -354,6 +361,12 @@ const handleShare = () => {
     0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* The card's built-in hover lift (translateY) reads as a tap response inside
+   the modal — misleading on fakes, which don't flip — so keep the card still. */
+.card-flip-scene :deep(.trading-card:hover) {
+  transform: translateZ(0);
+}
+
 /* Card flip (front <-> back) */
 .card-flip-scene {
   perspective: 1600px;
@@ -379,6 +392,9 @@ const handleShare = () => {
   inset: 0;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  /* Own isolation group so the FAKE overlay/stamp mix-blend against the card
+     within this face — the preserve-3d parent otherwise breaks the blend. */
+  isolation: isolate;
 }
 
 .card-flip__face--back {

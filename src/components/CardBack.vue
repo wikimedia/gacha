@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
 import type { Card } from '../stores/useGameStore';
 
 // Placeholder for the flipped ("back") side of a detail card. The full
@@ -7,9 +8,64 @@ import type { Card } from '../stores/useGameStore';
 // footer — will be built out here later. For now this is an intentional stub
 // that fills the card and matches its size / corner radius so the flip reads
 // correctly.
-defineProps<{
+const props = defineProps<{
   card: Card;
 }>();
+
+// Trust & relevance signals from the MediaWiki attribution API. The shape is
+// intentionally loose for now; the rendered backside will consume this once
+// the full design is built.
+const signals = ref<Record<string, unknown> | null>(null);
+const isLoading = ref(false);
+const hasError = ref(false);
+
+const MAX_RETRIES = 3;
+const RETRY_BASE_MS = 800;
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+let controller: AbortController | null = null;
+
+async function fetchSignals() {
+  const title = props.card.title?.trim();
+  if (!title) return;
+
+  const path = encodeURIComponent(title.replace(/ /g, '_'));
+  const url =
+    `https://en.wikipedia.org/w/rest.php/attribution/v0-beta/pages/${path}` +
+    `/signals?redirect=true&expand=trust_and_relevance`;
+
+  const ctrl = new AbortController();
+  controller = ctrl;
+  isLoading.value = true;
+  hasError.value = false;
+
+  // Retry transient failures (network / 5xx / 429) with a linear backoff;
+  // permanent client errors (e.g. 404) are not worth retrying.
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: { accept: 'application/json' },
+        signal: ctrl.signal,
+      });
+      if (res.ok) {
+        signals.value = await res.json();
+        isLoading.value = false;
+        return;
+      }
+      if (res.status < 500 && res.status !== 429) break;
+    } catch {
+      if (ctrl.signal.aborted) return; // component unmounted mid-flight
+    }
+    if (attempt < MAX_RETRIES) await wait(RETRY_BASE_MS * (attempt + 1));
+  }
+
+  if (ctrl.signal.aborted) return;
+  hasError.value = true;
+  isLoading.value = false;
+}
+
+onMounted(fetchSignals);
+onUnmounted(() => controller?.abort());
 </script>
 
 <template>
