@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import type { Card } from '../stores/useGameStore';
 import CardComp from './Card.vue';
+import CardBack from './CardBack.vue';
 import AppIcon from './AppIcon.vue';
 import ShareCardSheet from './ShareCardSheet.vue';
 import { cdxIconClose, cdxIconPrevious, cdxIconNext, cdxIconCheck } from '@wikimedia/codex-icons';
@@ -29,16 +30,25 @@ const emit = defineEmits<{
 
 const activeIndex = ref(props.initialIndex);
 const isShareSheetOpen = ref(false);
+const showCopyToast = ref(false);
+// Whether the active card is flipped to show its back side.
+const isFlipped = ref(false);
 
 // Keep track of active index when initialIndex changes or modal opens
 watch(() => props.initialIndex, (newVal) => {
   activeIndex.value = newVal;
 });
 
+// Flipping is per-card: navigating to another card resets to the front.
+watch(activeIndex, () => {
+  isFlipped.value = false;
+});
+
 watch(() => props.show, (newVal) => {
   if (newVal) {
     activeIndex.value = props.initialIndex;
     lockBodyScroll();
+    isFlipped.value = false;
   } else {
     isShareSheetOpen.value = false;
     unlockBodyScroll();
@@ -60,6 +70,15 @@ const answerStatus = computed<'correct' | 'incorrect' | null>(() => {
 const statusGlyph = computed<string>(() =>
   (answerStatus.value === 'correct' ? cdxIconCheck : cdxIconClose) as string
 );
+
+// Tapping a non-active card selects it; tapping the active card flips it.
+const handleCardClick = (index: number) => {
+  if (index !== activeIndex.value) {
+    activeIndex.value = index;
+  } else {
+    isFlipped.value = !isFlipped.value;
+  }
+};
 
 const handlePrev = () => {
   if (activeIndex.value > 0) {
@@ -187,30 +206,39 @@ const handleShare = () => {
             @touchstart="handleTouchStart"
             @touchend="handleTouchEnd"
           >
-            <div 
-              v-for="(card, index) in cards" 
+            <div
+              v-for="(card, index) in cards"
               :key="card.id"
-              class="relative w-[315px] h-[440px] flex-shrink-0 transition-all duration-300"
-              :class="{ 
+              class="card-flip-scene relative w-[315px] h-[440px] flex-shrink-0 transition-all duration-300"
+              :class="{
                 'opacity-40 scale-95 cursor-pointer': index !== activeIndex,
-                'scale-100 active-card-shadow': index === activeIndex
+                'scale-100 active-card-shadow cursor-pointer': index === activeIndex
               }"
-              @click="index !== activeIndex ? activeIndex = index : null"
+              @click="handleCardClick(index)"
             >
-              <!-- Card component itself -->
-              <CardComp :card="card" :show-link="false" />
+              <div class="card-flip" :class="{ 'is-flipped': index === activeIndex && isFlipped }">
+                <!-- Front face -->
+                <div class="card-flip__face">
+                  <CardComp :card="card" :show-link="false" />
 
-              <!-- Fake Card Overlay (stamp) -->
-              <div 
-                v-if="!card.isReal"
-                class="modal-card-fake-overlay"
-              ></div>
-              <div
-                v-if="!card.isReal"
-                class="modal-card-fake-stamp"
-              >
-                <div class="fake-stamp-text">
-                  FAKE
+                  <!-- Fake Card Overlay (stamp) -->
+                  <div
+                    v-if="!card.isReal"
+                    class="modal-card-fake-overlay"
+                  ></div>
+                  <div
+                    v-if="!card.isReal"
+                    class="modal-card-fake-stamp"
+                  >
+                    <div class="fake-stamp-text">
+                      FAKE
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Back face (placeholder) -->
+                <div class="card-flip__face card-flip__face--back">
+                  <CardBack :card="card" />
                 </div>
               </div>
             </div>
@@ -321,17 +349,40 @@ const handleShare = () => {
 }
 
 .active-card-shadow {
-  box-shadow: 
+  box-shadow:
     0 15px 35px rgba(0, 0, 0, 0.4),
     0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.answer-status-icon--correct {
-  color: var(--color-green);
+/* Card flip (front <-> back) */
+.card-flip-scene {
+  perspective: 1600px;
+  /* Match the card's corner radius so the active-card-shadow glow is rounded
+     too, instead of a square box poking past the rounded card corners. */
+  border-radius: 11.5px;
 }
 
-.answer-status-icon--incorrect {
-  color: var(--color-red);
+.card-flip {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-flip.is-flipped {
+  transform: rotateY(-180deg);
+}
+
+.card-flip__face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card-flip__face--back {
+  transform: rotateY(180deg);
 }
 
 /* FAKE Overlay and Stamp */
