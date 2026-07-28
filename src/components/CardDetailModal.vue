@@ -5,7 +5,7 @@ import CardComp from './Card.vue';
 import CardBack from './CardBack.vue';
 import AppIcon from './AppIcon.vue';
 import ShareCardSheet from './ShareCardSheet.vue';
-import { cdxIconClose, cdxIconPrevious, cdxIconNext, cdxIconCheck } from '@wikimedia/codex-icons';
+import { cdxIconClose, cdxIconPrevious, cdxIconNext, cdxIconCheck, cdxIconInfoFilled } from '@wikimedia/codex-icons';
 import { trackEvent } from '../analytics.ts';
 import { lockBodyScroll, unlockBodyScroll } from '../utils/scrollLock';
 
@@ -74,6 +74,26 @@ const statusGlyph = computed<string>(() =>
 // Fake cards have no real article: they can't flip and their actions are disabled.
 const actionsDisabled = computed(() => !activeCard.value?.isReal);
 
+// One-time "tap to flip" hint. Shown on flippable (real) cards until the user
+// dismisses it with the ✕, which is remembered in localStorage.
+const FLIP_HINT_KEY = 'moonflower_flip_hint_dismissed';
+const flipHintDismissed = ref(false);
+try {
+  flipHintDismissed.value =
+    typeof localStorage !== 'undefined' && localStorage.getItem(FLIP_HINT_KEY) === '1';
+} catch { /* localStorage unavailable */ }
+
+const showFlipHint = computed(
+  () => props.show && !flipHintDismissed.value && !isFlipped.value && !!activeCard.value?.isReal
+);
+
+const dismissFlipHint = () => {
+  flipHintDismissed.value = true;
+  try {
+    localStorage.setItem(FLIP_HINT_KEY, '1');
+  } catch { /* localStorage unavailable */ }
+};
+
 // Tapping a non-active card selects it; tapping the active card flips it —
 // but only real cards have a back to flip to.
 const handleCardClick = (index: number) => {
@@ -81,6 +101,8 @@ const handleCardClick = (index: number) => {
     activeIndex.value = index;
   } else if (props.cards[index]?.isReal) {
     isFlipped.value = !isFlipped.value;
+    // Flipping counts as discovering the feature — retire the hint for good.
+    if (isFlipped.value) dismissFlipHint();
   }
 };
 
@@ -253,7 +275,23 @@ const handleShare = () => {
         </div>
 
         <!-- Bottom Controls & Actions -->
-        <div class="flex flex-col items-center w-full max-w-[326px] gap-6 px-4">
+        <div class="relative flex flex-col items-center w-full max-w-[326px] gap-6 px-4">
+          <!-- Flip hint popover (dismissable, remembered in localStorage) -->
+          <Transition name="flip-hint-fade">
+            <div v-if="showFlipHint" class="flip-hint" role="status">
+              <span class="flip-hint__pointer" aria-hidden="true"></span>
+              <AppIcon :icon="cdxIconInfoFilled" :size="18" class="flip-hint__info" />
+              <p class="flip-hint__text">Tap the card to flip and learn more</p>
+              <button
+                class="flip-hint__close"
+                @click="dismissFlipHint"
+                aria-label="Dismiss hint"
+              >
+                <AppIcon :icon="cdxIconClose" :size="18" />
+              </button>
+            </div>
+          </Transition>
+
           <!-- Dots/Arrow Navigation Row -->
           <div class="flex items-center justify-between w-full px-2">
             <!-- Left Chevron -->
@@ -365,6 +403,79 @@ const handleShare = () => {
    the modal — misleading on fakes, which don't flip — so keep the card still. */
 .card-flip-scene :deep(.trading-card:hover) {
   transform: translateZ(0);
+}
+
+/* Flip hint popover — dark box above the bottom controls, pointing up at the
+   card. Border separates it from the dark scrim; pointer is a rotated square. */
+.flip-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(200%);
+  transform: translateX(-50%);
+  width: 270px;
+  max-width: calc(100% - 8px);
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.06), 0 0 4px rgba(0, 0, 0, 0.06);
+  color: var(--color-ink);
+}
+
+.flip-hint__pointer {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--color-white);
+  border-top: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+}
+
+.flip-hint__info {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.flip-hint__text {
+  flex: 1;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.flip-hint__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: -1px -6px 0 0;
+  background: transparent;
+  border: none;
+  color: var(--color-ink);
+  opacity: 0.75;
+  cursor: pointer;
+  outline: none;
+}
+.flip-hint__close:hover {
+  opacity: 1;
+}
+
+.flip-hint-fade-enter-active,
+.flip-hint-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.flip-hint-fade-enter-from,
+.flip-hint-fade-leave-to {
+  opacity: 0;
 }
 
 /* Card flip (front <-> back) */
