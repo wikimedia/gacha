@@ -3,16 +3,24 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import type { Card } from '../stores/useGameStore';
 import CardComp from './Card.vue';
 import AppIcon from './AppIcon.vue';
+import ShareCardSheet from './ShareCardSheet.vue';
 import { cdxIconClose, cdxIconPrevious, cdxIconNext } from '@wikimedia/codex-icons';
 import { trackEvent } from '../analytics.ts';
+import { lockBodyScroll, unlockBodyScroll } from '../utils/scrollLock';
 
 const props = withDefaults(defineProps<{
   show: boolean;
   cards: Card[];
   initialIndex?: number;
   isCorrectArray?: boolean[]; // For results screen check/cross badges
+  /** Binder owner's username, stamped on the share graphic; null for guests. */
+  ownerUsername?: string | null;
+  /** Whether the viewer owns the collection these cards come from. */
+  isOwnCollection?: boolean;
 }>(), {
   initialIndex: 0,
+  ownerUsername: null,
+  isOwnCollection: false,
 });
 
 const emit = defineEmits<{
@@ -20,7 +28,7 @@ const emit = defineEmits<{
 }>();
 
 const activeIndex = ref(props.initialIndex);
-const showCopyToast = ref(false);
+const isShareSheetOpen = ref(false);
 
 // Keep track of active index when initialIndex changes or modal opens
 watch(() => props.initialIndex, (newVal) => {
@@ -30,9 +38,10 @@ watch(() => props.initialIndex, (newVal) => {
 watch(() => props.show, (newVal) => {
   if (newVal) {
     activeIndex.value = props.initialIndex;
-    document.body.style.overflow = 'hidden';
+    lockBodyScroll();
   } else {
-    document.body.style.overflow = '';
+    isShareSheetOpen.value = false;
+    unlockBodyScroll();
   }
 });
 
@@ -53,6 +62,14 @@ const handleNext = () => {
 // Keyboard navigation
 const handleKeyDown = (e: KeyboardEvent) => {
   if (!props.show) return;
+  // While the share sheet is up, only let Escape through (to close the sheet,
+  // not the modal); arrows would otherwise change the card behind it.
+  if (isShareSheetOpen.value) {
+    if (e.key === 'Escape') {
+      isShareSheetOpen.value = false;
+    }
+    return;
+  }
   if (e.key === 'ArrowLeft') {
     handlePrev();
   } else if (e.key === 'ArrowRight') {
@@ -68,7 +85,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
-  document.body.style.overflow = '';
+  if (props.show) unlockBodyScroll();
 });
 
 // Touch swipe navigation
@@ -102,18 +119,9 @@ const handleLearnMore = () => {
 };
 
 const handleShare = () => {
-  if (activeCard.value?.wikipediaLink) {
-    navigator.clipboard.writeText(activeCard.value.wikipediaLink)
-      .then(() => {
-        showCopyToast.value = true;
-        setTimeout(() => {
-          showCopyToast.value = false;
-        }, 3000);
-      })
-      .catch(err => console.error('Failed to copy card link:', err));
-  }
+  if (!activeCard.value?.isReal) return; // fakes are not shareable
+  isShareSheetOpen.value = true;
   trackEvent('card_detail_share');
-
 };
 </script>
 
@@ -246,21 +254,24 @@ const handleShare = () => {
             >
               Learn More
             </button>
-            <button 
+            <button
               @click="handleShare"
-              class="flex-1 bg-[#4a6783] text-[#fdf4eb] border-none py-3.5 px-4 rounded-[2px] font-serif font-black text-sm uppercase tracking-wider shadow-[0px_0px_6px_rgba(0,0,0,0.25)] hover:bg-[#5b7e9f] active:scale-[0.98] transition-all cursor-pointer text-center outline-none select-none"
+              :disabled="!activeCard?.isReal"
+              class="flex-1 bg-slate text-cream border-none py-3.5 px-4 rounded-[2px] font-serif font-black text-sm uppercase tracking-wider shadow-[0px_0px_6px_rgba(0,0,0,0.25)] hover:bg-slate-light active:scale-[0.98] transition-all cursor-pointer text-center outline-none select-none disabled:opacity-40 disabled:pointer-events-none"
             >
               Share
             </button>
           </div>
         </div>
 
-        <!-- Copy Toast Notification Overlay -->
-        <Transition name="toast-fade">
-          <div v-if="showCopyToast" class="modal-toast-notification">
-            📋 Card link copied to clipboard!
-          </div>
-        </Transition>
+        <!-- Share-as-image bottom sheet -->
+        <ShareCardSheet
+          :open="isShareSheetOpen"
+          :card="activeCard"
+          :username="ownerUsername"
+          :is-own-collection="isOwnCollection"
+          @close="isShareSheetOpen = false"
+        />
       </div>
     </Transition>
   </Teleport>
@@ -346,24 +357,6 @@ const handleShare = () => {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Toast Alert Style inside Modal */
-.modal-toast-notification {
-  position: fixed;
-  bottom: 100px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-  background-color: #fdf4eb;
-  color: #3f3f35;
-  border: 1.5px solid #c4b69d;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-family: var(--font-serif);
-  font-size: 13px;
-  font-weight: bold;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-}
-
 /* Transitions */
 .modal-fade-enter-active,
 .modal-fade-leave-active {
@@ -372,26 +365,5 @@ const handleShare = () => {
 .modal-fade-enter-from,
 .modal-fade-leave-to {
   opacity: 0;
-}
-
-.toast-fade-enter-active {
-  animation: toastPop 0.3s ease-out;
-}
-.toast-fade-leave-active {
-  transition: opacity 0.2s ease-in;
-}
-.toast-fade-leave-to {
-  opacity: 0;
-}
-
-@keyframes toastPop {
-  0% {
-    transform: translateX(-50%) translateY(20px) scale(0.9);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(-50%) translateY(0) scale(1);
-    opacity: 1;
-  }
 }
 </style>
