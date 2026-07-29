@@ -10,7 +10,9 @@ import {
   cdxIconUserAvatarOutline,
   cdxIconInfo,
   cdxIconShare,
-  cdxIconPrevious
+  cdxIconPrevious,
+  cdxIconHeart,
+  cdxIconHeartOutline
 } from '@wikimedia/codex-icons';
 import InstructionsBody from './InstructionsBody.vue';
 import CreditsSheet from './CreditsSheet.vue';
@@ -24,14 +26,19 @@ const props = withDefaults(defineProps<{
   binderColor?: string;
   currentRound?: number;
   totalRounds?: number;
+  lives?: number;
 }>(), {
   gachaActive: false,
   isAnimating: false,
   gameActive: false,
   binderColor: '#4a6783',
   currentRound: 1,
-  totalRounds: 10
+  totalRounds: 10,
+  lives: 3
 });
+
+// Total lives in a run (game is lost after 3 incorrect guesses).
+const maxLives = 3;
 
 const emit = defineEmits<{
   (e: 'activate'): void;
@@ -241,29 +248,49 @@ defineExpose({
         </ul>
       </div>
 
-      <!-- Center: Progress Indicator (during game) or title -->
-      <div v-if="gameActive" class="game-progress-bar">
-        <div
-          v-for="i in totalRounds"
-          :key="i"
-          class="game-progress-segment"
-          :class="{
-            'game-progress-segment--completed': i < currentRound,
-            'game-progress-segment--upcoming': i >= currentRound
-          }"
-        />
-      </div>
-      <router-link 
-        v-else
-        to="/" 
+      <!-- Center: title (hidden during a game run) -->
+      <router-link
+        v-if="!gameActive"
+        to="/"
         class="font-serif font-normal text-[26px] leading-9 text-ink no-underline hover:opacity-85 select-none"
       >
         World of Wikipedia
       </router-link>
 
-      <!-- Right: Info Dialog Trigger OR Share button -->
-      <div v-if="route.name === 'profile'" class="relative z-50">
-        <button 
+      <!-- Right: in-game status (round counter + lives) OR share / info -->
+      <div v-if="gameActive" class="game-status-group">
+        <!-- Round counter: deck icon + "current / total" -->
+        <div class="game-status-box" aria-label="Card progress">
+          <svg
+            class="deck-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 18 18"
+            fill="none"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <!-- back card (outline) -->
+            <rect x="1.17" y="1" width="10.3" height="14.4" rx="2.06" stroke="currentColor" stroke-width="2" />
+            <!-- front card (filled), tilted forward -->
+            <rect x="5.28" y="2.14" width="10.3" height="14.43" rx="2.06" fill="currentColor" transform="rotate(23.13 10.43 9.35)" />
+          </svg>
+          <span class="game-counter">{{ currentRound }} / {{ totalRounds }}</span>
+        </div>
+        <!-- Lives remaining -->
+        <div class="game-status-box game-status-box--lives" :aria-label="`${lives} of ${maxLives} lives remaining`">
+          <span
+            v-for="n in maxLives"
+            :key="n"
+            class="life-heart"
+            :class="{ 'life-heart--lost': n <= maxLives - lives }"
+          >
+            <AppIcon :icon="n <= maxLives - lives ? cdxIconHeartOutline : cdxIconHeart" :size="18" />
+          </span>
+        </div>
+      </div>
+      <div v-else-if="route.name === 'profile'" class="relative z-50">
+        <button
           class="header-icon-btn"
           @click="emit('share-profile')"
           aria-label="Share Profile Link"
@@ -454,36 +481,53 @@ defineExpose({
   }
 }
 
-/* --- Game Progress Indicator (segmented bar) --- */
-.game-progress-bar {
+/* --- In-game status (round counter + lives) --- */
+.game-status-group {
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 8px;
   flex: 0 0 auto;
-  margin: 0 12px;
-  height: 26px;
-  border: 1.5px solid var(--color-ink);
-  border-radius: 4px;
-  overflow: hidden;
+}
+
+.game-status-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius-button);
   background: transparent;
+  color: var(--color-ink);
 }
 
-.game-progress-segment {
-  width: 24px;
+.game-counter {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.deck-icon {
   flex-shrink: 0;
-  transition: background-color 0.3s ease;
-  border-right: 1.5px solid var(--color-ink);
 }
 
-.game-progress-segment:last-child {
-  border-right: none;
+.game-status-box--lives {
+  gap: 6px;
 }
 
-.game-progress-segment--completed {
-  background-color: #4a6783;
+/* Heart colour is meaningful only to this component (matches the mock). */
+.life-heart {
+  --color-heart: #a56553;
+  display: inline-flex;
+  color: var(--color-heart);
 }
 
-.game-progress-segment--upcoming {
-  background-color: rgba(74, 103, 131, 0.25);
+.life-heart--lost {
+  color: var(--color-ink);
+  opacity: 0.25;
 }
 
 /* --- How to Play modal (full-screen; content shared via InstructionsBody) --- */

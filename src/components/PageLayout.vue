@@ -15,6 +15,7 @@ defineProps<{
   binderColor?: string;
   currentRound?: number;
   totalRounds?: number;
+  lives?: number;
 }>();
 
 const emit = defineEmits<{
@@ -53,6 +54,7 @@ defineExpose({
       :binder-color="binderColor"
       :current-round="currentRound"
       :total-rounds="totalRounds"
+      :lives="lives"
       @activate="emit('activate')"
       @edit-profile="emit('edit-profile')"
       @quit-game="emit('quit-game')"
@@ -63,6 +65,6 @@ defineExpose({
     <main class="app-page-main" :class="{ 'app-page-main-wide': isWide }">
       <slot />
     </main>
-    <AppFooter />
+    <AppFooter v-if="!gameActive" />
   </div>
 </template>
