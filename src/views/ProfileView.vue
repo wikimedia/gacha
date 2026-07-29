@@ -2,10 +2,11 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
-import { useGameStore } from '../stores/useGameStore';
+import { useGameStore, RARITY_RANK } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from '../components/Card.vue';
 import CardDetailModal from '../components/CardDetailModal.vue';
+import ShareCardSheet from '../components/ShareCardSheet.vue';
 import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import { supabase } from '../supabase';
@@ -260,16 +261,37 @@ watch(
   }
 );
 
-// Custom Redesign Handlers
+// Profile-level sharing: the header share button opens the card share
+// sheet, seeded with the profile's representative card.
+const isProfileShareOpen = ref(false);
+
+// The pinned ("profile picture") card, else the highest-rarity real card,
+// newest first on ties. The `title` checks skip rows whose card details
+// failed to resolve (mappedBinderCards spreads `[]` to `{}` in that case).
+const profileShareCard = computed<Card | null>(() => {
+  if (pinnedCard.value?.title) return pinnedCard.value;
+  const candidates = mappedBinderCards.value.filter(c => c.title && c.isReal !== false);
+  if (candidates.length === 0) return null;
+  return candidates.reduce((best, c) =>
+    (RARITY_RANK[c.rarity] ?? 0) > (RARITY_RANK[best.rarity] ?? 0) ? c : best
+  );
+});
+
 const handleShareProfile = () => {
-  navigator.clipboard.writeText(window.location.href)
-    .then(() => {
-      showShareToast.value = true;
-      setTimeout(() => {
-        showShareToast.value = false;
-      }, 3000);
-    })
-    .catch(err => console.error('Failed to copy profile link:', err));
+  if (profileShareCard.value) {
+    isProfileShareOpen.value = true;
+  } else {
+    // Empty binder: no card to build a graphic from; copy the profile
+    // link instead.
+    navigator.clipboard.writeText(window.location.href)
+      .then(() => {
+        showShareToast.value = true;
+        setTimeout(() => {
+          showShareToast.value = false;
+        }, 3000);
+      })
+      .catch(err => console.error('Failed to copy profile link:', err));
+  }
   trackEvent('profile_share');
 };
 
@@ -426,15 +448,15 @@ const isAvatarCSSImage = computed(() => {
   return val.startsWith('linear-gradient') || val.startsWith('url(');
 });
 
-const sortedBinderCards = computed(() => {
-  console.log(`sortedBinderCards re-evaluating: profileCards count = ${profileCards.value.length}, gameCards count = ${gameStore.gameCards.length}`);
+// All binder cards mapped to display data and sorted (pinned first, then
+// newest), before the search filter is applied.
+const mappedBinderCards = computed(() => {
   const result = profileCards.value.map(c => {
     const cardData = c.cardDetails || gameStore.gameCards.find((mc: any) => mc.id === c.id) || [];
     if (!cardData) {
       console.warn(`Card data not found for collected card ID: "${c.id}"`);
       return null;
     }
-    console.log(`Mapping card ${c.id}: title="${cardData.title}", image="${cardData.image}"`);
     return {
       ...cardData,
       collectedAt: c.collectedAt,
@@ -443,7 +465,6 @@ const sortedBinderCards = computed(() => {
     };
   })
   .filter(c => c !== null);
-  console.log(`sortedBinderCards computed result: mapped ${result.length} cards successfully.`);
   return result
   .sort((a, b) => {
     const aShow = a.isShowcase ? 1 : 0;
@@ -452,15 +473,17 @@ const sortedBinderCards = computed(() => {
       return bShow - aShow;
     }
     return new Date(b.collectedAt).getTime() - new Date(a.collectedAt).getTime();
-  })
-  .filter(c => {
-    const card = c!;
+  }) as Array<Card & { isShowcase: boolean, customSection: string | null }>;
+});
+
+const sortedBinderCards = computed(() => {
+  return mappedBinderCards.value.filter(card => {
     // Filter by search title
     if (searchFilter.value && !card.title.toLowerCase().includes(searchFilter.value.toLowerCase())) {
       return false;
     }
     return true;
-  }) as Array<Card & { isShowcase: boolean, customSection: string | null }>;
+  });
 });
 
 // Group binder cards by Category
@@ -844,7 +867,17 @@ const toggleCardShowcase = async (cardId: string) => {
       :show="isDetailModalOpen"
       :cards="detailModalCards"
       :initial-index="detailModalInitialIndex"
+      :owner-username="profileUser?.username ?? null"
+      :is-own-collection="isPrivateMode"
       @close="isDetailModalOpen = false"
+    />
+    <!-- Profile-level share sheet -->
+    <ShareCardSheet
+      :open="isProfileShareOpen"
+      :card="profileShareCard"
+      :username="profileUser?.username ?? null"
+      :is-own-collection="isPrivateMode"
+      @close="isProfileShareOpen = false"
     />
   </PageLayout>
 </template>

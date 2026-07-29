@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch, onUnmounted } from 'vue';
 import { PhX } from '@phosphor-icons/vue';
+import { lockBodyScroll, unlockBodyScroll } from '../utils/scrollLock';
 
 // Reusable bottom sheet: dark backdrop, slide-up paper panel, body scroll-lock,
 // and a header row (title + close button). Consumers supply the body via the
@@ -19,13 +20,11 @@ const emit = defineEmits<{
   (e: 'close'): void;
 }>();
 
-const lockScroll = (locked: boolean) => {
-  document.body.style.overflow = locked ? 'hidden' : '';
-};
-
-watch(() => props.open, lockScroll);
+watch(() => props.open, (open) => (open ? lockBodyScroll() : unlockBodyScroll()));
 // Guard against unmounting while open (would otherwise leave the page locked).
-onUnmounted(() => lockScroll(false));
+onUnmounted(() => {
+  if (props.open) unlockBodyScroll();
+});
 </script>
 
 <template>
