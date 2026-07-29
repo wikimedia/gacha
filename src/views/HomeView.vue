@@ -781,6 +781,9 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
 
         </div>
 
+        <!-- Footer: buttons plus the floating result toast. The toast is
+             positioned absolutely so it never reflows the card above it. -->
+        <div class="gameplay-footer">
         <!-- Correct / incorrect result toast (centered, just above the buttons) -->
         <Transition name="result-toast-pop">
           <div v-if="roundAnswered" class="round-result-slot">
@@ -851,6 +854,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             </template>
             Fact
           </BaseButton>
+        </div>
         </div>
       </section>
 

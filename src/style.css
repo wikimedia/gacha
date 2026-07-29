@@ -453,16 +453,6 @@ body {
   animation: gradientShift 3.5s ease-out infinite;
 }
 
-/* Correct/Incorrect evaluation stamp */
-.animate-stamp-scale {
-  animation: stampScale 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes stampScale {
-  0% { transform: scale(3.5); opacity: 0; }
-  100% { opacity: 1; }
-}
-
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
 }
@@ -772,6 +762,74 @@ body {
   box-sizing: border-box;
   z-index: 20;
   transition: all 0.2s ease;
+}
+
+/* --- Round result toast (correct / incorrect feedback above the buttons) --- */
+.gameplay-footer {
+  position: relative;
+}
+
+/* Floated above the buttons so it never reflows the card area above it. */
+.round-result-slot {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 8px 8px;
+  pointer-events: none;
+}
+
+.round-result-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--toast-border);
+  border-radius: var(--radius-button);
+  background: var(--toast-bg);
+  color: var(--toast-border);
+  box-shadow: 0 0 16px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+.round-result-toast__icon {
+  flex-shrink: 0;
+}
+
+.round-result-toast__label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.round-result-toast--incorrect {
+  --toast-bg: #ffe9e5;
+  --toast-border: #f54739;
+}
+
+.round-result-toast--correct {
+  --toast-bg: #dff2eb;
+  --toast-border: #a6bf7f;
+}
+
+.result-toast-pop-enter-active {
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.result-toast-pop-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.result-toast-pop-enter-from {
+  opacity: 0;
+  transform: translateY(8px) scale(0.92);
+}
+
+.result-toast-pop-leave-to {
+  opacity: 0;
 }
 
 
