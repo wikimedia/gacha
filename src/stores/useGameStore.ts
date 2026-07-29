@@ -46,6 +46,15 @@ export interface Card {
   badge?: 'correct' | 'incorrect';
 }
 
+/** Rarity tiers in ascending value order (also each tier's star count). */
+export const RARITY_RANK: Record<Card['rarity'], number> = {
+  Common: 1,
+  Uncommon: 2,
+  Rare: 3,
+  Epic: 4,
+  Legendary: 5,
+};
+
 export interface CollectedCard {
   id: string;
   collectedAt: string;

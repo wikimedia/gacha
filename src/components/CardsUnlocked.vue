@@ -498,6 +498,8 @@ const handleDismiss = () => {
       :cards="detailModalCards"
       :initial-index="detailModalInitialIndex"
       :is-correct-array="gameType === 'fakeout' ? detailModalIsCorrectArray : undefined"
+      :owner-username="authStore.user?.username ?? null"
+      :is-own-collection="true"
       @close="isDetailModalOpen = false"
     />
   </div>
