@@ -90,6 +90,11 @@ withDefaults(
   background-color: var(--color-ink-dark);
 }
 
+.app-btn-true.is-disabled {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
 /* Fake / "false" button variant (light, outlined) */
 .app-btn-false {
   flex: 1;
@@ -104,6 +109,11 @@ withDefaults(
 
 .app-btn-false:hover:not(:disabled) {
   background-color: var(--color-paper-dark);
+}
+
+.app-btn-false.is-disabled {
+  opacity: 0.5;
+  box-shadow: none;
 }
 
 .app-btn-icon {

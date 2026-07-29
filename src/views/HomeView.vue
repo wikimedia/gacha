@@ -69,9 +69,8 @@ const swipeOffset = ref(0);
 const isSwiping = ref(false);
 const touchStartX = ref(0);
 
-// Stamp feedback states
+// Result feedback states
 const roundWasCorrect = ref(false);
-const stampAngle = ref(0);
 const swipeDirection = ref<'left' | 'right' | null>(null);
 
 // Cooldown ticking
@@ -369,8 +368,7 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
   const isCorrect = isRealChoice === card.isReal;
   
   roundWasCorrect.value = isCorrect;
-  stampAngle.value = Math.floor(Math.random() * 30) - 15; // Random angle between -15 and 15 degrees
-  
+
   // Track all encountered cards
   encounteredCardsThisGame.value.push({ card, isCorrect });
 
@@ -779,35 +777,60 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
               
             </div>
 
-            <!-- Rubber Stamp Overlay inside wrapper -->
-            <div 
-              v-if="roundAnswered" 
-              class="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
-            >
-              <div 
-                class="px-6 py-3 border-[6px] font-mono font-black text-3xl uppercase tracking-widest bg-white/95 shadow-xl select-none animate-stamp-scale whitespace-nowrap"
-                :class="[
-                  roundWasCorrect 
-                    ? 'border-success text-success' 
-                    : 'border-error text-error'
-                ]"
-                :style="{ transform: `rotate(${stampAngle}deg)` }"
-              >
-                {{ roundWasCorrect ? 'CORRECT' : `INCORRECT ${incorrectCount}/3` }}
-              </div>
-            </div>
-
           </div>
 
         </div>
 
-        <!-- Desktop Swiping Helpers (True/False Redesign) -->
-        <div 
-          class="gameplay-buttons-container"
-          :class="[roundAnswered ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100']"
-        >
-          <BaseButton 
+        <!-- Correct / incorrect result toast (centered, just above the buttons) -->
+        <Transition name="result-toast-pop">
+          <div v-if="roundAnswered" class="round-result-slot">
+            <div
+              class="round-result-toast"
+              :class="roundWasCorrect ? 'round-result-toast--correct' : 'round-result-toast--incorrect'"
+              role="status"
+            >
+              <svg
+                class="round-result-toast__icon"
+                width="18"
+                height="18"
+                viewBox="0 0 18 18"
+                fill="none"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <!-- correct: filled disc with the check cut out -->
+                <path
+                  v-if="roundWasCorrect"
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M9 0C13.9706 0 18 4.02944 18 9C18 13.9706 13.9706 18 9 18C4.02944 18 0 13.9706 0 9C0 4.02944 4.02944 0 9 0ZM7.82324 10.1182L5.7998 8.59961L4.59961 10.2002L7.40039 12.2998H8.5L13.4053 6.34375L11.8438 5.09473L7.82324 10.1182Z"
+                  fill="currentColor"
+                />
+                <!-- incorrect: outlined circle with a cross -->
+                <template v-else>
+                  <path
+                    fill-rule="evenodd"
+                    clip-rule="evenodd"
+                    d="M9 0C13.9706 0 18 4.02944 18 9C18 13.9706 13.9706 18 9 18C4.02944 18 0 13.9706 0 9C0 4.02944 4.02944 0 9 0ZM9 2C5.13401 2 2 5.13401 2 9C2 12.866 5.13401 16 9 16C12.866 16 16 12.866 16 9C16 5.13401 12.866 2 9 2Z"
+                    fill="currentColor"
+                  />
+                  <path
+                    d="M13.2432 6.17188L10.4131 9.00098L13.2412 11.8301L11.8271 13.2441L8.99902 10.415L6.17188 13.2422L4.75781 11.8281L7.58496 9L4.75684 6.17188L6.17188 4.75781L8.99902 7.58594L11.8281 4.75781L13.2432 6.17188Z"
+                    fill="currentColor"
+                  />
+                </template>
+              </svg>
+              <span class="round-result-toast__label">{{ roundWasCorrect ? 'Correct' : 'Incorrect' }}</span>
+            </div>
+          </div>
+        </Transition>
+
+        <!-- Desktop Swiping Helpers (True/False Redesign). Buttons stay
+             visible but are disabled while the result toast is showing. -->
+        <div class="gameplay-buttons-container">
+          <BaseButton
             variant="false"
+            :disabled="roundAnswered"
             @click="handleSwipeChoice(false)"
           >
             <template #icon>
@@ -816,9 +839,10 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             </template>
             Fake
           </BaseButton>
-          
-          <BaseButton 
+
+          <BaseButton
             variant="true"
+            :disabled="roundAnswered"
             @click="handleSwipeChoice(true)"
           >
             <template #icon>
