@@ -497,6 +497,9 @@ const handleTouchStart = (e: TouchEvent) => {
 
 const handleTouchMove = (e: TouchEvent) => {
   if (!isSwiping.value || roundAnswered.value) return;
+  // Stop the horizontal drag from scrolling/rubber-banding the page on
+  // iOS/Android (belt-and-suspenders with the card's touch-action: none).
+  if (e.cancelable) e.preventDefault();
   const diffX = e.touches[0].clientX - touchStartX.value;
   swipeOffset.value = diffX;
 };
@@ -722,7 +725,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
           <!-- Centered wrapper container -->
           <div class="relative w-full max-w-[var(--card-width)] h-[var(--card-height)]">
             
-            <div class="stack select-none w-full h-full">
+            <div class="stack select-none w-full h-full touch-none">
               
               <div
                 v-for="(card, index) in visibleDeck"
@@ -756,23 +759,6 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
                   :show-link="false"
                   :shiny-trigger="index === 0 ? 'on' : 'off'"
                 />
-
-                <!-- Swiping Indicators Overlay -->
-                <div 
-                  v-if="index === 0 && swipeOffset !== 0 && !roundAnswered"
-                  class="absolute inset-0 flex items-center justify-center font-bold text-2xl uppercase pointer-events-none z-40 transition-all rounded"
-                  :class="[
-                    swipeOffset > 30 ? 'bg-success/20 text-success' : '',
-                    swipeOffset < -30 ? 'bg-error/20 text-error' : ''
-                  ]"
-                >
-                  <div v-if="swipeOffset > 30" class="px-4 py-2 border-4 border-success bg-white rounded shadow-md font-sans">
-                    ✓ Fact
-                  </div>
-                  <div v-if="swipeOffset < -30" class="px-4 py-2 border-4 border-error bg-white rounded shadow-md font-sans">
-                    ✕ Fake
-                  </div>
-                </div>
               </div>
               
             </div>

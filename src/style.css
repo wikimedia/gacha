@@ -371,7 +371,7 @@
 
 /* Custom Base resets */
 html {
-    overscroll-behavior-y: contain;
+    overscroll-behavior: none;
 }
 
 body {
@@ -380,7 +380,7 @@ body {
   background-color: var(--color-surface-subtle);
   margin: 0;
   padding: 0;
-  overscroll-behavior-y: contain;
+  overscroll-behavior: none;
 }
 
 .wiki-serif {
