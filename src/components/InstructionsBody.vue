@@ -86,8 +86,6 @@ const RULES = [
 
 /* "Rules" panel — paper card that frames the instruction list */
 .rules-panel {
-  /* Neutral border specific to this panel; not part of the shared palette. */
-  --rules-border: #9b9b9b;
   width: 370px;
   max-width: 100%;
   display: flex;
@@ -96,7 +94,7 @@ const RULES = [
   gap: 16px;
   padding: 16px 30px;
   background-color: var(--color-paper);
-  border: 1px solid var(--rules-border);
+  border: 1px solid var(--color-border-neutral);
   border-radius: var(--radius-button);
   box-sizing: border-box;
 }

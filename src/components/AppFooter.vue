@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import BaseSheet from './BaseSheet.vue';
 import InstructionsBody from './InstructionsBody.vue';
+import PrivacyNoticesSheet from './PrivacyNoticesSheet.vue';
 
 // Site-wide footer rendered below all page content (home/category selection,
 // in-game, post-game results, and profile) via PageLayout.
@@ -9,20 +10,21 @@ import InstructionsBody from './InstructionsBody.vue';
 // Layout (Figma "Bot Nav"): Rules · Privacy & Notices · Contact Us · [Donate].
 // "Rules" opens the how-to-play instructions in a bottom sheet (the same
 // content the first-game modal shows, minus its heading/Start button).
-// "Privacy & Notices" is still a placeholder. "Contact Us" opens the feedback
-// Google Form; "Donate to Wikipedia" links to the WMF donation page.
+// "Privacy & Notices" opens a bottom sheet listing the third-party services the
+// game relies on. "Contact Us" opens the feedback Google Form; "Donate to
+// Wikipedia" links to the WMF donation page.
 const CONTACT_FORM_URL = 'https://forms.gle/NvSXJbr8nyVFsFZy8';
 const DONATE_URL = 'https://donate.wikimedia.org/w/index.php';
 
 const showRules = ref(false);
+const showPrivacy = ref(false);
 </script>
 
 <template>
   <footer class="app-footer">
     <div class="app-footer__row">
       <button type="button" class="app-footer__link" @click="showRules = true">Rules</button>
-      <!-- TODO: open an in-app sheet (no-op for now) -->
-      <button type="button" class="app-footer__link">Privacy &amp; Notices</button>
+      <button type="button" class="app-footer__link" @click="showPrivacy = true">Privacy &amp; Notices</button>
       <a
         class="app-footer__link"
         :href="CONTACT_FORM_URL"
@@ -45,6 +47,9 @@ const showRules = ref(false);
     <BaseSheet :open="showRules" title="Rules" @close="showRules = false">
       <InstructionsBody />
     </BaseSheet>
+
+    <!-- Privacy & Notices bottom sheet -->
+    <PrivacyNoticesSheet :open="showPrivacy" @close="showPrivacy = false" />
   </footer>
 </template>
 
