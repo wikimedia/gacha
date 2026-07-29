@@ -13,7 +13,7 @@ import BaseButton from '../components/BaseButton.vue';
 import { trackEvent } from '../analytics';
 import { PhThumbsUp, PhThumbsDown } from '@phosphor-icons/vue';
 import AppIcon from '../components/AppIcon.vue';
-import { cdxIconPlay } from '@wikimedia/codex-icons';
+import { cdxIconPlay, cdxIconSuccess, cdxIconClear } from '@wikimedia/codex-icons';
 
 const route = useRoute();
 const router = useRouter();
@@ -792,37 +792,11 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
               :class="roundWasCorrect ? 'round-result-toast--correct' : 'round-result-toast--incorrect'"
               role="status"
             >
-              <svg
+              <AppIcon
                 class="round-result-toast__icon"
-                width="18"
-                height="18"
-                viewBox="0 0 18 18"
-                fill="none"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <!-- correct: filled disc with the check cut out -->
-                <path
-                  v-if="roundWasCorrect"
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M9 0C13.9706 0 18 4.02944 18 9C18 13.9706 13.9706 18 9 18C4.02944 18 0 13.9706 0 9C0 4.02944 4.02944 0 9 0ZM7.82324 10.1182L5.7998 8.59961L4.59961 10.2002L7.40039 12.2998H8.5L13.4053 6.34375L11.8438 5.09473L7.82324 10.1182Z"
-                  fill="currentColor"
-                />
-                <!-- incorrect: outlined circle with a cross -->
-                <template v-else>
-                  <path
-                    fill-rule="evenodd"
-                    clip-rule="evenodd"
-                    d="M9 0C13.9706 0 18 4.02944 18 9C18 13.9706 13.9706 18 9 18C4.02944 18 0 13.9706 0 9C0 4.02944 4.02944 0 9 0ZM9 2C5.13401 2 2 5.13401 2 9C2 12.866 5.13401 16 9 16C12.866 16 16 12.866 16 9C16 5.13401 12.866 2 9 2Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M13.2432 6.17188L10.4131 9.00098L13.2412 11.8301L11.8271 13.2441L8.99902 10.415L6.17188 13.2422L4.75781 11.8281L7.58496 9L4.75684 6.17188L6.17188 4.75781L8.99902 7.58594L11.8281 4.75781L13.2432 6.17188Z"
-                    fill="currentColor"
-                  />
-                </template>
-              </svg>
+                :icon="roundWasCorrect ? cdxIconSuccess : cdxIconClear"
+                :size="18"
+              />
               <span class="round-result-toast__label">{{ roundWasCorrect ? 'Correct' : 'Incorrect' }}</span>
             </div>
           </div>

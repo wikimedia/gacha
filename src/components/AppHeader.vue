@@ -261,20 +261,7 @@ defineExpose({
       <div v-if="gameActive" class="game-status-group">
         <!-- Round counter: deck icon + "current / total" -->
         <div class="game-status-box" aria-label="Card progress">
-          <svg
-            class="deck-icon"
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
-            fill="none"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <!-- back card (outline) -->
-            <rect x="1.17" y="1" width="10.3" height="14.4" rx="2.06" stroke="currentColor" stroke-width="2" />
-            <!-- front card (filled), tilted forward -->
-            <rect x="5.28" y="2.14" width="10.3" height="14.43" rx="2.06" fill="currentColor" transform="rotate(23.13 10.43 9.35)" />
-          </svg>
+          <img class="deck-icon" src="/cards.svg" width="18" height="18" alt="" aria-hidden="true" />
           <span class="game-counter">{{ currentRound }} / {{ totalRounds }}</span>
         </div>
         <!-- Lives remaining -->
