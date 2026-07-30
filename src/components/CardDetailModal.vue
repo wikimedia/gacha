@@ -332,12 +332,6 @@ const handleShare = () => {
 
           <!-- Action buttons -->
           <div class="flex gap-3 w-full pb-4">
-            <button 
-              @click="handleLearnMore"
-              class="flex-1 bg-[#fdf4eb] text-[#4a6783] border-none py-3.5 px-4 rounded-[2px] font-serif font-black text-sm uppercase tracking-wider shadow-[0px_0px_6px_rgba(0,0,0,0.25)] hover:bg-white active:scale-[0.98] transition-all cursor-pointer text-center outline-none select-none"
-            >
-              Learn More
-            </button>
             <button
               @click="handleShare"
               :disabled="actionsDisabled"
