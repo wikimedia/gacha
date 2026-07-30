@@ -97,3 +97,35 @@ export const CATEGORY_HOME_CONFIG: Record<Category, CategoryHomeConfig> = {
     ],
   },
 };
+
+/**
+ * A fine-grained topic in the home-screen "More" picker. Each maps a
+ * human-readable label to a Wikimedia article-topic code stored in the DB's
+ * `topic` column, matched exactly (leaf topics only, canonical casing).
+ */
+export interface TopicOption {
+  /** Display name on the picker tile. */
+  label: string;
+  /** Exact DB `topic` value; the pool query filters on this. */
+  code: string;
+  /**
+   * Broader sub_category the topic lives under. Used as the fallback fakes pool
+   * when the topic itself is too thin, so backfilled fakes stay thematically
+   * close.
+   */
+  category: Category;
+  /** Picker tile thumbnail (Wikimedia Commons). */
+  image: string;
+}
+
+/**
+ * Topics surfaced in the "More" picker. We only list topics with enough
+ * real + fake content to build full decks (currently all under "Media").
+ */
+export const TOPICS: TopicOption[] = [
+  { label: 'Films', code: 'Culture.Media.Films', category: 'Media', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Jaws_movie_poster.jpg/960px-Jaws_movie_poster.jpg' },
+  { label: 'Television', code: 'Culture.Media.Television', category: 'Media', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Television_static.gif/330px-Television_static.gif' },
+  { label: 'Music', code: 'Culture.Media.Music', category: 'Media', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/HANGMAN%27S_CHAIR_French_Metal_Band_live_in_Paris_Trabendo%2C_Live_Music_Photography.jpg/960px-HANGMAN%27S_CHAIR_French_Metal_Band_live_in_Paris_Trabendo%2C_Live_Music_Photography.jpg' },
+  { label: 'Video Games', code: 'Culture.Media.Video_games', category: 'Media', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Fez_%28video_game%29_cover_art.png/500px-Fez_%28video_game%29_cover_art.png' },
+  { label: 'Entertainment', code: 'Culture.Media.Entertainment', category: 'Media', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Tragedy_and_Comedy_%288094737104%29.jpg/960px-Tragedy_and_Comedy_%288094737104%29.jpg' },
+];

@@ -4,14 +4,15 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore, CATEGORIES, CATEGORY_SLUG, categoryToSlug, slugToCategory } from '../stores/useGameStore';
 import type { Card, Category } from '../stores/useGameStore';
-import { CATEGORY_HOME_CONFIG } from '../data/categories';
+import { CATEGORY_HOME_CONFIG, type TopicOption } from '../data/categories';
 import CardComp from '../components/Card.vue';
 import CardsUnlocked from '../components/CardsUnlocked.vue';
 import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import BaseButton from '../components/BaseButton.vue';
+import TopicPickerSheet from '../components/TopicPickerSheet.vue';
 import { trackEvent } from '../analytics';
-import { PhThumbsUp, PhThumbsDown } from '@phosphor-icons/vue';
+import { PhThumbsUp, PhThumbsDown, PhDotsThreeOutline } from '@phosphor-icons/vue';
 import AppIcon from '../components/AppIcon.vue';
 import { cdxIconPlay } from '@wikimedia/codex-icons';
 
@@ -25,6 +26,12 @@ const isLoading = ref(true);
 
 // Active Category for Fakeout Game (tracks game session)
 const selectedCategory = ref<Category | null>(null);
+
+// Topic picker ("More" sheet). When a game is launched from a fine-grained
+// topic rather than one of the six categories, we track its label for the
+// results badge and analytics (there's no Category for it).
+const showTopicSheet = ref(false);
+const selectedTopicLabel = ref<string | null>(null);
 
 // Subcategories definition matching Figma website UX / UI page
 interface SubCategoryDef {
@@ -218,6 +225,7 @@ watch(() => route.name, (name) => {
     showCardsUnlocked.value = false;
     gameActive.value = false;
     selectedCategory.value = null;
+    selectedTopicLabel.value = null;
   }
 });
 
@@ -248,22 +256,25 @@ const shuffle = (arr: Card[]): Card[] => {
   return a;
 };
 
-// Category selection & game initialization
-const startFakeoutGame = async (category: Category) => {
-  if (gameStore.isCooldownActive(category) || isStartingGame.value) return;
-
+// Core game initialization, shared by category and topic games. `fetchPool`
+// returns the candidate card pool; `category`/`topicLabel` identify the run for
+// the results badge, cooldown, and analytics (exactly one is set).
+const beginGame = async (
+  fetchPool: () => Promise<Card[]>,
+  { category, topicLabel }: { category?: Category; topicLabel?: string }
+) => {
   isStartingGame.value = true;
   try {
-    // Fetch a fresh randomized pool for this category each game so the cards vary
-    // between games. Fall back to the cached sample if the fetch is empty (offline/mock).
-    let catCards = await gameStore.fetchCategoryPool(category);
-    if (catCards.length === 0) {
-      catCards = gameStore.gameCards.filter((c: Card) => c.category === category);
+    // Fetch a fresh randomized pool each game so the cards vary between games.
+    // Fall back to the cached sample if the fetch is empty (offline/mock).
+    let poolCards = await fetchPool();
+    if (poolCards.length === 0 && category) {
+      poolCards = gameStore.gameCards.filter((c: Card) => c.category === category);
     }
 
     // Build the deck: a fully shuffled, balanced mix of real and fake cards
-    const reals = shuffle(catCards.filter((c: Card) => c.isReal));
-    const fakes = shuffle(catCards.filter((c: Card) => !c.isReal));
+    const reals = shuffle(poolCards.filter((c: Card) => c.isReal));
+    const fakes = shuffle(poolCards.filter((c: Card) => !c.isReal));
 
     // Aim for an even real/fake split; if one side is short, backfill from the other
     let numReal = Math.min(TARGET_REAL, reals.length);
@@ -279,12 +290,13 @@ const startFakeoutGame = async (category: Category) => {
 
     gameStartTime.value = performance.now();
     trackEvent('start_fakeout_game', {
-      fakeout_category: category,
+      fakeout_category: category || topicLabel,
       logged_in: authStore.isLoggedIn,
     });
 
     pointsBeforeGame.value = gameStore.gdPoints;
-    selectedCategory.value = category;
+    selectedCategory.value = category ?? null;
+    selectedTopicLabel.value = topicLabel ?? null;
     gameActive.value = true;
     currentRound.value = 1;
     gameScore.value = 0;
@@ -302,6 +314,25 @@ const startFakeoutGame = async (category: Category) => {
   } finally {
     isStartingGame.value = false;
   }
+};
+
+// Category selection & game initialization
+const startFakeoutGame = async (category: Category) => {
+  if (gameStore.isCooldownActive(category) || isStartingGame.value) return;
+  await beginGame(() => gameStore.fetchCategoryPool(category), { category });
+};
+
+// Launch a game filtered to a fine-grained topic (from the "More" picker).
+// Not route-driven — topic games have no /play/:category URL — so we start the
+// game directly and stay on the home route.
+const startTopicGame = async (topic: TopicOption) => {
+  if (isStartingGame.value) return;
+  showTopicSheet.value = false;
+  maybeShowInstructions();
+  await beginGame(
+    () => gameStore.fetchTopicPool(topic.code, topic.category),
+    { topicLabel: topic.label }
+  );
 };
 
 // Navigate to the slugified game URL; the route watcher below starts the game.
@@ -384,7 +415,7 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
     trackEvent('correct_fakeout_card', {
       logged_in: authStore.isLoggedIn,
       gameScore: gameScore.value,
-      fakeout_category: selectedCategory.value,
+      fakeout_category: selectedCategory.value || selectedTopicLabel.value,
       cardIsReal: card.isReal
     });
 
@@ -400,7 +431,7 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
       trackEvent('lose_fakeout_game', {
         logged_in: authStore.isLoggedIn,
         gameScore: gameScore.value,       
-        fakeout_category: selectedCategory.value,
+        fakeout_category: selectedCategory.value || selectedTopicLabel.value,
         failedCardIsReal: card.isReal
       });
       gameLost.value = true;
@@ -431,7 +462,7 @@ const endFakeoutGame = () => {
   trackEvent('end_fakeout_game', {
     logged_in: authStore.isLoggedIn,
     gameScore: gameScore.value,
-    fakeout_category: selectedCategory.value,
+    fakeout_category: selectedCategory.value || selectedTopicLabel.value,
     // Seconds elapsed since the game started, rounded to one decimal place.
     duration_sec: gameStartTime.value
       ? Math.round((performance.now() - gameStartTime.value) / 100) / 10
@@ -477,12 +508,14 @@ const returnToHome = () => {
 const quitGame = () => {
   gameActive.value = false;
   selectedCategory.value = null;
+  selectedTopicLabel.value = null;
   returnToHome();
 };
 
 const handleCardsUnlockedDismiss = () => {
   showCardsUnlocked.value = false;
   selectedCategory.value = null;
+  selectedTopicLabel.value = null;
   returnToHome();
   // If Fake Out, run the progress bar animation returning to Home
   if (cardsUnlockedGameType.value === 'fakeout') {
@@ -687,6 +720,23 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
               </div>
               <span class="category-slider-label">
                 {{ subCat.name }}
+              </span>
+            </div>
+
+            <!-- "More" tile: opens the fine-grained topic picker. A distinct
+                 affordance — it opens a sheet rather than selecting a category. -->
+            <div
+              class="category-slider-item"
+              role="button"
+              tabindex="0"
+              @click="showTopicSheet = true"
+              @keydown.enter="showTopicSheet = true"
+            >
+              <div class="category-slider-thumbnail-wrapper category-slider-more">
+                <PhDotsThreeOutline :size="28" weight="fill" />
+              </div>
+              <span class="category-slider-label">
+                More
               </span>
             </div>
           </div>
@@ -897,7 +947,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
           taps: gachaDroppedCards.length
         }"
         :lost="gameLost"
-        :category="selectedCategory || undefined"
+        :category="selectedCategory || selectedTopicLabel || undefined"
         :failed-card="gameLost && currentCard ? currentCard : undefined"
         :deck="gameDeck"
         @claim="handleClaimSuccess"
@@ -905,6 +955,14 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
         @open-auth="headerRef?.openAuthModal()"
       />
     </template>
+
+    <!-- Fine-grained topic picker, opened from the "More" slider tile. -->
+    <TopicPickerSheet
+      :open="showTopicSheet"
+      :starting="isStartingGame"
+      @select="startTopicGame"
+      @close="showTopicSheet = false"
+    />
 
   </PageLayout>
 </template>
