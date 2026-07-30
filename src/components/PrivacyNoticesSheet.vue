@@ -29,6 +29,11 @@ const SERVICES = [
     lead: 'We use Supabase to store cards and user accounts. Refer to Supabase’s ',
     policyUrl: 'https://supabase.com/privacy',
   },
+  {
+    name: 'Google Analytics',
+    lead: 'We use Google Analytics to monitor app usage. Refer to Google’s ',
+    policyUrl: 'https://policies.google.com/technologies/partner-sites',
+  },
 ];
 </script>
 
