@@ -15,6 +15,7 @@
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-serif: 'Source Serif 4', Georgia, 'Times', serif;
+  --leading-body: 22px; /* body copy (sheets, instructions) at text-sm/14px */
 
   /* Brand blue */
   --color-blue: #1d5ee0;

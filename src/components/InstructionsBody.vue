@@ -146,7 +146,7 @@ const RULES = [
   font-family: var(--font-sans);
   font-weight: 400;
   font-size: 14px;
-  line-height: 22px;
+  line-height: var(--leading-body);
   color: var(--color-ink);
 }
 

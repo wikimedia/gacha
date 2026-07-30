@@ -35,7 +35,7 @@ const SERVICES = [
 <template>
   <BaseSheet :open="open" title="Privacy &amp; Notices" @close="emit('close')">
     <!-- Intro -->
-    <p class="px-4 pb-2 text-sm leading-[22px] m-0 text-ink">
+    <p class="px-4 pb-2 text-sm leading-body m-0 text-ink">
       World of Wikipedia is built on several third-party services that help the
       game run. We only collect what we need to run the game and never sell your
       information.
@@ -48,8 +48,8 @@ const SERVICES = [
         :key="service.name"
         class="flex gap-2.5 items-start"
       >
-        <span class="shrink-0 w-4 text-sm leading-[22px] text-ink">{{ i + 1 }}.</span>
-        <div class="flex-1 min-w-0 flex flex-col text-sm leading-[22px] text-ink">
+        <span class="shrink-0 w-4 text-sm leading-body text-ink">{{ i + 1 }}.</span>
+        <div class="flex-1 min-w-0 flex flex-col text-sm leading-body text-ink">
           <span class="font-bold">{{ service.name }}</span>
           <span>
             {{ service.lead }}<a

@@ -71,7 +71,7 @@ const credits = computed<CollageAttribution[]>(
 
 <style scoped>
 .credits-intro {
-  line-height: 22px;
+  line-height: var(--leading-body);
 }
 
 /* Warm tan specific to the credits cards; not part of the shared palette. */
