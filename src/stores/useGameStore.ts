@@ -408,9 +408,16 @@ export const useGameStore = defineStore('game', () => {
   // Real cards come from articles_v2, fake cards from fake_articles_v3.
   const FAKES_TABLE = 'fake_articles_v3';
 
+  // Exact match on the `topic` column. TOPICS surfaces only leaf topics (no
+  // sub-children), so equality is both correct and index-friendly — a composite
+  // (topic, rand) btree can serve the pool query directly. Codes must match the
+  // DB's canonical casing (e.g. "Culture.Media.Films") in both tables.
+  const applyTopicFilter = (query: any, topic: string) =>
+    query.eq('topic', topic);
+
   // Filters for real articles in articles_v2: unclaimed, has an image,
-  // not flagged above threshold, and (when given) one category.
-  const applyArticleFilters = (query: any, category?: Category) => {
+  // not flagged above threshold, and (when given) one category and/or topic.
+  const applyArticleFilters = (query: any, category?: Category, topic?: string) => {
     let q = query
       .is('profile_id', null)
       .not('image_url', 'is', null)
@@ -418,19 +425,40 @@ export const useGameStore = defineStore('game', () => {
     if (category) {
       q = applyCategoryFilter(q, category);
     }
+    if (topic) {
+      q = applyTopicFilter(q, topic);
+    }
     return q;
   };
 
   // Filters for the dedicated fakes table: image_url is not null and
   // flag_score is below threshold or null.
-  const applyFakesTableFilters = (query: any, category?: Category) => {
+  const applyFakesTableFilters = (query: any, category?: Category, topic?: string) => {
     let q = query
       .not('image_url', 'is', null)
       .or(`flag_score.lte.${FLAG_SCORE_MAX},flag_score.is.null`);
     if (category) {
       q = applyCategoryFilter(q, category);
     }
+    if (topic) {
+      q = applyTopicFilter(q, topic);
+    }
     return q;
+  };
+
+  // Execute a Supabase query, retrying once after a short delay on failure so a
+  // transient network/API blip doesn't surface as an empty pool. `buildQuery`
+  // must rebuild the query each call — PostgREST builders can't be re-awaited.
+  const runQueryWithRetry = async (buildQuery: () => any): Promise<any[]> => {
+    const { data, error } = await buildQuery();
+    if (!error) return data || [];
+
+    console.warn('Supabase query failed, retrying once:', error.message);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const { data: retryData, error: retryError } = await buildQuery();
+    if (retryError) throw retryError;
+    return retryData || [];
   };
 
   // Fetch a random window of `sampleSize` rows from `table`. Each row carries a
@@ -447,36 +475,35 @@ export const useGameStore = defineStore('game', () => {
   ): Promise<any[]> => {
     const pivot = Math.random();
 
-    const { data, error } = await applyFilters(supabase.from(table).select('*'))
-      .gte('rand', pivot)
-      .order('rand', { ascending: true })
-      .limit(sampleSize);
-
-    if (error) throw error;
-    let rows = data || [];
+    let rows = await runQueryWithRetry(() =>
+      applyFilters(supabase.from(table).select('*'))
+        .gte('rand', pivot)
+        .order('rand', { ascending: true })
+        .limit(sampleSize)
+    );
 
     // If the pivot landed too near the top to fill the sample, wrap around to
     // the start of rand-space and take the remainder.
     if (rows.length < sampleSize) {
-      const { data: wrapData, error: wrapError } = await applyFilters(supabase.from(table).select('*'))
-        .lt('rand', pivot)
-        .order('rand', { ascending: true })
-        .limit(sampleSize - rows.length);
-
-      if (wrapError) throw wrapError;
-      rows = rows.concat(wrapData || []);
+      const wrapRows = await runQueryWithRetry(() =>
+        applyFilters(supabase.from(table).select('*'))
+          .lt('rand', pivot)
+          .order('rand', { ascending: true })
+          .limit(sampleSize - rows.length)
+      );
+      rows = rows.concat(wrapRows);
     }
 
     return rows;
   };
 
   // Real cards always come from articles_v2.
-  const fetchRealSample = (sampleSize: number, category?: Category): Promise<any[]> =>
-    fetchRandomSample('articles_v2', (q) => applyArticleFilters(q, category), sampleSize);
+  const fetchRealSample = (sampleSize: number, category?: Category, topic?: string): Promise<any[]> =>
+    fetchRandomSample('articles_v2', (q) => applyArticleFilters(q, category, topic), sampleSize);
 
   // Fake cards come from the dedicated fakes table.
-  const fetchFakeSample = (sampleSize: number, category?: Category): Promise<any[]> =>
-    fetchRandomSample(FAKES_TABLE, (q) => applyFakesTableFilters(q, category), sampleSize);
+  const fetchFakeSample = (sampleSize: number, category?: Category, topic?: string): Promise<any[]> =>
+    fetchRandomSample(FAKES_TABLE, (q) => applyFakesTableFilters(q, category, topic), sampleSize);
 
   // Fetch a fresh, randomized pool of playable cards for a single category — a
   // balanced mix of real and fake. Called per game so consecutive games draw new
@@ -484,6 +511,33 @@ export const useGameStore = defineStore('game', () => {
   // Overfetch fakes by this factor so that, after dropping ones the player has
   // already seen (tracked in the Bloom filter), enough fresh fakes remain.
   const FAKE_OVERFETCH = 4;
+
+  // Assemble a balanced card pool from raw real rows and usable (image +
+  // appropriate) fake rows. Shared by the category and topic pool builders.
+  const buildPoolFromRows = (realRows: any[], usableFakes: any[], perClass: number): Card[] => {
+    // Prefer fakes the player hasn't seen recently. If filtering leaves too few
+    // to fill the pool, they've likely seen most of these fakes — reset the
+    // filter and reuse the full overfetched set.
+    let fakeRows = usableFakes.filter((row: any) => row.qid && !seenFakes.has(row.qid));
+    if (fakeRows.length < perClass) {
+      seenFakes = createSeenFakesFilter();
+      saveSeenFakesFilter(seenFakes);
+      fakeRows = usableFakes;
+    }
+    fakeRows = fakeRows.slice(0, perClass);
+
+    // Tag each row with its source so mapArticleRowToCard knows real vs fake
+    // (the v2 tables no longer have a 'real' column — the table itself is the signal).
+    realRows.forEach((row: any) => { row._isReal = true; });
+    fakeRows.forEach((row: any) => { row._isReal = false; });
+
+    const realCards = realRows
+      .filter((row: any) => row.image_url && isAppropriateArticle(row))
+      .map((row: any) => mapArticleRowToCard(row));
+    const fakeCards = fakeRows.map((row: any) => mapArticleRowToCard(row));
+
+    return [...realCards, ...fakeCards];
+  };
 
   const fetchCategoryPool = async (category: Category, perClass = 15): Promise<Card[]> => {
     try {
@@ -495,30 +549,41 @@ export const useGameStore = defineStore('game', () => {
       // Only consider playable fakes (have an image, appropriate).
       const usableFakes = fakeRowsRaw.filter((row: any) => row.image_url && isAppropriateArticle(row));
 
-      // Prefer fakes the player hasn't seen recently. If filtering leaves too few
-      // to fill the pool, they've likely seen most of this category's fakes —
-      // reset the filter and reuse the full overfetched set.
-      let fakeRows = usableFakes.filter((row: any) => row.qid && !seenFakes.has(row.qid));
-      if (fakeRows.length < perClass) {
-        seenFakes = createSeenFakesFilter();
-        saveSeenFakesFilter(seenFakes);
-        fakeRows = usableFakes;
-      }
-      fakeRows = fakeRows.slice(0, perClass);
-
-      // Tag each row with its source so mapArticleRowToCard knows real vs fake
-      // (the v2 tables no longer have a 'real' column — the table itself is the signal).
-      realRows.forEach((row: any) => { row._isReal = true; });
-      fakeRows.forEach((row: any) => { row._isReal = false; });
-
-      const realCards = realRows
-        .filter((row: any) => row.image_url && isAppropriateArticle(row))
-        .map((row: any) => mapArticleRowToCard(row));
-      const fakeCards = fakeRows.map((row: any) => mapArticleRowToCard(row));
-
-      return [...realCards, ...fakeCards];
+      return buildPoolFromRows(realRows, usableFakes, perClass);
     } catch (err: any) {
       console.error('Failed to fetch category pool from Supabase:', err.message);
+      return [];
+    }
+  };
+
+  // Like fetchCategoryPool but filters by the fine-grained `topic` column instead
+  // of sub_category, for games launched from the "More" topic picker.
+  // `fallbackCategory` is the broader sub_category the topic lives under; when the
+  // topic doesn't yield enough fakes we top up from it (rather than from random
+  // articles across all categories) so the fakes stay thematically close.
+  const fetchTopicPool = async (topic: string, fallbackCategory?: Category, perClass = 15): Promise<Card[]> => {
+    try {
+      const [realRows, fakeRowsRaw] = await Promise.all([
+        fetchRealSample(perClass, undefined, topic),
+        fetchFakeSample(perClass * FAKE_OVERFETCH, undefined, topic)
+      ]);
+
+      let usableFakes = fakeRowsRaw.filter((row: any) => row.image_url && isAppropriateArticle(row));
+
+      // Not enough on-topic fakes to build a varied deck — supplement with fakes
+      // from the broader sub_category, keeping the topic ones we already have.
+      if (usableFakes.length < perClass && fallbackCategory) {
+        const fallbackRaw = await fetchFakeSample(perClass * FAKE_OVERFETCH, fallbackCategory);
+        const seenQids = new Set(usableFakes.map((r: any) => r.qid));
+        const extra = fallbackRaw.filter((row: any) =>
+          row.image_url && isAppropriateArticle(row) && !seenQids.has(row.qid)
+        );
+        usableFakes = usableFakes.concat(extra);
+      }
+
+      return buildPoolFromRows(realRows, usableFakes, perClass);
+    } catch (err: any) {
+      console.error('Failed to fetch topic pool from Supabase:', err.message);
       return [];
     }
   };
@@ -958,6 +1023,7 @@ export const useGameStore = defineStore('game', () => {
     syncWithUser,
     loadCardsFromDatabase,
     fetchCategoryPool,
+    fetchTopicPool,
     markFakesSeen,
     addPoints,
     persistState,
