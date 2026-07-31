@@ -371,10 +371,15 @@ const handleShare = () => {
   will-change: transform;
 }
 
-.active-card-shadow {
+/* Active card's drop shadow. Rendered on the card faces — which rotate and
+   backface-cull with the flip — rather than on the static scene, so during a
+   flip the glow turns edge-on with the card instead of hanging behind it as a
+   ghost rectangle. Radius matches the card so the glow stays rounded. */
+.active-card-shadow .card-flip__face {
   box-shadow:
     0 15px 35px rgba(0, 0, 0, 0.4),
     0 5px 15px rgba(0, 0, 0, 0.2);
+  border-radius: 11.5px;
 }
 
 /* The card's built-in hover lift (translateY) reads as a tap response inside
@@ -459,9 +464,6 @@ const handleShare = () => {
 /* Card flip (front <-> back) */
 .card-flip-scene {
   perspective: 1600px;
-  /* Match the card's corner radius so the active-card-shadow glow is rounded
-     too, instead of a square box poking past the rounded card corners. */
-  border-radius: 11.5px;
 }
 
 .card-flip {
