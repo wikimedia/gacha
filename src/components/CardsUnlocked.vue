@@ -966,17 +966,17 @@ const handleDismiss = () => {
 }
 
 .grid-card-wrapper {
-  width: calc(var(--card-design-width) * 0.48);
-  height: calc(var(--card-design-height) * 0.48);
+  width: 151.2px; /* display size; native card (356) scaled by 0.42472 below */
+  height: 211.2px;
   position: relative;
   overflow: visible; /* so correct/incorrect badge can pop out of bounds */
 }
 
 .grid-card-inner {
-  transform: scale(0.48);
+  transform: scale(0.42472);
   transform-origin: top left;
-  width: var(--card-design-width);
-  height: var(--card-design-height);
+  width: var(--card-width);
+  height: var(--card-height);
   pointer-events: none;
 }
 

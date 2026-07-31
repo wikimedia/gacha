@@ -230,11 +230,10 @@ const handleShare = () => {
           </button>
         </div>
 
-        <!-- Carousel Container -->
-        <div class="relative w-full overflow-hidden flex items-center py-4 flex-grow">
+        <div class="carousel-viewport relative w-full flex items-center py-4 flex-grow">
           <div 
             class="carousel-track"
-            :style="{ transform: `translateX(calc(50vw - var(--card-full-width) / 2 - ${activeIndex} * (var(--card-full-width) + var(--carousel-gap))))` }"
+            :style="{ transform: `translateX(calc(50vw - var(--card-width) / 2 - ${activeIndex} * (var(--card-width) + var(--carousel-gap))))` }"
             @touchstart="handleTouchStart"
             @touchend="handleTouchEnd"
           >
@@ -250,24 +249,21 @@ const handleShare = () => {
               @click="handleCardClick(index)"
             >
               <div class="card-flip" :class="{ 'is-flipped': index === activeIndex && isFlipped }">
-                <!-- Front face. The card design is a fixed base size scaled up
-                     to the full display size via .fullsize-card__content. -->
+                <!-- Front face -->
                 <div class="card-flip__face">
-                  <div class="fullsize-card__content">
-                    <CardComp :card="card" :show-link="false" />
+                  <CardComp :card="card" :show-link="false" />
 
-                    <!-- Fake Card Overlay (stamp) -->
-                    <div
-                      v-if="!card.isReal"
-                      class="modal-card-fake-overlay"
-                    ></div>
-                    <div
-                      v-if="!card.isReal"
-                      class="modal-card-fake-stamp"
-                    >
-                      <div class="fake-stamp-text">
-                        FAKE
-                      </div>
+                  <!-- Fake Card Overlay (stamp) -->
+                  <div
+                    v-if="!card.isReal"
+                    class="modal-card-fake-overlay"
+                  ></div>
+                  <div
+                    v-if="!card.isReal"
+                    class="modal-card-fake-stamp"
+                  >
+                    <div class="fake-stamp-text">
+                      FAKE
                     </div>
                   </div>
                 </div>
@@ -276,7 +272,10 @@ const handleShare = () => {
                      is mounted only for the active card so the signals fetch
                      fires for the card actually being viewed. -->
                 <div class="card-flip__face card-flip__face--back">
-                  <div class="fullsize-card__content">
+                  <!-- CardBack fills its parent, so give it the same base-size
+                       zoom wrapper the front card carries (Card.vue) — otherwise
+                       its fixed-px internals wouldn't scale to match the front. -->
+                  <div class="card-back-zoom">
                     <CardBack v-if="index === activeIndex && card.isReal" :card="card" />
                   </div>
                 </div>
@@ -366,6 +365,14 @@ const handleShare = () => {
 
 .answer-badge--incorrect {
   color: #db8059;
+}
+
+/* Clip neighbour cards horizontally while letting the flip's vertical
+   perspective bulge overflow. `clip` (unlike `hidden`) permits a per-axis value
+   without forcing the other axis to a scroll container. */
+.carousel-viewport {
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 .carousel-track {
@@ -469,8 +476,8 @@ const handleShare = () => {
 
 /* Card flip (front <-> back) */
 .card-flip-scene {
-  width: var(--card-full-width);
-  height: var(--card-full-height);
+  width: var(--card-width);
+  height: var(--card-height);
   perspective: 1600px;
 }
 
@@ -500,10 +507,20 @@ const handleShare = () => {
   transform: rotateY(180deg);
 }
 
-/* FAKE Overlay and Stamp */
+/* Base-size box zoomed to the full display size, matching Card.vue's wrapper so
+   the back scales identically to the front. */
+.card-back-zoom {
+  width: var(--card-base-width);
+  height: var(--card-base-height);
+  zoom: var(--card-scale-full);
+}
+
+/* FAKE Overlay and Stamp. These sit in the (unzoomed) face over the zoomed
+   card, so their inset/size are scaled by --card-scale-full to line up with the
+   card's own 14px image frame and read at the card's scale. */
 .modal-card-fake-overlay {
   position: absolute;
-  inset: 14px;
+  inset: calc(14px * var(--card-scale-full));
   background-color: rgba(148, 136, 119, 0.35);
   mix-blend-mode: hard-light;
   pointer-events: none;
@@ -512,7 +529,7 @@ const handleShare = () => {
 
 .modal-card-fake-stamp {
   position: absolute;
-  inset: 14px;
+  inset: calc(14px * var(--card-scale-full));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -527,7 +544,7 @@ const handleShare = () => {
   font-family: 'Georgia', serif;
   font-weight: 900;
   color: #ffffff;
-  font-size: 48px;
+  font-size: calc(48px * var(--card-scale-full));
   letter-spacing: 0.05em;
   line-height: 1;
   text-align: center;
