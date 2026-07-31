@@ -5,7 +5,7 @@ import CardComp from './Card.vue';
 import CardBack from './CardBack.vue';
 import AppIcon from './AppIcon.vue';
 import ShareCardSheet from './ShareCardSheet.vue';
-import { cdxIconClose, cdxIconPrevious, cdxIconNext, cdxIconCheck, cdxIconInfoFilled } from '@wikimedia/codex-icons';
+import { cdxIconClose, cdxIconCheck, cdxIconInfoFilled } from '@wikimedia/codex-icons';
 import { trackEvent } from '../analytics.ts';
 import { lockBodyScroll, unlockBodyScroll } from '../utils/scrollLock';
 
@@ -30,7 +30,6 @@ const emit = defineEmits<{
 
 const activeIndex = ref(props.initialIndex);
 const isShareSheetOpen = ref(false);
-const showCopyToast = ref(false);
 // Whether the active card is flipped to show its back side.
 const isFlipped = ref(false);
 
@@ -104,6 +103,13 @@ const handleCardClick = (index: number) => {
     // Flipping counts as discovering the feature — retire the hint for good.
     if (isFlipped.value) dismissFlipHint();
   }
+};
+
+// Front/back indicator dots: only real cards have a back to flip to.
+const setFlipped = (flipped: boolean) => {
+  if (!activeCard.value?.isReal) return;
+  isFlipped.value = flipped;
+  if (flipped) dismissFlipHint();
 };
 
 const handlePrev = () => {
@@ -217,10 +223,10 @@ const handleShare = () => {
           <!-- Close Button (✕) -->
           <button
             @click="emit('close')"
-            class="absolute right-6 top-1/2 -translate-y-1/2 text-white/80 hover:text-white transition-colors duration-200 cursor-pointer p-2 z-50 outline-none bg-transparent border-none"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-white/80 hover:text-white transition-colors duration-200 cursor-pointer p-2 z-50 outline-none bg-transparent border-none"
             aria-label="Close modal"
           >
-            <AppIcon :icon="cdxIconClose" :size="28" />
+            <AppIcon :icon="cdxIconClose" :size="18" />
           </button>
         </div>
 
@@ -275,7 +281,7 @@ const handleShare = () => {
         </div>
 
         <!-- Bottom Controls & Actions -->
-        <div class="relative flex flex-col items-center w-full max-w-[326px] gap-6 px-4">
+        <div class="relative flex flex-col items-center w-full gap-6 px-4">
           <!-- Flip hint popover (dismissable, remembered in localStorage) -->
           <Transition name="flip-hint-fade">
             <div v-if="showFlipHint" class="flip-hint" role="status">
@@ -292,42 +298,20 @@ const handleShare = () => {
             </div>
           </Transition>
 
-          <!-- Dots/Arrow Navigation Row -->
-          <div class="flex items-center justify-between w-full px-2">
-            <!-- Left Chevron -->
-            <button 
-              @click="handlePrev" 
-              :disabled="activeIndex === 0"
-              class="w-10 h-10 flex items-center justify-center text-white disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed hover:text-white/80 transition-colors outline-none bg-transparent border-none"
-              aria-label="Previous card"
-            >
-              <AppIcon :icon="cdxIconPrevious" :size="28" />
-            </button>
-
-            <!-- Dots pagination OR numerical indicator -->
-            <div v-if="cards.length <= 10" class="flex items-center justify-center gap-2">
-              <button 
-                v-for="(_, index) in cards" 
-                :key="'dot-' + index"
-                @click="activeIndex = index"
-                class="w-2 h-2 rounded-full transition-all duration-300 outline-none bg-transparent border-none"
-                :class="index === activeIndex ? 'bg-white scale-125' : 'bg-white/30 hover:bg-white/50'"
-                :aria-label="'Go to card ' + (index + 1)"
-              ></button>
-            </div>
-            <div v-else class="text-white/80 font-serif text-sm font-bold tracking-widest select-none">
-              {{ activeIndex + 1 }} / {{ cards.length }}
-            </div>
-
-            <!-- Right Chevron -->
-            <button 
-              @click="handleNext" 
-              :disabled="activeIndex === cards.length - 1"
-              class="w-10 h-10 flex items-center justify-center text-white disabled:opacity-20 cursor-pointer disabled:cursor-not-allowed hover:text-white/80 transition-colors outline-none bg-transparent border-none"
-              aria-label="Next card"
-            >
-              <AppIcon :icon="cdxIconNext" :size="28" />
-            </button>
+          <!-- Front/back indicator (two dots). Only real cards have a back. -->
+          <div v-if="activeCard?.isReal" class="flex items-center justify-center gap-2">
+            <button
+              @click="setFlipped(false)"
+              class="w-2 h-2 rounded-full transition-all duration-300 outline-none bg-transparent border-none"
+              :class="!isFlipped ? 'bg-white scale-125' : 'bg-white/30 hover:bg-white/50'"
+              aria-label="Show card front"
+            ></button>
+            <button
+              @click="setFlipped(true)"
+              class="w-2 h-2 rounded-full transition-all duration-300 outline-none bg-transparent border-none"
+              :class="isFlipped ? 'bg-white scale-125' : 'bg-white/30 hover:bg-white/50'"
+              aria-label="Show card back"
+            ></button>
           </div>
 
           <!-- Action buttons -->
