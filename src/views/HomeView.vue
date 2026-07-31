@@ -721,14 +721,14 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
         <div class="flex-grow flex items-center justify-center my-2 relative min-h-0">
           
           <!-- Centered wrapper container -->
-          <div class="relative w-full max-w-[315px] h-[440px]">
+          <div class="relative w-full max-w-[var(--card-full-width)] h-[var(--card-full-height)]">
             
             <div class="stack select-none w-full h-full">
               
               <div
                 v-for="(card, index) in visibleDeck"
                 :key="card.id"
-                class="relative"
+                class="fullsize-card"
                 :class="[
                   index === 0
                     ? (roundAnswered 
@@ -752,12 +752,14 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
                 @mouseup="index === 0 ? handleMouseUp() : null"
                 @mouseleave="index === 0 ? handleMouseUp() : null"
               >
-                <CardComp
-                  :card="card"
-                  :show-link="false"
-                  :shiny-trigger="index === 0 ? 'on' : 'off'"
-                />
-                
+                <div class="fullsize-card__content">
+                  <CardComp
+                    :card="card"
+                    :show-link="false"
+                    :shiny-trigger="index === 0 ? 'on' : 'off'"
+                  />
+                </div>
+
                 <!-- Swiping Indicators Overlay -->
                 <div 
                   v-if="index === 0 && swipeOffset !== 0 && !roundAnswered"

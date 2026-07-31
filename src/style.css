@@ -358,6 +358,27 @@
 
   /* Shared layout */
   --button-row-max-width: 370px;
+
+  /* Card sizing. The trading card is designed at a fixed base size and is
+     always rendered at that base then scaled by a wrapper (see .fullsize-card
+     and the binder grid in ProfileView). Full-size contexts — the game loop
+     and the detail modal — render at --card-full-* (the mock's ~356×497, i.e.
+     the base scaled by --card-scale-full). Down-scaled contexts (binder,
+     unlocked grid) scale the same base by their own factors. */
+  --card-design-width: 315px;
+  --card-design-height: 440px;
+  --card-scale-full: 1.1302; /* ≈ 356/315 */
+  --card-full-width: calc(var(--card-design-width) * var(--card-scale-full));
+  --card-full-height: calc(var(--card-design-height) * var(--card-scale-full));
+}
+
+/* Fall back to the base size where the full-size card would overflow the
+   available chrome (short or narrow viewports). Centralized here so every
+   full-size context clamps together. */
+@media (max-height: 740px), (max-width: 360px) {
+  :root {
+    --card-scale-full: 1;
+  }
 }
 
 /* Custom Base resets */
@@ -376,6 +397,25 @@ body {
 
 .wiki-serif {
   font-family: var(--font-serif);
+}
+
+/* Full-size card frame. Reserves the full display size in layout while
+   rendering the fixed-base-size card scaled up to fill it, so the card scales
+   uniformly (fonts, insets and all). Mirrors the binder's scale-wrapper
+   pattern; used by the game loop and the detail modal. */
+.fullsize-card {
+  width: var(--card-full-width);
+  height: var(--card-full-height);
+  position: relative;
+}
+.fullsize-card__content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--card-design-width);
+  height: var(--card-design-height);
+  transform: scale(var(--card-scale-full));
+  transform-origin: top left;
 }
 
 /* Scrollbar customizations matching Wikipedia UI */

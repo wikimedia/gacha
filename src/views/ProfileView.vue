@@ -1083,8 +1083,8 @@ const toggleCardShowcase = async (cardId: string) => {
   position: relative;
 }
 .binder-grid--1col .card-scaled-content {
-  width: 315px;
-  height: 440px;
+  width: var(--card-design-width);
+  height: var(--card-design-height);
   position: absolute;
   top: 0;
   left: 0;
@@ -1103,8 +1103,8 @@ const toggleCardShowcase = async (cardId: string) => {
   position: relative;
 }
 .binder-grid--2col .card-scaled-content {
-  width: 315px;
-  height: 440px;
+  width: var(--card-design-width);
+  height: var(--card-design-height);
   position: absolute;
   top: 0;
   left: 0;
@@ -1123,8 +1123,8 @@ const toggleCardShowcase = async (cardId: string) => {
   position: relative;
 }
 .binder-grid--3col .card-scaled-content {
-  width: 315px;
-  height: 440px;
+  width: var(--card-design-width);
+  height: var(--card-design-height);
   position: absolute;
   top: 0;
   left: 0;
@@ -1136,11 +1136,11 @@ const toggleCardShowcase = async (cardId: string) => {
 @media (min-width: 640px) {
   /* 1 Column View - Native Size */
   .binder-grid--1col {
-    grid-template-columns: repeat(auto-fit, 315px);
+    grid-template-columns: repeat(auto-fit, var(--card-design-width));
   }
   .binder-grid--1col .card-scale-wrapper {
-    width: 315px;
-    height: 440px;
+    width: var(--card-design-width);
+    height: var(--card-design-height);
   }
   .binder-grid--1col .card-scaled-content {
     transform: scale(1);

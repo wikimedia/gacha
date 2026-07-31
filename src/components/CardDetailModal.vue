@@ -234,14 +234,14 @@ const handleShare = () => {
         <div class="relative w-full overflow-hidden flex items-center py-4 flex-grow">
           <div 
             class="carousel-track"
-            :style="{ transform: 'translateX(calc(50vw - 157.5px - ' + (activeIndex * 335) + 'px))' }"
+            :style="{ transform: `translateX(calc(50vw - var(--card-full-width) / 2 - ${activeIndex} * (var(--card-full-width) + var(--carousel-gap))))` }"
             @touchstart="handleTouchStart"
             @touchend="handleTouchEnd"
           >
             <div
               v-for="(card, index) in cards"
               :key="card.id"
-              class="card-flip-scene relative w-[315px] h-[440px] flex-shrink-0 transition-all duration-300"
+              class="card-flip-scene relative flex-shrink-0 transition-all duration-300"
               :class="{
                 'opacity-40 scale-95 cursor-pointer': index !== activeIndex,
                 'scale-100 active-card-shadow': index === activeIndex,
@@ -250,21 +250,24 @@ const handleShare = () => {
               @click="handleCardClick(index)"
             >
               <div class="card-flip" :class="{ 'is-flipped': index === activeIndex && isFlipped }">
-                <!-- Front face -->
+                <!-- Front face. The card design is a fixed base size scaled up
+                     to the full display size via .fullsize-card__content. -->
                 <div class="card-flip__face">
-                  <CardComp :card="card" :show-link="false" />
+                  <div class="fullsize-card__content">
+                    <CardComp :card="card" :show-link="false" />
 
-                  <!-- Fake Card Overlay (stamp) -->
-                  <div
-                    v-if="!card.isReal"
-                    class="modal-card-fake-overlay"
-                  ></div>
-                  <div
-                    v-if="!card.isReal"
-                    class="modal-card-fake-stamp"
-                  >
-                    <div class="fake-stamp-text">
-                      FAKE
+                    <!-- Fake Card Overlay (stamp) -->
+                    <div
+                      v-if="!card.isReal"
+                      class="modal-card-fake-overlay"
+                    ></div>
+                    <div
+                      v-if="!card.isReal"
+                      class="modal-card-fake-stamp"
+                    >
+                      <div class="fake-stamp-text">
+                        FAKE
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -273,7 +276,9 @@ const handleShare = () => {
                      is mounted only for the active card so the signals fetch
                      fires for the card actually being viewed. -->
                 <div class="card-flip__face card-flip__face--back">
-                  <CardBack v-if="index === activeIndex && card.isReal" :card="card" />
+                  <div class="fullsize-card__content">
+                    <CardBack v-if="index === activeIndex && card.isReal" :card="card" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -364,8 +369,9 @@ const handleShare = () => {
 }
 
 .carousel-track {
+  --carousel-gap: 20px; /* also consumed by the centering transform inline */
   display: flex;
-  gap: 20px;
+  gap: var(--carousel-gap);
   align-items: center;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
@@ -379,7 +385,7 @@ const handleShare = () => {
   box-shadow:
     0 15px 35px rgba(0, 0, 0, 0.4),
     0 5px 15px rgba(0, 0, 0, 0.2);
-  border-radius: 11.5px;
+  border-radius: calc(11.5px * var(--card-scale-full));
 }
 
 /* The card's built-in hover lift (translateY) reads as a tap response inside
@@ -463,6 +469,8 @@ const handleShare = () => {
 
 /* Card flip (front <-> back) */
 .card-flip-scene {
+  width: var(--card-full-width);
+  height: var(--card-full-height);
   perspective: 1600px;
 }
 

@@ -966,8 +966,8 @@ const handleDismiss = () => {
 }
 
 .grid-card-wrapper {
-  width: 151.2px; /* 315px * 0.48 */
-  height: 211.2px; /* 440px * 0.48 */
+  width: calc(var(--card-design-width) * 0.48);
+  height: calc(var(--card-design-height) * 0.48);
   position: relative;
   overflow: visible; /* so correct/incorrect badge can pop out of bounds */
 }
@@ -975,8 +975,8 @@ const handleDismiss = () => {
 .grid-card-inner {
   transform: scale(0.48);
   transform-origin: top left;
-  width: 315px;
-  height: 440px;
+  width: var(--card-design-width);
+  height: var(--card-design-height);
   pointer-events: none;
 }
 
