@@ -155,7 +155,7 @@ defineExpose({
 <template>
   <header class="w-full z-40 select-none pointer-events-none sticky top-0">
     <!-- Figma Mock Header (Stacked overlay with icons) -->
-    <div class="gacha-header-overlay pointer-events-auto">
+    <div class="gacha-header-overlay pointer-events-auto" :class="{ 'gacha-header-overlay--solid': gachaActive }">
       
       <!-- Left: Profile Menu Button / Dropdown OR Exit Button / Back Home Button -->
       <div v-if="gameActive" class="z-50">
@@ -437,9 +437,16 @@ defineExpose({
   width: 100%;
   max-width: 28rem; /* max-w-md */
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1rem 1rem 0rem 1rem;
   background: transparent;
   user-select: none;
+}
+
+/* On scrollable screens (gacha results), the sticky header needs an opaque
+   background so content scrolling underneath is occluded rather than showing
+   through. Matches the page background (--color-sand). */
+.gacha-header-overlay--solid {
+  background-color: var(--color-sand);
 }
 
 

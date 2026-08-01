@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, watch, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from './Card.vue';
 import CardDetailModal from './CardDetailModal.vue';
 import Stars from './Stars.vue';
+import AppIcon from './AppIcon.vue';
+import { cdxIconCheck, cdxIconClose } from '@wikimedia/codex-icons';
 
 const props = defineProps<{
   unlockedCards: Card[];
@@ -30,7 +31,6 @@ const emit = defineEmits<{
   (e: 'open-auth'): void;
 }>();
 
-const router = useRouter();
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 
@@ -134,8 +134,28 @@ const cardsInGrid = computed(() => {
       list.push({ card: failed, isCorrect: false });
     }
   }
-  
+
   return list;
+});
+
+const correctCards = computed(() => cardsInGrid.value.filter(item => item.isCorrect));
+const incorrectCards = computed(() => cardsInGrid.value.filter(item => !item.isCorrect));
+
+// Cards are grouped into Correct / Incorrect sections for the Fakeout results
+// (empty sections are omitted). Gacha has no wrong answers, so it renders a
+// single unlabeled grid.
+const cardGroups = computed(() => {
+  if (props.gameType === 'fakeout') {
+    const groups: { key: string; label: string; variant: 'correct' | 'incorrect'; cards: { card: Card; isCorrect: boolean }[] }[] = [];
+    if (correctCards.value.length > 0) {
+      groups.push({ key: 'correct', label: 'Correct', variant: 'correct', cards: correctCards.value });
+    }
+    if (incorrectCards.value.length > 0) {
+      groups.push({ key: 'incorrect', label: 'Incorrect', variant: 'incorrect', cards: incorrectCards.value });
+    }
+    return groups;
+  }
+  return [{ key: 'all', label: '', variant: 'correct' as const, cards: cardsInGrid.value }];
 });
 
 // Cards are auto-collected at game end in HomeView. If the user is already logged in,
@@ -143,14 +163,12 @@ const cardsInGrid = computed(() => {
 // If not logged in, cards are saved in localStorage as guest progress.
 const isClaimed = ref(authStore.isLoggedIn && props.unlockedCards.length > 0);
 const isClaiming = ref(false);
-const showLoginPrompt = ref(!authStore.isLoggedIn && props.unlockedCards.length > 0);
 
 // Watch for authentication state changes. If they log in while on this screen,
 // we automatically claim cards in the database (they're already in localStorage
 // from guest state, but the auth store migration will handle the DB write).
 watch(() => authStore.isLoggedIn, async (loggedIn) => {
   if (loggedIn && !isClaimed.value && props.unlockedCards.length > 0) {
-    showLoginPrompt.value = false;
     isClaiming.value = true;
     try {
       // Collect and claim cards that were saved as guest progress
@@ -174,60 +192,23 @@ watch(() => authStore.isLoggedIn, async (loggedIn) => {
   }
 });
 
-// Fallback claim handler — cards are normally auto-collected at game end,
-// but this covers the edge case where a user manually triggers claiming.
-const handleClaim = async () => {
-  // If the user is not logged in, prompt them to sign in
-  if (!authStore.isLoggedIn) {
-    showLoginPrompt.value = true;
-    return;
-  }
-
-  if (isClaimed.value) return;
-
-  isClaiming.value = true;
-  
-  try {
-    // Collect all real cards in the game store (idempotent — skips already-collected)
-    const realCardIds: string[] = [];
-    props.unlockedCards.forEach(card => {
-      gameStore.collectCard(card);
-      realCardIds.push(card.id);
-    });
-
-    // Claim all real cards in Supabase for this profile
-    if (realCardIds.length > 0) {
-      await gameStore.claimArticlesForProfile(realCardIds, props.unlockedCards);
-    }
-
-    isClaimed.value = true;
-    emit('claim', props.unlockedCards);
-  } catch (err) {
-    console.error('Error claiming cards:', err);
-  } finally {
-    isClaiming.value = false;
-  }
-};
-
 const handleOpenAuth = () => {
   emit('open-auth');
-};
-
-const handleViewBinder = () => {
-  if (authStore.user?.username) {
-    router.push(`/@${authStore.user.username}`);
-  }
 };
 
 // Card detail modal states
 const isDetailModalOpen = ref(false);
 const detailModalInitialIndex = ref(0);
 
-const detailModalCards = computed(() => cardsInGrid.value.map(item => item.card));
-const detailModalIsCorrectArray = computed(() => cardsInGrid.value.map(item => item.isCorrect));
+// Flatten the grouped sections so the detail-modal carousel navigates cards in
+// the same order they appear on screen (Correct section first, then Incorrect).
+const orderedGridItems = computed(() => cardGroups.value.flatMap(group => group.cards));
+
+const detailModalCards = computed(() => orderedGridItems.value.map(item => item.card));
+const detailModalIsCorrectArray = computed(() => orderedGridItems.value.map(item => item.isCorrect));
 
 const openCardDetail = (card: Card) => {
-  const index = cardsInGrid.value.findIndex(item => item.card.id === card.id);
+  const index = orderedGridItems.value.findIndex(item => item.card.id === card.id);
   if (index !== -1) {
     detailModalInitialIndex.value = index;
     isDetailModalOpen.value = true;
@@ -237,17 +218,38 @@ const openCardDetail = (card: Card) => {
 const handleDismiss = () => {
   emit('dismiss');
 };
+
+const rootRef = ref<HTMLElement | null>(null);
+const CARD_BASE_WIDTH = 350;
+const GRID_GAP = 8;
+let resizeObserver: ResizeObserver | null = null;
+
+const updateCardScale = () => {
+  const grids = rootRef.value?.querySelectorAll<HTMLElement>('.cards-grid-container');
+  grids?.forEach(grid => {
+    const cellWidth = (grid.clientWidth - GRID_GAP) / 2;
+    if (cellWidth > 0) {
+      grid.style.setProperty('--card-scale', String(cellWidth / CARD_BASE_WIDTH));
+    }
+  });
+};
+
+onMounted(() => {
+  resizeObserver = new ResizeObserver(updateCardScale);
+  if (rootRef.value) resizeObserver.observe(rootRef.value);
+  updateCardScale();
+});
+
+onBeforeUnmount(() => resizeObserver?.disconnect());
+
+// Grids for the active tab mount/unmount when switching tabs, so re-measure.
+watch(activeTab, () => nextTick(updateCardScale));
 </script>
 
 <template>
-  <div class="results-page-container select-none">
-    
-    <!-- 1. Header Title -->
-    <div class="results-title-container">
-      <h2 class="results-title">Your Results</h2>
-    </div>
+  <div ref="rootRef" class="results-page-container select-none">
 
-    <!-- 2. Tabs Navigation -->
+    <!-- Tabs Navigation -->
     <div class="results-tabs-container">
       <div class="results-tabs">
         <button 
@@ -272,142 +274,69 @@ const handleDismiss = () => {
       
       <!-- TAB 1: CARDS TAB -->
       <div v-if="activeTab === 'cards'" class="cards-tab-content flex-grow flex flex-col gap-4 py-2 items-center">
-        <!-- 2-column Grid of played cards -->
-        <div class="cards-grid-container mt-2 pb-4">
-          <div 
-            v-for="item in cardsInGrid" 
-            :key="item.card.id" 
-            class="grid-card-wrapper animate-card-reveal cursor-pointer"
-            @click="openCardDetail(item.card)"
+        <p class="cards-tab-subtitle">Tap on a card to learn more about it.</p>
+
+        <!-- Cards grouped into Correct / Incorrect sections (empty sections omitted) -->
+        <div class="cards-groups-wrapper">
+          <div
+            v-for="group in cardGroups"
+            :key="group.key"
+            class="cards-group"
           >
-            <!-- Scaled Card -->
-            <div class="grid-card-inner">
-              <CardComp :card="item.card" :show-link="false" />
+            <!-- Section header (Fakeout only) -->
+            <div v-if="group.label" class="results-section-header">
+              <span class="results-section-icon" :class="`results-section-icon--${group.variant}`">
+                <AppIcon :icon="group.variant === 'correct' ? cdxIconCheck : cdxIconClose" :size="13" />
+              </span>
+              <span class="results-section-title">{{ group.label }}</span>
             </div>
 
-            <!-- Correct/Incorrect badge in top-right corner of the scaled wrapper (Only for Fakeout game) -->
-            <div 
-              v-if="gameType === 'fakeout' && item.isCorrect"
-              class="card-grid-badge card-grid-badge--correct"
-              title="Correct"
-            >
-              <svg class="badge-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-                <path d="M8 12.5l3 3 5-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </div>
-            <div 
-              v-else-if="gameType === 'fakeout'"
-              class="card-grid-badge card-grid-badge--incorrect"
-              title="Incorrect"
-            >
-              <svg class="badge-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-                <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </div>
-
-            <!-- Fake Card Overlay (with diagonal FAKE stamp) -->
-            <div 
-              v-if="!item.card.isReal"
-              class="card-grid-fake-overlay"
-            ></div>
-            <div
-              v-if="!item.card.isReal"
-              class="card-grid-fake-stamp"
-            >
-              <div class="fake-stamp-text">
-                FAKE
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action / Message Block Below Grid -->
-        <!-- Case A: Lost State with NO cards unlocked -->
-        <div v-if="lost && unlockedCards.length === 0" class="flex flex-col items-center gap-4 w-full">
-          <div class="try-again-message">
-            Better luck next time!
-          </div>
-          <button @click="handleDismiss" class="try-again-button w-full">
-            Try again to collect cards
-          </button>
-        </div>
-
-        <!-- Case B: Won/Gacha state or Lost state with claiming -->
-        <div v-else class="w-full">
-          <!-- CLAIMING / ACTION BOX -->
-          <div class="card card-bordered bg-base-100 border-base-300 shadow-md p-5 text-center">
-            <!-- Unclaimed state -->
-            <div v-if="!isClaimed && !showLoginPrompt" class="flex flex-col gap-3">
-              <h4 class="font-serif font-black text-sm text-base-content leading-tight">
-                {{ lost ? 'Game Over! Claim Your Discoveries anyway?' : (unlockedCards.length > 0 ? 'Ready to Claim Your Discoveries?' : 'No Discoveries to Claim') }}
-              </h4>
-              <p class="text-xs text-secondary leading-relaxed font-sans font-light">
-                {{ lost
-                  ? "Even though you didn't finish the round, you get to keep the real cards you identified correctly!"
-                  : (unlockedCards.length > 0 
-                    ? 'Add these articles to your Wikipedia binder collection and collect points to unlock more rewards.'
-                    : 'Get answers correct in the game to unlock cards that you can claim here!')
-                }}
-              </p>
-              <button 
-                v-if="unlockedCards.length > 0"
-                @click="handleClaim"
-                :disabled="isClaiming"
-                class="btn btn-primary w-full uppercase font-bold text-xs text-white"
+            <!-- 2-column grid of cards for this section -->
+            <div class="cards-grid-container">
+              <div
+                v-for="item in group.cards"
+                :key="item.card.id"
+                class="grid-card-wrapper animate-card-reveal cursor-pointer"
+                @click="openCardDetail(item.card)"
               >
-                <span v-if="isClaiming" class="loading loading-spinner loading-xs"></span>
-                🎁 Claim {{ unlockedCards.length }} Cards
-              </button>
-              <button @click="handleDismiss" class="btn btn-outline border-base-300 w-full uppercase font-bold text-xs">
-                🔄 Play Again
-              </button>
-            </div>
+                <!-- Scaled Card -->
+                <div class="grid-card-inner">
+                  <CardComp :card="item.card" :show-link="false" />
+                </div>
 
-            <!-- Guest Auth login prompt state -->
-            <div v-else-if="!isClaimed && showLoginPrompt" class="flex flex-col gap-3 animate-fade-in">
-              <h4 class="font-serif font-black text-sm text-primary leading-tight">
-                {{ lost ? 'Sign In to Keep Your Discoveries' : 'Sign In to Claim Cards' }}
-              </h4>
-              <p class="text-xs text-secondary leading-relaxed font-sans font-light">
-                {{ lost
-                  ? 'To save the real cards you identified during this round, please log in with your email.'
-                  : 'To claim these cards and add them to your collection, please log in with your email. This ensures your discoveries are securely saved.'
-                }}
-              </p>
-              <div class="flex flex-col gap-2 mt-2">
-                <button @click="handleOpenAuth" class="btn btn-primary w-full uppercase font-bold text-xs text-white">
-                  🔑 Log In to Claim
-                </button>
-                <button @click="showLoginPrompt = false" class="btn btn-ghost btn-xs text-secondary hover:bg-transparent mt-1">
-                  ← Cancel
-                </button>
-              </div>
-            </div>
-
-            <!-- Claimed state -->
-            <div v-else class="flex flex-col gap-3 animate-fade-in">
-              <span class="text-4xl animate-bounce">✨</span>
-              <h4 class="font-serif font-black text-sm text-success leading-tight">
-                {{ lost ? 'Discoveries Saved!' : 'Discoveries Claimed!' }}
-              </h4>
-              <p class="text-xs text-secondary leading-relaxed font-sans font-light">
-                {{ lost
-                  ? 'Your correctly identified cards have been successfully saved to your cloud profile binder!'
-                  : 'Your unlocked cards have been successfully saved to your cloud profile binder!'
-                }}
-              </p>
-              <div class="flex flex-col gap-2 mt-2">
-                <button @click="handleViewBinder" class="btn btn-primary w-full uppercase font-bold text-xs text-white">
-                  📖 Open Binder & View Cards
-                </button>
-                <button @click="handleDismiss" class="btn btn-outline border-base-300 w-full uppercase font-bold text-xs">
-                  Play Again
-                </button>
+                <!-- Fake Card Overlay (with diagonal FAKE stamp) -->
+                <div
+                  v-if="!item.card.isReal"
+                  class="card-grid-fake-overlay"
+                ></div>
+                <div
+                  v-if="!item.card.isReal"
+                  class="card-grid-fake-stamp"
+                >
+                  <div class="fake-stamp-text">
+                    FAKE
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Action Block Below Grid -->
+        <div class="results-actions">
+          <button
+            v-if="!authStore.isLoggedIn"
+            @click="handleOpenAuth"
+            class="results-action-btn results-action-btn--primary"
+          >
+            Log in to collect cards
+          </button>
+          <button
+            @click="handleDismiss"
+            class="results-action-btn results-action-btn--secondary"
+          >
+            Play Again
+          </button>
         </div>
 
       </div>
@@ -588,18 +517,6 @@ const handleDismiss = () => {
   25%, 100% { left: 150%; }
 }
 
-/* ── Try Again Screen Layout (Figma Redesign) ────────────────── */
-.try-again-screen-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  padding-top: 40px;
-  width: 326px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
 .card-stack-container {
   position: relative;
   width: 326px;
@@ -713,110 +630,54 @@ const handleDismiss = () => {
   text-align: center;
 }
 
-.try-again-message {
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 14px;
-  color: #000;
-  text-align: center;
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-
-.try-again-button {
-  background-color: var(--color-blue);
-  color: var(--color-white);
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 16px;
-  line-height: 20px;
-  text-align: center;
-  width: 326px;
-  height: 44px;
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.try-again-button:hover {
-  background-color: var(--color-blue-dark);
-}
-
-.try-again-button:active {
-  transform: scale(0.98);
-}
-
 /* Unified Results Layout Styles */
 .results-page-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 11px;
   padding-top: 10px;
   padding-bottom: 20px;
   width: 100%;
-  max-width: 360px;
   margin-left: auto;
   margin-right: auto;
 }
 
-.results-title-container {
-  width: 326px;
-  display: flex;
-  justify-content: center;
-  padding: 4px 0;
-}
-
-.results-title {
-  font-family: 'Georgia', serif;
-  font-weight: bold;
-  font-size: 24px;
-  color: #3f3f35;
-  text-align: center;
-}
-
 .results-tabs-container {
-  width: 326px;
+  width: 100%;
   margin: 0 auto;
 }
 
 .results-tabs {
-  background-color: rgba(63, 63, 53, 0.1);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-radius: 3px;
-  padding: 2px;
-  width: 326px;
+  align-items: stretch;
+  width: 100%;
+  border-bottom: 1px solid #b5aea1;
 }
 
 .results-tab-btn {
-  font-family: var(--font-serif);
-  font-weight: bold;
+  font-family: var(--font-sans);
+  font-weight: 700;
   font-size: 14px;
-  line-height: 20px;
+  line-height: 22px;
   text-align: center;
-  height: 24px;
   flex: 1;
   border: none;
-  border-radius: 3px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 1px 6px 3px;
   cursor: pointer;
   background-color: transparent;
   color: #5c5c54;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .results-tab-btn--active {
-  background-color: #3f3f35;
-  color: #fdf4eb;
+  color: var(--color-rust);
+  border-bottom-color: var(--color-rust);
 }
 
 .results-content-area {
@@ -954,14 +815,123 @@ const handleDismiss = () => {
   transform: scale(0.98);
 }
 
-/* Cards Grid Styling.
-   --grid-card-scale shrinks the native card (--card-width/height
-   from style.css) to its grid display size. Column width, wrapper size, and the
-   inner transform all derive from it. */
+/* Cards tab: bottom action buttons (Log in / Play Again) */
+.results-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.results-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 44px;
+  border-radius: var(--radius-button);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.results-action-btn:active {
+  transform: scale(0.98);
+}
+
+.results-action-btn--primary {
+  background-color: var(--color-rust);
+  border: 1px solid var(--color-rust);
+  color: var(--color-white);
+}
+
+.results-action-btn--primary:hover {
+  background-color: var(--color-rust-dark);
+  border-color: var(--color-rust-dark);
+}
+
+.results-action-btn--secondary {
+  background-color: var(--color-paper);
+  border: 1px solid var(--color-rust);
+  color: var(--color-rust);
+}
+
+.results-action-btn--secondary:hover {
+  background-color: var(--color-paper-dark);
+}
+
+/* Cards tab: subtitle + Correct/Incorrect grouped sections */
+.cards-tab-subtitle {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--color-ink);
+  text-align: center;
+  width: 100%;
+}
+
+.cards-groups-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.cards-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.results-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.results-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  color: var(--color-white);
+}
+
+.results-section-icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.results-section-icon--correct {
+  background-color: #8ea885;
+}
+
+.results-section-icon--incorrect {
+  background-color: #d06a4c;
+}
+
+.results-section-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 28px;
+  color: var(--color-charcoal);
+}
+
+/* Cards Grid Styling — two responsive columns that fill the row width.
+   --card-scale is set from the live column width in JS (updateCardScale). */
 .cards-grid-container {
-  --grid-card-scale: 0.42472;
-  --grid-card-display-width: calc(var(--card-width) * var(--grid-card-scale));
-  --grid-card-display-height: calc(var(--card-height) * var(--grid-card-scale));
+  --grid-card-display-width: calc(var(--card-width) * var(--card-scale));
+  --grid-card-display-height: calc(var(--card-height) * var(--card-scale));
 
   display: grid;
 
@@ -970,51 +940,30 @@ const handleDismiss = () => {
   margin-left: auto;
   margin-right: auto;
   width: fit-content;
+
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  width: 100%;
+  --card-scale: 0.55; /* fallback until measured (JS sets the exact value) */
 }
 
 .grid-card-wrapper {
-  width: var(--grid-card-display-width);
-  height: var(--grid-card-display-height);
+  width: 100%;
+  /* The inner card is a fixed 315×440 scaled with transform; without these the
+     grid tracks/rows blow out to its intrinsic size instead of the column width. */
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 315 / 440;
   position: relative;
-  overflow: visible; /* so correct/incorrect badge can pop out of bounds */
+  overflow: visible;
 }
 
 .grid-card-inner {
-  transform: scale(var(--grid-card-scale));
+  transform: scale(var(--card-scale));
   transform-origin: top left;
   width: var(--card-width);
   height: var(--card-height);
   pointer-events: none;
-}
-
-.card-grid-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 38px;
-  height: 38px;
-  border-top-right-radius: 5.5px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  z-index: 30;
-  pointer-events: none;
-}
-
-.card-grid-badge--correct {
-  background: linear-gradient(225deg, #8ea885 50%, transparent 50%);
-}
-
-.card-grid-badge--incorrect {
-  background: linear-gradient(225deg, #d06a4c 50%, transparent 50%);
-}
-
-.badge-icon-svg {
-  width: 14px;
-  height: 14px;
-  margin-top: 5px;
-  margin-right: 5px;
-  color: #ffffff;
 }
 
 .card-grid-fake-overlay {
