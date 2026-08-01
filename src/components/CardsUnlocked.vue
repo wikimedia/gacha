@@ -322,104 +322,78 @@ watch(activeTab, () => nextTick(updateCardScale));
           </div>
         </div>
 
-        <!-- Action Block Below Grid -->
-        <div class="results-actions">
-          <button
-            v-if="!authStore.isLoggedIn"
-            @click="handleOpenAuth"
-            class="results-action-btn results-action-btn--primary"
-          >
-            Log in to collect cards
-          </button>
-          <button
-            @click="handleDismiss"
-            class="results-action-btn results-action-btn--secondary"
-          >
-            Play Again
-          </button>
-        </div>
-
       </div>
 
       <!-- TAB 2: STATS TAB -->
-      <div v-if="activeTab === 'stats'" class="stats-tab-content flex-grow flex flex-col gap-6 py-2 items-center">
-        <!-- 3D Card Stack -->
-        <div class="card-stack-container mt-2">
-          <div 
-            v-if="stackCards.left" 
-            class="card-stack-item card-stack-item--left cursor-pointer"
+      <div v-if="activeTab === 'stats'" class="stats-tab-content">
+        <!-- Fanned card stack (session highlights) -->
+        <div class="card-fan">
+          <div
+            v-if="stackCards.left"
+            class="card-fan-item card-fan-item--left cursor-pointer"
             @click="openCardDetail(stackCards.left)"
           >
-            <CardComp :card="stackCards.left" :show-link="false" class="scaled-card-left" />
+            <CardComp :card="stackCards.left" :show-link="false" class="card-fan-scaled card-fan-scaled--side" />
           </div>
-          <div 
-            v-if="stackCards.right" 
-            class="card-stack-item card-stack-item--right cursor-pointer"
+          <div
+            v-if="stackCards.right"
+            class="card-fan-item card-fan-item--right cursor-pointer"
             @click="openCardDetail(stackCards.right)"
           >
-            <CardComp :card="stackCards.right" :show-link="false" class="scaled-card-right" />
+            <CardComp :card="stackCards.right" :show-link="false" class="card-fan-scaled card-fan-scaled--side" />
           </div>
-          <div 
-            v-if="stackCards.center" 
-            class="card-stack-item card-stack-item--center cursor-pointer"
+          <div
+            v-if="stackCards.center"
+            class="card-fan-item card-fan-item--center cursor-pointer"
             @click="openCardDetail(stackCards.center)"
           >
-            <CardComp :card="stackCards.center" :show-link="false" class="scaled-card-center" />
+            <CardComp :card="stackCards.center" :show-link="false" class="card-fan-scaled card-fan-scaled--center" />
           </div>
         </div>
 
-        <!-- Stats Info Section -->
-        <div class="results-info-container">
-          <!-- Category Badge Box -->
-          <div class="results-category-badge shadow-sm">
-            <span class="category-badge-text">{{ category || 'General Knowledge' }}</span>
+        <!-- Fakes / Facts summary -->
+        <div class="stats-summary-row">
+          <div class="stats-summary-box stats-summary-box--fakes">
+            <span>Fakes</span>
+            <span>{{ identifiedFakes?.length ?? 0 }}</span>
           </div>
-
-          <!-- Total Collected Badge -->
-          <div class="results-total-collected shadow-sm">
-            Total Collected : {{ unlockedCards.length }}
+          <div class="stats-summary-box stats-summary-box--facts">
+            <span>Facts</span>
+            <span>{{ unlockedCards.length }}</span>
           </div>
+        </div>
 
-          <!-- Stats Box Row: Fakes / Facts -->
-          <div class="results-fakes-facts-row gap-2">
-            <!-- Fakes Box -->
-            <div class="results-fakes-box shadow-sm rounded-[2px]">
-              <span>Fakes</span>
-              <span>{{ identifiedFakes?.length ?? 0 }}</span>
-            </div>
-            <!-- Facts Box -->
-            <div class="results-facts-box shadow-sm rounded-[2px]">
-              <span>Facts</span>
-              <span>{{ unlockedCards.length }}</span>
-            </div>
-          </div>
-
-          <!-- Rarity Star Breakdown Rows (Simplified if no cards gotten right) -->
-          <div 
-            v-if="unlockedCards.length > 0"
-            class="results-star-breakdown-box flex flex-col gap-1 border border-[#3f3f35]/10 rounded-[2px] bg-[rgba(200,193,183,0.15)] p-1 mt-2"
+        <!-- Rarity star breakdown -->
+        <div class="stats-rarity-list">
+          <div
+            v-for="row in starRows"
+            :key="row.stars"
+            class="stats-rarity-row"
           >
-            <div 
-              v-for="(row, idx) in starRows" 
-              :key="row.stars"
-              class="flex flex-col"
-            >
-              <div class="star-breakdown-row">
-                <Stars :rarity="row.label" :muted="row.count === 0" :size="16" />
-                <div class="star-breakdown-count font-serif font-black text-sm">
-                  {{ row.count }}
-                </div>
-              </div>
-              <div v-if="idx < starRows.length - 1" class="h-px bg-[#3f3f35]/10 mx-3"></div>
-            </div>
+            <Stars :rarity="row.label" :size="20" />
+            <span class="stats-rarity-count">{{ row.count }}</span>
           </div>
         </div>
-
-        <!-- Keep Playing Button -->
-        <button @click="handleDismiss" class="keep-playing-btn">
-          {{ lost ? 'Try again to collect cards' : 'Keep playing' }}
-        </button>
       </div>
+
+    </div>
+
+    <!-- Shared bottom actions (both tabs) -->
+    <div class="results-actions">
+      <button
+        v-if="!authStore.isLoggedIn"
+        @click="handleOpenAuth"
+        class="results-action-btn results-action-btn--primary"
+      >
+        Log in to collect cards
+      </button>
+      <button
+        @click="handleDismiss"
+        class="results-action-btn results-action-btn--secondary"
+      >
+        Play Again
+      </button>
+    </div>
 
     <!-- Card Detail Modal -->
     <CardDetailModal
@@ -431,7 +405,6 @@ watch(activeTab, () => nextTick(updateCardScale));
       :is-own-collection="true"
       @close="isDetailModalOpen = false"
     />
-  </div>
 </div>
 </template>
 
@@ -517,117 +490,127 @@ watch(activeTab, () => nextTick(updateCardScale));
   25%, 100% { left: 150%; }
 }
 
-.card-stack-container {
-  position: relative;
-  width: 326px;
-  height: 218px;
-  filter: drop-shadow(-2.241px 3.361px 3.249px rgba(0, 0, 0, 0.25));
+/* ── Stats tab ──────────────────────────────────────────────── */
+.stats-tab-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 0;
 }
 
-.card-stack-item {
+/* Fanned stack of three session cards (side cards tucked behind the center) */
+.card-fan {
+  position: relative;
+  width: 296px;
+  height: 200px;
+  margin: 0 auto;
+}
+
+.card-fan-item {
   position: absolute;
+  top: 0;
   overflow: visible;
 }
 
-.card-stack-item--left {
-  left: calc(50% - 98.04px);
-  top: 0;
-  width: 129.926px;
-  height: 181.485px;
-  transform: translateX(-50%) rotate(-6deg);
+/* Side cards: 315×440 scaled to 0.3745 → 117.97×164.78 */
+.card-fan-item--left,
+.card-fan-item--right {
+  width: 117.97px;
+  height: 164.78px;
   z-index: 10;
+  filter: drop-shadow(-0.6px 0.8px 1.8px rgba(0, 0, 0, 0.19));
 }
 
-.card-stack-item--right {
-  left: calc(50% + 98.01px);
-  top: 0;
-  width: 129.926px;
-  height: 181.485px;
-  transform: translateX(-50%) rotate(6deg);
-  z-index: 10;
+.card-fan-item--left {
+  left: calc(50% - 89px);
+  transform: translateX(-50%) rotate(-8deg);
 }
 
-.card-stack-item--center {
-  left: calc(50% - 6.72px);
-  top: 17.86px;
-  width: 143.395px;
-  height: 200.298px;
-  transform: translateX(-50%) rotate(0.5deg);
+.card-fan-item--right {
+  left: calc(50% + 89px);
+  transform: translateX(-50%) rotate(8deg);
+}
+
+/* Center card: 315×440 scaled to 0.4133 → 130.2×181.85, sits on top */
+.card-fan-item--center {
+  left: 50%;
+  top: 16px;
+  width: 130.2px;
+  height: 181.85px;
+  transform: translateX(-50%);
   z-index: 20;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.4));
 }
 
-.scaled-card-left,
-.scaled-card-right {
-  transform: scale(0.412);
+.card-fan-scaled {
   transform-origin: top left;
   pointer-events: none;
 }
 
-.scaled-card-center {
-  transform: scale(0.43);
-  transform-origin: top left;
-  pointer-events: none;
+.card-fan-scaled--side {
+  transform: scale(0.37); 
 }
 
-.results-info-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 326px;
+.card-fan-scaled--center {
+  transform: scale(0.38); 
 }
 
-.category-badge-box {
-  background-color: rgba(200, 193, 183, 0.43);
-  width: 326px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 0;
-}
-
-.category-badge-text {
-  font-family: 'Georgia', serif;
-  font-weight: bold;
-  font-size: 20px;
-  line-height: 20px;
-  color: #3f3f35;
-  text-align: center;
-  word-break: break-word;
-}
-
-.stats-row {
+/* Fakes / Facts summary boxes */
+.stats-summary-row {
   display: flex;
   gap: 8px;
-  width: 326px;
+  width: 100%;
+}
+
+.stats-summary-box {
+  flex: 1;
+  min-width: 0;
   height: 32px;
-}
-
-.stat-box {
-  background-color: rgba(200, 193, 183, 0.43);
-  width: 159px;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 4px 15px;
   box-sizing: border-box;
+  border-radius: var(--radius-button);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--color-charcoal);
 }
 
-.stat-label {
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 14px;
-  line-height: 20px;
-  color: #3f3f35;
+.stats-summary-box--fakes {
+  background-color: rgba(253, 244, 235, 0.7);
 }
 
-.stat-value {
-  font-family: var(--font-serif);
-  font-weight: bold;
+.stats-summary-box--facts {
+  background-color: #f9f0e4;
+  color: var(--color-ink);
+}
+
+/* Rarity breakdown: one bottom-bordered row per rarity */
+.stats-rarity-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.stats-rarity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 15px;
+  border-bottom: 1px solid #b5aea1;
+}
+
+.stats-rarity-count {
+  font-family: var(--font-sans);
   font-size: 14px;
-  line-height: 20px;
-  color: #3f3f35;
-  text-align: center;
+  line-height: 22px;
+  color: var(--color-charcoal);
 }
 
 /* Unified Results Layout Styles */
@@ -641,6 +624,9 @@ watch(activeTab, () => nextTick(updateCardScale));
   width: 100%;
   margin-left: auto;
   margin-right: auto;
+  /* Fill the main content area so the actions can pin to the bottom when the
+     content is short, while still flowing (and scrolling) when it's tall. */
+  flex-grow: 1;
 }
 
 .results-tabs-container {
@@ -690,138 +676,16 @@ watch(activeTab, () => nextTick(updateCardScale));
   width: 100%;
 }
 
-.stats-tab-content {
-  width: 100%;
-}
-
-.results-category-badge {
-  background-color: rgba(200, 193, 183, 0.43);
-  width: 326px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 0;
-  font-family: 'Georgia', serif;
-  font-weight: bold;
-  font-size: 16px;
-  color: #3f3f35;
-  text-align: center;
-}
-
-.results-total-collected {
-  background-color: rgba(200, 193, 183, 0.43);
-  width: 326px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 0;
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 16px;
-  color: #3f3f35;
-  text-align: center;
-}
-
-.results-fakes-facts-row {
-  display: flex;
-  justify-content: space-between;
-  width: 326px;
-  height: 32px;
-}
-
-.results-fakes-box {
-  background-color: rgba(253, 244, 235, 0.7);
-  width: 159px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 15px;
-  box-sizing: border-box;
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 14px;
-  color: #3f3f35;
-}
-
-.results-facts-box {
-  background-color: rgba(63, 63, 53, 0.88);
-  width: 159px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 15px;
-  box-sizing: border-box;
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 14px;
-  color: #fdf4eb;
-}
-
-.results-star-breakdown-box {
-  width: 326px;
-}
-
-.star-breakdown-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  height: 32px;
-  padding: 0 15px;
-  box-sizing: border-box;
-}
-
-.star-breakdown-stars {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.star-breakdown-count {
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 16px;
-  color: #3f3f35;
-}
-
-.keep-playing-btn {
-  background-color: var(--color-blue);
-  color: var(--color-white);
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 16px;
-  line-height: 20px;
-  text-align: center;
-  width: 326px;
-  height: 44px;
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-top: 12px;
-}
-
-.keep-playing-btn:hover {
-  background-color: var(--color-blue-dark);
-}
-
-.keep-playing-btn:active {
-  transform: scale(0.98);
-}
-
-/* Cards tab: bottom action buttons (Log in / Play Again) */
+/* Shared bottom action buttons (Log in / Play Again).
+   margin-top: auto pins them to the bottom of the (flex-grown) container when
+   content is short; when content overflows they simply follow it and scroll. */
 .results-actions {
   display: flex;
   flex-direction: column;
   gap: 16px;
   width: 100%;
-  margin-top: 8px;
+  margin-top: auto;
+  padding-top: 16px;
 }
 
 .results-action-btn {
