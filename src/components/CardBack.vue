@@ -261,7 +261,9 @@ const catStyle = computed(
 .cb-noise {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  /* Overlay the content (which sits at z-index 1), matching the front card
+     where the texture layers paint on top of everything. */
+  z-index: 2;
   pointer-events: none;
 }
 .cb-tint {
