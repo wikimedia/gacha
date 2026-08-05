@@ -954,26 +954,33 @@ const handleDismiss = () => {
   transform: scale(0.98);
 }
 
-/* Cards Grid Styling */
+/* Cards Grid Styling.
+   --grid-card-scale shrinks the native card (--card-width/height
+   from style.css) to its grid display size. Column width, wrapper size, and the
+   inner transform all derive from it. */
 .cards-grid-container {
+  --grid-card-scale: 0.42472;
+  --grid-card-display-width: calc(var(--card-width) * var(--grid-card-scale));
+  --grid-card-display-height: calc(var(--card-height) * var(--grid-card-scale));
+
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  justify-content: center;
+
+  grid-template-columns: repeat(2, var(--grid-card-display-width));
+  gap: 15px;
   margin-left: auto;
   margin-right: auto;
-  width: 314.4px; /* 151.2px * 2 + 12px gap */
+  width: fit-content;
 }
 
 .grid-card-wrapper {
-  width: 151.2px; /* display size; native card (356) scaled by 0.42472 below */
-  height: 211.2px;
+  width: var(--grid-card-display-width);
+  height: var(--grid-card-display-height);
   position: relative;
   overflow: visible; /* so correct/incorrect badge can pop out of bounds */
 }
 
 .grid-card-inner {
-  transform: scale(0.42472);
+  transform: scale(var(--grid-card-scale));
   transform-origin: top left;
   width: var(--card-width);
   height: var(--card-height);
