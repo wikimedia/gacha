@@ -376,7 +376,7 @@ const handleShare = () => {
 }
 
 .carousel-track {
-  --carousel-gap: 15px; /* also consumed by the centering transform inline */
+  --carousel-gap: 10px; /* also consumed by the centering transform inline */
   display: flex;
   gap: var(--carousel-gap);
   align-items: center;
