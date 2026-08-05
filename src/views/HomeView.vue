@@ -642,9 +642,10 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
   <PageLayout
     ref="headerRef"
     :displayed-points="displayedPoints" 
-    :gacha-active="gachaActive || showCardsUnlocked" 
+    :gacha-active="gachaActive || showCardsUnlocked"
     :is-animating="isAnimatingPoints"
     :game-active="gameActive"
+    :results-active="showCardsUnlocked"
     :active-main-category="gameActive ? selectedCategory || undefined : activeSubCategory.mainCategory"
     :current-round="currentRound"
     :total-rounds="gameDeck.length"

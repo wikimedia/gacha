@@ -23,6 +23,7 @@ const props = withDefaults(defineProps<{
   isAnimating?: boolean;
   activeMainCategory?: Category;
   gameActive?: boolean;
+  resultsActive?: boolean;
   binderColor?: string;
   currentRound?: number;
   totalRounds?: number;
@@ -31,6 +32,7 @@ const props = withDefaults(defineProps<{
   gachaActive: false,
   isAnimating: false,
   gameActive: false,
+  resultsActive: false,
   binderColor: '#4a6783',
   currentRound: 1,
   totalRounds: 10,
@@ -287,13 +289,15 @@ defineExpose({
         </button>
       </div>
       <button
-        v-else
+        v-else-if="!resultsActive"
         class="header-icon-btn"
         @click="showCreditsModal = true"
         aria-label="Credits & attribution"
       >
         <AppIcon :icon="cdxIconInfo" :size="18" />
       </button>
+      <!-- Results screen: no info button, but keep a spacer so the title stays centered -->
+      <div v-else class="header-icon-spacer" aria-hidden="true"></div>
 
     </div>
 
@@ -447,6 +451,13 @@ defineExpose({
    through. Matches the page background (--color-sand). */
 .gacha-header-overlay--solid {
   background-color: var(--color-sand);
+}
+
+/* Invisible stand-in for the right-hand icon button, matching header-icon-btn
+   size (32×32) so the centered title doesn't shift when the button is hidden. */
+.header-icon-spacer {
+  width: 32px;
+  height: 32px;
 }
 
 

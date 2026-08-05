@@ -12,6 +12,7 @@ defineProps<{
   hideHeader?: boolean;
   activeMainCategory?: Category;
   gameActive?: boolean;
+  resultsActive?: boolean;
   binderColor?: string;
   currentRound?: number;
   totalRounds?: number;
@@ -51,6 +52,7 @@ defineExpose({
       :is-animating="isAnimating"
       :active-main-category="activeMainCategory"
       :game-active="gameActive"
+      :results-active="resultsActive"
       :binder-color="binderColor"
       :current-round="currentRound"
       :total-rounds="totalRounds"
