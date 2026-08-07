@@ -387,6 +387,14 @@ watch(activeTab, () => nextTick(updateCardScale));
       >
         Log in to collect cards
       </button>
+      <router-link
+        tag="buton"
+        v-if="authStore.isLoggedIn"
+        class="results-action-btn results-action-btn--primary"
+         :to="'/@' + (authStore.user?.username)"
+      >
+        View my collection
+      </router-link>
       <button
         @click="handleDismiss"
         class="results-action-btn results-action-btn--secondary"
