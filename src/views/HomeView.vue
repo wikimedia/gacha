@@ -721,7 +721,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
         <div class="flex-grow flex items-center justify-center my-2 relative min-h-0">
           
           <!-- Centered wrapper container -->
-          <div class="relative w-full max-w-[315px] h-[440px]">
+          <div class="relative w-full max-w-[var(--card-width)] h-[var(--card-height)]">
             
             <div class="stack select-none w-full h-full">
               
@@ -757,7 +757,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
                   :show-link="false"
                   :shiny-trigger="index === 0 ? 'on' : 'off'"
                 />
-                
+
                 <!-- Swiping Indicators Overlay -->
                 <div 
                   v-if="index === 0 && swipeOffset !== 0 && !roundAnswered"

@@ -262,8 +262,9 @@ const grainPosition = computed(() => {
    ============================================================ */
 
 .trading-card-wrapper {
-  width: 315px;
-  height: 440px;
+  width: var(--card-base-width);
+  height: var(--card-base-height);
+  zoom: var(--card-scale-full);
   display: flex;
   flex-direction: column;
   position: relative;

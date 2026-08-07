@@ -1083,12 +1083,12 @@ const toggleCardShowcase = async (cardId: string) => {
   position: relative;
 }
 .binder-grid--1col .card-scaled-content {
-  width: 315px;
-  height: 440px;
+  width: var(--card-width);
+  height: var(--card-height);
   position: absolute;
   top: 0;
   left: 0;
-  transform: scale(0.85);
+  transform: scale(0.75211);
   transform-origin: top left;
 }
 
@@ -1103,12 +1103,12 @@ const toggleCardShowcase = async (cardId: string) => {
   position: relative;
 }
 .binder-grid--2col .card-scaled-content {
-  width: 315px;
-  height: 440px;
+  width: var(--card-width);
+  height: var(--card-height);
   position: absolute;
   top: 0;
   left: 0;
-  transform: scale(0.42);
+  transform: scale(0.37163);
   transform-origin: top left;
 }
 
@@ -1123,18 +1123,19 @@ const toggleCardShowcase = async (cardId: string) => {
   position: relative;
 }
 .binder-grid--3col .card-scaled-content {
-  width: 315px;
-  height: 440px;
+  width: var(--card-width);
+  height: var(--card-height);
   position: absolute;
   top: 0;
   left: 0;
-  transform: scale(0.28);
+  transform: scale(0.24775);
   transform-origin: top left;
 }
 
 /* Desktop sizing overrides */
 @media (min-width: 640px) {
-  /* 1 Column View - Native Size */
+  /* 1 Column View. Display size stays 315×440 (the binder's established size);
+     the native card is 356 so it scales down by 315/356. */
   .binder-grid--1col {
     grid-template-columns: repeat(auto-fit, 315px);
   }
@@ -1143,7 +1144,7 @@ const toggleCardShowcase = async (cardId: string) => {
     height: 440px;
   }
   .binder-grid--1col .card-scaled-content {
-    transform: scale(1);
+    transform: scale(0.88483);
   }
 
   /* 2 Columns View - Larger Scales */
@@ -1155,7 +1156,7 @@ const toggleCardShowcase = async (cardId: string) => {
     height: 374px;
   }
   .binder-grid--2col .card-scaled-content {
-    transform: scale(0.85);
+    transform: scale(0.75211);
   }
 
   /* 3 Columns View - Larger Scales */
@@ -1167,7 +1168,7 @@ const toggleCardShowcase = async (cardId: string) => {
     height: 264px;
   }
   .binder-grid--3col .card-scaled-content {
-    transform: scale(0.6);
+    transform: scale(0.53090);
   }
 }
 
