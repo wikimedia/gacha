@@ -647,7 +647,7 @@ const handleDismiss = () => {
 }
 
 .scaled-card-center {
-  transform: scale(0.455);
+  transform: scale(0.43);
   transform-origin: top left;
   pointer-events: none;
 }

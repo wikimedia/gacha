@@ -20,7 +20,7 @@ defineProps<{
   <div class="share-graphic">
     <p class="share-graphic__wordmark">World of Wikipedia</p>
     <div class="share-graphic__card">
-      <CardComp :card="card" :show-link="false" shiny-trigger="off" />
+      <CardComp :card="card" :show-link="false" shiny-trigger="off"/>
     </div>
     <p class="share-graphic__footer">
       {{ username ? `${SHARE_DOMAIN} | @${username}` : SHARE_DOMAIN }}
@@ -37,7 +37,7 @@ defineProps<{
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   background-color: var(--color-cream);
   border-radius: 8px;
 }
@@ -51,6 +51,7 @@ defineProps<{
 }
 
 .share-graphic__card {
+  transform: scale(0.9);
   position: relative;
   flex-shrink: 0;
 }
