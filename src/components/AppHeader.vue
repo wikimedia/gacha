@@ -259,7 +259,7 @@ defineExpose({
       <!-- Right: in-game status (round counter + lives) OR share / info -->
       <div v-if="gameActive" class="game-status-group">
         <!-- Round counter: deck icon + "current / total" -->
-        <div class="game-status-box" aria-label="Card progress">
+        <div class="game-status-box">
           <img class="deck-icon" src="/cards.svg" width="18" height="18" alt="" aria-hidden="true" />
           <span class="game-counter">{{ currentRound }} / {{ totalRounds }}</span>
         </div>
