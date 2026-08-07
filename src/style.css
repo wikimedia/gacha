@@ -767,6 +767,7 @@ body {
 /* --- Round result toast (correct / incorrect feedback above the buttons) --- */
 .gameplay-footer {
   position: relative;
+  z-index: 30;
 }
 
 /* Floated above the buttons so it never reflows the card area above it. */
@@ -791,6 +792,7 @@ body {
   background: var(--toast-bg);
   color: var(--toast-border);
   box-shadow: 0 0 16px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.06);
+  z-index: 100;
 }
 
 .round-result-toast__icon {
