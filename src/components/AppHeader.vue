@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
-import type { Category } from '../stores/useGameStore';
+import { MAX_LIVES, type Category } from '../stores/useGameStore';
 import AppIcon from './AppIcon.vue';
 import {
   cdxIconClose,
@@ -36,11 +36,8 @@ const props = withDefaults(defineProps<{
   binderColor: '#4a6783',
   currentRound: 1,
   totalRounds: 10,
-  lives: 3
+  lives: MAX_LIVES
 });
-
-// Total lives in a run (game is lost after 3 incorrect guesses).
-const maxLives = 3;
 
 const emit = defineEmits<{
   (e: 'activate'): void;
@@ -267,14 +264,14 @@ defineExpose({
           <span class="game-counter">{{ currentRound }} / {{ totalRounds }}</span>
         </div>
         <!-- Lives remaining -->
-        <div class="game-status-box game-status-box--lives" :aria-label="`${lives} of ${maxLives} lives remaining`">
+        <div class="game-status-box game-status-box--lives" :aria-label="`${lives} of ${MAX_LIVES} lives remaining`">
           <span
-            v-for="n in maxLives"
+            v-for="n in MAX_LIVES"
             :key="n"
             class="life-heart"
-            :class="{ 'life-heart--lost': n <= maxLives - lives }"
+            :class="{ 'life-heart--lost': n <= MAX_LIVES - lives }"
           >
-            <AppIcon :icon="n <= maxLives - lives ? cdxIconHeartOutline : cdxIconHeart" :size="18" />
+            <AppIcon :icon="n <= MAX_LIVES - lives ? cdxIconHeartOutline : cdxIconHeart" :size="18" />
           </span>
         </div>
       </div>

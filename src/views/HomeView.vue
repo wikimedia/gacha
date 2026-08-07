@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
-import { useGameStore, CATEGORIES, CATEGORY_SLUG, categoryToSlug, slugToCategory } from '../stores/useGameStore';
+import { useGameStore, CATEGORIES, CATEGORY_SLUG, categoryToSlug, slugToCategory, MAX_LIVES } from '../stores/useGameStore';
 import type { Card, Category } from '../stores/useGameStore';
 import { CATEGORY_HOME_CONFIG } from '../data/categories';
 import CardComp from '../components/Card.vue';
@@ -88,6 +88,8 @@ const identifiedFakesThisGame = ref<Card[]>([]);
 const encounteredCardsThisGame = ref<{ card: Card; isCorrect: boolean }[]>([]);
 const gameLost = ref(false);
 const incorrectCount = ref(0);
+// Lives left in the current run; the run is lost once this hits 0.
+const livesRemaining = computed(() => Math.max(0, MAX_LIVES - incorrectCount.value));
 const isStartingGame = ref(false);
 // Timestamp (ms) when the current fakeout game started, for measuring play duration.
 const gameStartTime = ref(0);
@@ -394,7 +396,7 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
     }
   } else {
     incorrectCount.value += 1;
-    if (incorrectCount.value >= 3) {
+    if (livesRemaining.value <= 0) {
       trackEvent('lose_fakeout_game', {
         logged_in: authStore.isLoggedIn,
         gameScore: gameScore.value,       
@@ -407,7 +409,7 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
 
   // Tighten up loop: automatically advance to the next card or end game after 1 second!
   setTimeout(() => {
-    if (incorrectCount.value >= 3) {
+    if (livesRemaining.value <= 0) {
       endFakeoutGame();
     } else {
       nextRound();
@@ -649,7 +651,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
     :active-main-category="gameActive ? selectedCategory || undefined : activeSubCategory.mainCategory"
     :current-round="currentRound"
     :total-rounds="gameDeck.length"
-    :lives="Math.max(0, 3 - incorrectCount)"
+    :lives="livesRemaining"
     :class="{ 'is-home-selection': !gachaActive && !showCardsUnlocked }"
     @activate="startGachaDrop" 
     @quit-game="quitGame"

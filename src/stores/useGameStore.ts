@@ -4,6 +4,8 @@ import { useAuthStore } from './useAuthStore';
 import { supabase } from '../supabase';
 import { BloomFilter, createSeenFakesFilter, loadSeenFakesFilter, saveSeenFakesFilter } from '../utils/seenFakesFilter';
 
+export const MAX_LIVES = 3;
+
 // The six categories, matching the design guidelines.
 export type Category = 'Sports' | 'People / Culture' | 'Media' | 'Earth' | 'History / Society' | 'Physical Science';
 export const CATEGORIES: Category[] = ['Sports', 'People / Culture', 'Media', 'Earth', 'History / Society', 'Physical Science'];
