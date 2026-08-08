@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
-import { useGameStore, CATEGORIES, CATEGORY_SLUG, categoryToSlug, slugToCategory } from '../stores/useGameStore';
+import { useGameStore, CATEGORIES, CATEGORY_SLUG, categoryToSlug, slugToCategory, MAX_LIVES } from '../stores/useGameStore';
 import type { Card, Category } from '../stores/useGameStore';
 import { CATEGORY_HOME_CONFIG } from '../data/categories';
 import CardComp from '../components/Card.vue';
@@ -13,7 +13,7 @@ import BaseButton from '../components/BaseButton.vue';
 import { trackEvent } from '../analytics';
 import { PhThumbsUp, PhThumbsDown } from '@phosphor-icons/vue';
 import AppIcon from '../components/AppIcon.vue';
-import { cdxIconPlay } from '@wikimedia/codex-icons';
+import { cdxIconPlay, cdxIconSuccess, cdxIconClear } from '@wikimedia/codex-icons';
 
 const route = useRoute();
 const router = useRouter();
@@ -69,9 +69,8 @@ const swipeOffset = ref(0);
 const isSwiping = ref(false);
 const touchStartX = ref(0);
 
-// Stamp feedback states
+// Result feedback states
 const roundWasCorrect = ref(false);
-const stampAngle = ref(0);
 const swipeDirection = ref<'left' | 'right' | null>(null);
 
 // Cooldown ticking
@@ -89,6 +88,8 @@ const identifiedFakesThisGame = ref<Card[]>([]);
 const encounteredCardsThisGame = ref<{ card: Card; isCorrect: boolean }[]>([]);
 const gameLost = ref(false);
 const incorrectCount = ref(0);
+// Lives left in the current run; the run is lost once this hits 0.
+const livesRemaining = computed(() => Math.max(0, MAX_LIVES - incorrectCount.value));
 const isStartingGame = ref(false);
 // Timestamp (ms) when the current fakeout game started, for measuring play duration.
 const gameStartTime = ref(0);
@@ -369,8 +370,7 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
   const isCorrect = isRealChoice === card.isReal;
   
   roundWasCorrect.value = isCorrect;
-  stampAngle.value = Math.floor(Math.random() * 30) - 15; // Random angle between -15 and 15 degrees
-  
+
   // Track all encountered cards
   encounteredCardsThisGame.value.push({ card, isCorrect });
 
@@ -396,7 +396,7 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
     }
   } else {
     incorrectCount.value += 1;
-    if (incorrectCount.value >= 3) {
+    if (livesRemaining.value <= 0) {
       trackEvent('lose_fakeout_game', {
         logged_in: authStore.isLoggedIn,
         gameScore: gameScore.value,       
@@ -409,7 +409,7 @@ const handleSwipeChoice = (isRealChoice: boolean) => {
 
   // Tighten up loop: automatically advance to the next card or end game after 1 second!
   setTimeout(() => {
-    if (incorrectCount.value >= 3) {
+    if (livesRemaining.value <= 0) {
       endFakeoutGame();
     } else {
       nextRound();
@@ -499,6 +499,9 @@ const handleTouchStart = (e: TouchEvent) => {
 
 const handleTouchMove = (e: TouchEvent) => {
   if (!isSwiping.value || roundAnswered.value) return;
+  // Stop the horizontal drag from scrolling/rubber-banding the page on
+  // iOS/Android (belt-and-suspenders with the card's touch-action: none).
+  if (e.cancelable) e.preventDefault();
   const diffX = e.touches[0].clientX - touchStartX.value;
   swipeOffset.value = diffX;
 };
@@ -641,12 +644,14 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
   <PageLayout
     ref="headerRef"
     :displayed-points="displayedPoints" 
-    :gacha-active="gachaActive || showCardsUnlocked" 
+    :gacha-active="gachaActive || showCardsUnlocked"
     :is-animating="isAnimatingPoints"
     :game-active="gameActive"
+    :results-active="showCardsUnlocked"
     :active-main-category="gameActive ? selectedCategory || undefined : activeSubCategory.mainCategory"
     :current-round="currentRound"
     :total-rounds="gameDeck.length"
+    :lives="livesRemaining"
     :class="{ 'is-home-selection': !gachaActive && !showCardsUnlocked }"
     @activate="startGachaDrop" 
     @quit-game="quitGame"
@@ -723,7 +728,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
           <!-- Centered wrapper container -->
           <div class="relative w-full max-w-[var(--card-width)] h-[var(--card-height)]">
             
-            <div class="stack select-none w-full h-full">
+            <div class="stack select-none w-full h-full touch-none">
               
               <div
                 v-for="(card, index) in visibleDeck"
@@ -757,56 +762,41 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
                   :show-link="false"
                   :shiny-trigger="index === 0 ? 'on' : 'off'"
                 />
-
-                <!-- Swiping Indicators Overlay -->
-                <div 
-                  v-if="index === 0 && swipeOffset !== 0 && !roundAnswered"
-                  class="absolute inset-0 flex items-center justify-center font-bold text-2xl uppercase pointer-events-none z-40 transition-all rounded"
-                  :class="[
-                    swipeOffset > 30 ? 'bg-success/20 text-success' : '',
-                    swipeOffset < -30 ? 'bg-error/20 text-error' : ''
-                  ]"
-                >
-                  <div v-if="swipeOffset > 30" class="px-4 py-2 border-4 border-success bg-white rounded shadow-md font-sans">
-                    ✓ Fact
-                  </div>
-                  <div v-if="swipeOffset < -30" class="px-4 py-2 border-4 border-error bg-white rounded shadow-md font-sans">
-                    ✕ Fake
-                  </div>
-                </div>
               </div>
               
-            </div>
-
-            <!-- Rubber Stamp Overlay inside wrapper -->
-            <div 
-              v-if="roundAnswered" 
-              class="absolute inset-0 flex items-center justify-center pointer-events-none z-40"
-            >
-              <div 
-                class="px-6 py-3 border-[6px] font-mono font-black text-3xl uppercase tracking-widest bg-white/95 shadow-xl select-none animate-stamp-scale whitespace-nowrap"
-                :class="[
-                  roundWasCorrect 
-                    ? 'border-success text-success' 
-                    : 'border-error text-error'
-                ]"
-                :style="{ transform: `rotate(${stampAngle}deg)` }"
-              >
-                {{ roundWasCorrect ? 'CORRECT' : `INCORRECT ${incorrectCount}/3` }}
-              </div>
             </div>
 
           </div>
 
         </div>
 
-        <!-- Desktop Swiping Helpers (True/False Redesign) -->
-        <div 
-          class="gameplay-buttons-container"
-          :class="[roundAnswered ? 'invisible opacity-0 pointer-events-none' : 'visible opacity-100']"
-        >
-          <BaseButton 
+        <!-- Footer: buttons plus the floating result toast. The toast is
+             positioned absolutely so it never reflows the card above it. -->
+        <div class="gameplay-footer">
+        <!-- Correct / incorrect result toast (centered, just above the buttons) -->
+        <Transition name="result-toast-pop">
+          <div v-if="roundAnswered" class="round-result-slot">
+            <div
+              class="round-result-toast"
+              :class="roundWasCorrect ? 'round-result-toast--correct' : 'round-result-toast--incorrect'"
+              role="status"
+            >
+              <AppIcon
+                class="round-result-toast__icon"
+                :icon="roundWasCorrect ? cdxIconSuccess : cdxIconClear"
+                :size="18"
+              />
+              <span class="round-result-toast__label">{{ roundWasCorrect ? 'Correct' : 'Incorrect' }}</span>
+            </div>
+          </div>
+        </Transition>
+
+        <!-- Desktop Swiping Helpers (True/False Redesign). Buttons stay
+             visible but are disabled while the result toast is showing. -->
+        <div class="gameplay-buttons-container">
+          <BaseButton
             variant="false"
+            :disabled="roundAnswered"
             @click="handleSwipeChoice(false)"
           >
             <template #icon>
@@ -815,9 +805,10 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             </template>
             Fake
           </BaseButton>
-          
-          <BaseButton 
+
+          <BaseButton
             variant="true"
+            :disabled="roundAnswered"
             @click="handleSwipeChoice(true)"
           >
             <template #icon>
@@ -826,6 +817,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             </template>
             Fact
           </BaseButton>
+        </div>
         </div>
       </section>
 

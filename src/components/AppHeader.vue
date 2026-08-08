@@ -3,14 +3,16 @@ import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
-import type { Category } from '../stores/useGameStore';
+import { MAX_LIVES, type Category } from '../stores/useGameStore';
 import AppIcon from './AppIcon.vue';
 import {
   cdxIconClose,
   cdxIconUserAvatarOutline,
   cdxIconInfo,
   cdxIconShare,
-  cdxIconPrevious
+  cdxIconPrevious,
+  cdxIconHeart,
+  cdxIconHeartOutline
 } from '@wikimedia/codex-icons';
 import InstructionsBody from './InstructionsBody.vue';
 import CreditsSheet from './CreditsSheet.vue';
@@ -21,16 +23,20 @@ const props = withDefaults(defineProps<{
   isAnimating?: boolean;
   activeMainCategory?: Category;
   gameActive?: boolean;
+  resultsActive?: boolean;
   binderColor?: string;
   currentRound?: number;
   totalRounds?: number;
+  lives?: number;
 }>(), {
   gachaActive: false,
   isAnimating: false,
   gameActive: false,
+  resultsActive: false,
   binderColor: '#4a6783',
   currentRound: 1,
-  totalRounds: 10
+  totalRounds: 10,
+  lives: MAX_LIVES
 });
 
 const emit = defineEmits<{
@@ -148,7 +154,7 @@ defineExpose({
 <template>
   <header class="w-full z-40 select-none pointer-events-none sticky top-0">
     <!-- Figma Mock Header (Stacked overlay with icons) -->
-    <div class="gacha-header-overlay pointer-events-auto">
+    <div class="gacha-header-overlay pointer-events-auto" :class="{ 'gacha-header-overlay--solid': gachaActive }">
       
       <!-- Left: Profile Menu Button / Dropdown OR Exit Button / Back Home Button -->
       <div v-if="gameActive" class="z-50">
@@ -241,29 +247,36 @@ defineExpose({
         </ul>
       </div>
 
-      <!-- Center: Progress Indicator (during game) or title -->
-      <div v-if="gameActive" class="game-progress-bar">
-        <div
-          v-for="i in totalRounds"
-          :key="i"
-          class="game-progress-segment"
-          :class="{
-            'game-progress-segment--completed': i < currentRound,
-            'game-progress-segment--upcoming': i >= currentRound
-          }"
-        />
-      </div>
-      <router-link 
-        v-else
-        to="/" 
+      <!-- Center: title (hidden during a game run) -->
+      <router-link
+        v-if="!gameActive"
+        to="/"
         class="font-serif font-normal text-[26px] leading-9 text-ink no-underline hover:opacity-85 select-none"
       >
         World of Wikipedia
       </router-link>
 
-      <!-- Right: Info Dialog Trigger OR Share button -->
-      <div v-if="route.name === 'profile'" class="relative z-50">
-        <button 
+      <!-- Right: in-game status (round counter + lives) OR share / info -->
+      <div v-if="gameActive" class="game-status-group">
+        <!-- Round counter: deck icon + "current / total" -->
+        <div class="game-status-box">
+          <img class="deck-icon" src="/cards.svg" width="18" height="18" alt="" aria-hidden="true" />
+          <span class="game-counter">{{ currentRound }} / {{ totalRounds }}</span>
+        </div>
+        <!-- Lives remaining -->
+        <div class="game-status-box game-status-box--lives" :aria-label="`${lives} of ${MAX_LIVES} lives remaining`">
+          <span
+            v-for="n in MAX_LIVES"
+            :key="n"
+            class="life-heart"
+            :class="{ 'life-heart--lost': n <= MAX_LIVES - lives }"
+          >
+            <AppIcon :icon="n <= MAX_LIVES - lives ? cdxIconHeartOutline : cdxIconHeart" :size="18" />
+          </span>
+        </div>
+      </div>
+      <div v-else-if="route.name === 'profile'" class="relative z-50">
+        <button
           class="header-icon-btn"
           @click="emit('share-profile')"
           aria-label="Share Profile Link"
@@ -273,13 +286,15 @@ defineExpose({
         </button>
       </div>
       <button
-        v-else
+        v-else-if="!resultsActive"
         class="header-icon-btn"
         @click="showCreditsModal = true"
         aria-label="Credits & attribution"
       >
         <AppIcon :icon="cdxIconInfo" :size="18" />
       </button>
+      <!-- Results screen: no info button, but keep a spacer so the title stays centered -->
+      <div v-else class="header-icon-spacer" aria-hidden="true"></div>
 
     </div>
 
@@ -423,9 +438,23 @@ defineExpose({
   width: 100%;
   max-width: 28rem; /* max-w-md */
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1rem 1rem 0rem 1rem;
   background: transparent;
   user-select: none;
+}
+
+/* On scrollable screens (gacha results), the sticky header needs an opaque
+   background so content scrolling underneath is occluded rather than showing
+   through. Matches the page background (--color-sand). */
+.gacha-header-overlay--solid {
+  background-color: var(--color-sand);
+}
+
+/* Invisible stand-in for the right-hand icon button, matching header-icon-btn
+   size (32×32) so the centered title doesn't shift when the button is hidden. */
+.header-icon-spacer {
+  width: 32px;
+  height: 32px;
 }
 
 
@@ -454,36 +483,53 @@ defineExpose({
   }
 }
 
-/* --- Game Progress Indicator (segmented bar) --- */
-.game-progress-bar {
+/* --- In-game status (round counter + lives) --- */
+.game-status-group {
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 8px;
   flex: 0 0 auto;
-  margin: 0 12px;
-  height: 26px;
-  border: 1.5px solid var(--color-ink);
-  border-radius: 4px;
-  overflow: hidden;
+}
+
+.game-status-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius-button);
   background: transparent;
+  color: var(--color-ink);
 }
 
-.game-progress-segment {
-  width: 24px;
+.game-counter {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.deck-icon {
   flex-shrink: 0;
-  transition: background-color 0.3s ease;
-  border-right: 1.5px solid var(--color-ink);
 }
 
-.game-progress-segment:last-child {
-  border-right: none;
+.game-status-box--lives {
+  gap: 6px;
 }
 
-.game-progress-segment--completed {
-  background-color: #4a6783;
+/* Heart colour is meaningful only to this component (matches the mock). */
+.life-heart {
+  --color-heart: #a56553;
+  display: inline-flex;
+  color: var(--color-heart);
 }
 
-.game-progress-segment--upcoming {
-  background-color: rgba(74, 103, 131, 0.25);
+.life-heart--lost {
+  color: var(--color-ink);
+  opacity: 0.25;
 }
 
 /* --- How to Play modal (full-screen; content shared via InstructionsBody) --- */

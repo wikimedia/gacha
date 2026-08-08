@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, watch, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useGameStore } from '../stores/useGameStore';
 import type { Card } from '../stores/useGameStore';
 import CardComp from './Card.vue';
 import CardDetailModal from './CardDetailModal.vue';
 import Stars from './Stars.vue';
+import AppIcon from './AppIcon.vue';
+import { cdxIconCheck, cdxIconClose } from '@wikimedia/codex-icons';
 
 const props = defineProps<{
   unlockedCards: Card[];
@@ -30,7 +31,6 @@ const emit = defineEmits<{
   (e: 'open-auth'): void;
 }>();
 
-const router = useRouter();
 const authStore = useAuthStore();
 const gameStore = useGameStore();
 
@@ -134,8 +134,28 @@ const cardsInGrid = computed(() => {
       list.push({ card: failed, isCorrect: false });
     }
   }
-  
+
   return list;
+});
+
+const correctCards = computed(() => cardsInGrid.value.filter(item => item.isCorrect));
+const incorrectCards = computed(() => cardsInGrid.value.filter(item => !item.isCorrect));
+
+// Cards are grouped into Correct / Incorrect sections for the Fakeout results
+// (empty sections are omitted). Gacha has no wrong answers, so it renders a
+// single unlabeled grid.
+const cardGroups = computed(() => {
+  if (props.gameType === 'fakeout') {
+    const groups: { key: string; label: string; variant: 'correct' | 'incorrect'; cards: { card: Card; isCorrect: boolean }[] }[] = [];
+    if (correctCards.value.length > 0) {
+      groups.push({ key: 'correct', label: 'Correct', variant: 'correct', cards: correctCards.value });
+    }
+    if (incorrectCards.value.length > 0) {
+      groups.push({ key: 'incorrect', label: 'Incorrect', variant: 'incorrect', cards: incorrectCards.value });
+    }
+    return groups;
+  }
+  return [{ key: 'all', label: '', variant: 'correct' as const, cards: cardsInGrid.value }];
 });
 
 // Cards are auto-collected at game end in HomeView. If the user is already logged in,
@@ -143,14 +163,12 @@ const cardsInGrid = computed(() => {
 // If not logged in, cards are saved in localStorage as guest progress.
 const isClaimed = ref(authStore.isLoggedIn && props.unlockedCards.length > 0);
 const isClaiming = ref(false);
-const showLoginPrompt = ref(!authStore.isLoggedIn && props.unlockedCards.length > 0);
 
 // Watch for authentication state changes. If they log in while on this screen,
 // we automatically claim cards in the database (they're already in localStorage
 // from guest state, but the auth store migration will handle the DB write).
 watch(() => authStore.isLoggedIn, async (loggedIn) => {
   if (loggedIn && !isClaimed.value && props.unlockedCards.length > 0) {
-    showLoginPrompt.value = false;
     isClaiming.value = true;
     try {
       // Collect and claim cards that were saved as guest progress
@@ -174,60 +192,23 @@ watch(() => authStore.isLoggedIn, async (loggedIn) => {
   }
 });
 
-// Fallback claim handler — cards are normally auto-collected at game end,
-// but this covers the edge case where a user manually triggers claiming.
-const handleClaim = async () => {
-  // If the user is not logged in, prompt them to sign in
-  if (!authStore.isLoggedIn) {
-    showLoginPrompt.value = true;
-    return;
-  }
-
-  if (isClaimed.value) return;
-
-  isClaiming.value = true;
-  
-  try {
-    // Collect all real cards in the game store (idempotent — skips already-collected)
-    const realCardIds: string[] = [];
-    props.unlockedCards.forEach(card => {
-      gameStore.collectCard(card);
-      realCardIds.push(card.id);
-    });
-
-    // Claim all real cards in Supabase for this profile
-    if (realCardIds.length > 0) {
-      await gameStore.claimArticlesForProfile(realCardIds, props.unlockedCards);
-    }
-
-    isClaimed.value = true;
-    emit('claim', props.unlockedCards);
-  } catch (err) {
-    console.error('Error claiming cards:', err);
-  } finally {
-    isClaiming.value = false;
-  }
-};
-
 const handleOpenAuth = () => {
   emit('open-auth');
-};
-
-const handleViewBinder = () => {
-  if (authStore.user?.username) {
-    router.push(`/@${authStore.user.username}`);
-  }
 };
 
 // Card detail modal states
 const isDetailModalOpen = ref(false);
 const detailModalInitialIndex = ref(0);
 
-const detailModalCards = computed(() => cardsInGrid.value.map(item => item.card));
-const detailModalIsCorrectArray = computed(() => cardsInGrid.value.map(item => item.isCorrect));
+// Flatten the grouped sections so the detail-modal carousel navigates cards in
+// the same order they appear on screen (Correct section first, then Incorrect).
+const orderedGridItems = computed(() => cardGroups.value.flatMap(group => group.cards));
+
+const detailModalCards = computed(() => orderedGridItems.value.map(item => item.card));
+const detailModalIsCorrectArray = computed(() => orderedGridItems.value.map(item => item.isCorrect));
 
 const openCardDetail = (card: Card) => {
-  const index = cardsInGrid.value.findIndex(item => item.card.id === card.id);
+  const index = orderedGridItems.value.findIndex(item => item.card.id === card.id);
   if (index !== -1) {
     detailModalInitialIndex.value = index;
     isDetailModalOpen.value = true;
@@ -237,17 +218,38 @@ const openCardDetail = (card: Card) => {
 const handleDismiss = () => {
   emit('dismiss');
 };
+
+const rootRef = ref<HTMLElement | null>(null);
+const CARD_BASE_WIDTH = 350;
+const GRID_GAP = 8;
+let resizeObserver: ResizeObserver | null = null;
+
+const updateCardScale = () => {
+  const grids = rootRef.value?.querySelectorAll<HTMLElement>('.cards-grid-container');
+  grids?.forEach(grid => {
+    const cellWidth = (grid.clientWidth - GRID_GAP) / 2;
+    if (cellWidth > 0) {
+      grid.style.setProperty('--card-scale', String(cellWidth / CARD_BASE_WIDTH));
+    }
+  });
+};
+
+onMounted(() => {
+  resizeObserver = new ResizeObserver(updateCardScale);
+  if (rootRef.value) resizeObserver.observe(rootRef.value);
+  updateCardScale();
+});
+
+onBeforeUnmount(() => resizeObserver?.disconnect());
+
+// Grids for the active tab mount/unmount when switching tabs, so re-measure.
+watch(activeTab, () => nextTick(updateCardScale));
 </script>
 
 <template>
-  <div class="results-page-container select-none">
-    
-    <!-- 1. Header Title -->
-    <div class="results-title-container">
-      <h2 class="results-title">Your Results</h2>
-    </div>
+  <div ref="rootRef" class="results-page-container select-none">
 
-    <!-- 2. Tabs Navigation -->
+    <!-- Tabs Navigation -->
     <div class="results-tabs-container">
       <div class="results-tabs">
         <button 
@@ -272,139 +274,49 @@ const handleDismiss = () => {
       
       <!-- TAB 1: CARDS TAB -->
       <div v-if="activeTab === 'cards'" class="cards-tab-content flex-grow flex flex-col gap-4 py-2 items-center">
-        <!-- 2-column Grid of played cards -->
-        <div class="cards-grid-container mt-2 pb-4">
-          <div 
-            v-for="item in cardsInGrid" 
-            :key="item.card.id" 
-            class="grid-card-wrapper animate-card-reveal cursor-pointer"
-            @click="openCardDetail(item.card)"
+        <p class="cards-tab-subtitle">Tap on a card to learn more about it.</p>
+
+        <!-- Cards grouped into Correct / Incorrect sections (empty sections omitted) -->
+        <div class="cards-groups-wrapper">
+          <div
+            v-for="group in cardGroups"
+            :key="group.key"
+            class="cards-group"
           >
-            <!-- Scaled Card -->
-            <div class="grid-card-inner">
-              <CardComp :card="item.card" :show-link="false" />
+            <!-- Section header (Fakeout only) -->
+            <div v-if="group.label" class="results-section-header">
+              <span class="results-section-icon" :class="`results-section-icon--${group.variant}`">
+                <AppIcon :icon="group.variant === 'correct' ? cdxIconCheck : cdxIconClose" :size="13" />
+              </span>
+              <span class="results-section-title">{{ group.label }}</span>
             </div>
 
-            <!-- Correct/Incorrect badge in top-right corner of the scaled wrapper (Only for Fakeout game) -->
-            <div 
-              v-if="gameType === 'fakeout' && item.isCorrect"
-              class="card-grid-badge card-grid-badge--correct"
-              title="Correct"
-            >
-              <svg class="badge-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-                <path d="M8 12.5l3 3 5-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </div>
-            <div 
-              v-else-if="gameType === 'fakeout'"
-              class="card-grid-badge card-grid-badge--incorrect"
-              title="Incorrect"
-            >
-              <svg class="badge-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-                <path d="M8 8l8 8M16 8l-8 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </div>
-
-            <!-- Fake Card Overlay (with diagonal FAKE stamp) -->
-            <div 
-              v-if="!item.card.isReal"
-              class="card-grid-fake-overlay"
-            ></div>
-            <div
-              v-if="!item.card.isReal"
-              class="card-grid-fake-stamp"
-            >
-              <div class="fake-stamp-text">
-                FAKE
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Action / Message Block Below Grid -->
-        <!-- Case A: Lost State with NO cards unlocked -->
-        <div v-if="lost && unlockedCards.length === 0" class="flex flex-col items-center gap-4 w-full">
-          <div class="try-again-message">
-            Better luck next time!
-          </div>
-          <button @click="handleDismiss" class="try-again-button w-full">
-            Try again to collect cards
-          </button>
-        </div>
-
-        <!-- Case B: Won/Gacha state or Lost state with claiming -->
-        <div v-else class="w-full">
-          <!-- CLAIMING / ACTION BOX -->
-          <div class="card card-bordered bg-base-100 border-base-300 shadow-md p-5 text-center">
-            <!-- Unclaimed state -->
-            <div v-if="!isClaimed && !showLoginPrompt" class="flex flex-col gap-3">
-              <h4 class="font-serif font-black text-sm text-base-content leading-tight">
-                {{ lost ? 'Game Over! Claim Your Discoveries anyway?' : (unlockedCards.length > 0 ? 'Ready to Claim Your Discoveries?' : 'No Discoveries to Claim') }}
-              </h4>
-              <p class="text-xs text-secondary leading-relaxed font-sans font-light">
-                {{ lost
-                  ? "Even though you didn't finish the round, you get to keep the real cards you identified correctly!"
-                  : (unlockedCards.length > 0 
-                    ? 'Add these articles to your Wikipedia binder collection and collect points to unlock more rewards.'
-                    : 'Get answers correct in the game to unlock cards that you can claim here!')
-                }}
-              </p>
-              <button 
-                v-if="unlockedCards.length > 0"
-                @click="handleClaim"
-                :disabled="isClaiming"
-                class="btn btn-primary w-full uppercase font-bold text-xs text-white"
+            <!-- 2-column grid of cards for this section -->
+            <div class="cards-grid-container">
+              <div
+                v-for="item in group.cards"
+                :key="item.card.id"
+                class="grid-card-wrapper animate-card-reveal cursor-pointer"
+                @click="openCardDetail(item.card)"
               >
-                <span v-if="isClaiming" class="loading loading-spinner loading-xs"></span>
-                🎁 Claim {{ unlockedCards.length }} Cards
-              </button>
-              <button @click="handleDismiss" class="btn btn-outline border-base-300 w-full uppercase font-bold text-xs">
-                🔄 Play Again
-              </button>
-            </div>
+                <!-- Scaled Card -->
+                <div class="grid-card-inner">
+                  <CardComp :card="item.card" :show-link="false" />
+                </div>
 
-            <!-- Guest Auth login prompt state -->
-            <div v-else-if="!isClaimed && showLoginPrompt" class="flex flex-col gap-3 animate-fade-in">
-              <h4 class="font-serif font-black text-sm text-primary leading-tight">
-                {{ lost ? 'Sign In to Keep Your Discoveries' : 'Sign In to Claim Cards' }}
-              </h4>
-              <p class="text-xs text-secondary leading-relaxed font-sans font-light">
-                {{ lost
-                  ? 'To save the real cards you identified during this round, please log in with your email.'
-                  : 'To claim these cards and add them to your collection, please log in with your email. This ensures your discoveries are securely saved.'
-                }}
-              </p>
-              <div class="flex flex-col gap-2 mt-2">
-                <button @click="handleOpenAuth" class="btn btn-primary w-full uppercase font-bold text-xs text-white">
-                  🔑 Log In to Claim
-                </button>
-                <button @click="showLoginPrompt = false" class="btn btn-ghost btn-xs text-secondary hover:bg-transparent mt-1">
-                  ← Cancel
-                </button>
-              </div>
-            </div>
-
-            <!-- Claimed state -->
-            <div v-else class="flex flex-col gap-3 animate-fade-in">
-              <span class="text-4xl animate-bounce">✨</span>
-              <h4 class="font-serif font-black text-sm text-success leading-tight">
-                {{ lost ? 'Discoveries Saved!' : 'Discoveries Claimed!' }}
-              </h4>
-              <p class="text-xs text-secondary leading-relaxed font-sans font-light">
-                {{ lost
-                  ? 'Your correctly identified cards have been successfully saved to your cloud profile binder!'
-                  : 'Your unlocked cards have been successfully saved to your cloud profile binder!'
-                }}
-              </p>
-              <div class="flex flex-col gap-2 mt-2">
-                <button @click="handleViewBinder" class="btn btn-primary w-full uppercase font-bold text-xs text-white">
-                  📖 Open Binder & View Cards
-                </button>
-                <button @click="handleDismiss" class="btn btn-outline border-base-300 w-full uppercase font-bold text-xs">
-                  Play Again
-                </button>
+                <!-- Fake Card Overlay (with diagonal FAKE stamp) -->
+                <div
+                  v-if="!item.card.isReal"
+                  class="card-grid-fake-overlay"
+                ></div>
+                <div
+                  v-if="!item.card.isReal"
+                  class="card-grid-fake-stamp"
+                >
+                  <div class="fake-stamp-text">
+                    FAKE
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -413,84 +325,83 @@ const handleDismiss = () => {
       </div>
 
       <!-- TAB 2: STATS TAB -->
-      <div v-if="activeTab === 'stats'" class="stats-tab-content flex-grow flex flex-col gap-6 py-2 items-center">
-        <!-- 3D Card Stack -->
-        <div class="card-stack-container mt-2">
-          <div 
-            v-if="stackCards.left" 
-            class="card-stack-item card-stack-item--left cursor-pointer"
+      <div v-if="activeTab === 'stats'" class="stats-tab-content">
+        <!-- Fanned card stack (session highlights) -->
+        <div class="card-fan">
+          <div
+            v-if="stackCards.left"
+            class="card-fan-item card-fan-item--left cursor-pointer"
             @click="openCardDetail(stackCards.left)"
           >
-            <CardComp :card="stackCards.left" :show-link="false" class="scaled-card-left" />
+            <CardComp :card="stackCards.left" :show-link="false" class="card-fan-scaled card-fan-scaled--side" />
           </div>
-          <div 
-            v-if="stackCards.right" 
-            class="card-stack-item card-stack-item--right cursor-pointer"
+          <div
+            v-if="stackCards.right"
+            class="card-fan-item card-fan-item--right cursor-pointer"
             @click="openCardDetail(stackCards.right)"
           >
-            <CardComp :card="stackCards.right" :show-link="false" class="scaled-card-right" />
+            <CardComp :card="stackCards.right" :show-link="false" class="card-fan-scaled card-fan-scaled--side" />
           </div>
-          <div 
-            v-if="stackCards.center" 
-            class="card-stack-item card-stack-item--center cursor-pointer"
+          <div
+            v-if="stackCards.center"
+            class="card-fan-item card-fan-item--center cursor-pointer"
             @click="openCardDetail(stackCards.center)"
           >
-            <CardComp :card="stackCards.center" :show-link="false" class="scaled-card-center" />
+            <CardComp :card="stackCards.center" :show-link="false" class="card-fan-scaled card-fan-scaled--center" />
           </div>
         </div>
 
-        <!-- Stats Info Section -->
-        <div class="results-info-container">
-          <!-- Category Badge Box -->
-          <div class="results-category-badge shadow-sm">
-            <span class="category-badge-text">{{ category || 'General Knowledge' }}</span>
+        <!-- Fakes / Facts summary -->
+        <div class="stats-summary-row">
+          <div class="stats-summary-box stats-summary-box--fakes">
+            <span>Fakes</span>
+            <span>{{ identifiedFakes?.length ?? 0 }}</span>
           </div>
-
-          <!-- Total Collected Badge -->
-          <div class="results-total-collected shadow-sm">
-            Total Collected : {{ unlockedCards.length }}
+          <div class="stats-summary-box stats-summary-box--facts">
+            <span>Facts</span>
+            <span>{{ unlockedCards.length }}</span>
           </div>
+        </div>
 
-          <!-- Stats Box Row: Fakes / Facts -->
-          <div class="results-fakes-facts-row gap-2">
-            <!-- Fakes Box -->
-            <div class="results-fakes-box shadow-sm rounded-[2px]">
-              <span>Fakes</span>
-              <span>{{ identifiedFakes?.length ?? 0 }}</span>
-            </div>
-            <!-- Facts Box -->
-            <div class="results-facts-box shadow-sm rounded-[2px]">
-              <span>Facts</span>
-              <span>{{ unlockedCards.length }}</span>
-            </div>
-          </div>
-
-          <!-- Rarity Star Breakdown Rows (Simplified if no cards gotten right) -->
-          <div 
-            v-if="unlockedCards.length > 0"
-            class="results-star-breakdown-box flex flex-col gap-1 border border-[#3f3f35]/10 rounded-[2px] bg-[rgba(200,193,183,0.15)] p-1 mt-2"
+        <!-- Rarity star breakdown -->
+        <div class="stats-rarity-list">
+          <div
+            v-for="row in starRows"
+            :key="row.stars"
+            class="stats-rarity-row"
           >
-            <div 
-              v-for="(row, idx) in starRows" 
-              :key="row.stars"
-              class="flex flex-col"
-            >
-              <div class="star-breakdown-row">
-                <Stars :rarity="row.label" :muted="row.count === 0" :size="16" />
-                <div class="star-breakdown-count font-serif font-black text-sm">
-                  {{ row.count }}
-                </div>
-              </div>
-              <div v-if="idx < starRows.length - 1" class="h-px bg-[#3f3f35]/10 mx-3"></div>
-            </div>
+            <Stars :rarity="row.label" :size="20" />
+            <span class="stats-rarity-count">{{ row.count }}</span>
           </div>
         </div>
-
-        <!-- Keep Playing Button -->
-        <button @click="handleDismiss" class="keep-playing-btn">
-          {{ lost ? 'Try again to collect cards' : 'Keep playing' }}
-        </button>
       </div>
+
+    </div>
+
+    <!-- Shared bottom actions (both tabs) -->
+    <div class="results-actions">
+      <button
+        v-if="!authStore.isLoggedIn"
+        @click="handleOpenAuth"
+        class="results-action-btn results-action-btn--primary"
+      >
+        Log in to collect cards
+      </button>
+      <router-link
+        tag="buton"
+        v-if="authStore.isLoggedIn"
+        class="results-action-btn results-action-btn--primary"
+         :to="'/@' + (authStore.user?.username)"
+      >
+        View my collection
+      </router-link>
+      <button
+        @click="handleDismiss"
+        class="results-action-btn results-action-btn--secondary"
+      >
+        Play Again
+      </button>
+    </div>
 
     <!-- Card Detail Modal -->
     <CardDetailModal
@@ -502,7 +413,6 @@ const handleDismiss = () => {
       :is-own-collection="true"
       @close="isDetailModalOpen = false"
     />
-  </div>
 </div>
 </template>
 
@@ -588,167 +498,127 @@ const handleDismiss = () => {
   25%, 100% { left: 150%; }
 }
 
-/* ── Try Again Screen Layout (Figma Redesign) ────────────────── */
-.try-again-screen-container {
+/* ── Stats tab ──────────────────────────────────────────────── */
+.stats-tab-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
-  padding-top: 40px;
-  width: 326px;
-  margin-left: auto;
-  margin-right: auto;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 0;
 }
 
-.card-stack-container {
+/* Fanned stack of three session cards (side cards tucked behind the center) */
+.card-fan {
   position: relative;
-  width: 326px;
-  height: 218px;
-  filter: drop-shadow(-2.241px 3.361px 3.249px rgba(0, 0, 0, 0.25));
+  width: 296px;
+  height: 200px;
+  margin: 0 auto;
 }
 
-.card-stack-item {
+.card-fan-item {
   position: absolute;
+  top: 0;
   overflow: visible;
 }
 
-.card-stack-item--left {
-  left: calc(50% - 98.04px);
-  top: 0;
-  width: 129.926px;
-  height: 181.485px;
-  transform: translateX(-50%) rotate(-6deg);
+/* Side cards: 315×440 scaled to 0.3745 → 117.97×164.78 */
+.card-fan-item--left,
+.card-fan-item--right {
+  width: 117.97px;
+  height: 164.78px;
   z-index: 10;
+  filter: drop-shadow(-0.6px 0.8px 1.8px rgba(0, 0, 0, 0.19));
 }
 
-.card-stack-item--right {
-  left: calc(50% + 98.01px);
-  top: 0;
-  width: 129.926px;
-  height: 181.485px;
-  transform: translateX(-50%) rotate(6deg);
-  z-index: 10;
+.card-fan-item--left {
+  left: calc(50% - 89px);
+  transform: translateX(-50%) rotate(-8deg);
 }
 
-.card-stack-item--center {
-  left: calc(50% - 6.72px);
-  top: 17.86px;
-  width: 143.395px;
-  height: 200.298px;
-  transform: translateX(-50%) rotate(0.5deg);
+.card-fan-item--right {
+  left: calc(50% + 89px);
+  transform: translateX(-50%) rotate(8deg);
+}
+
+/* Center card: 315×440 scaled to 0.4133 → 130.2×181.85, sits on top */
+.card-fan-item--center {
+  left: 50%;
+  top: 16px;
+  width: 130.2px;
+  height: 181.85px;
+  transform: translateX(-50%);
   z-index: 20;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.4));
 }
 
-.scaled-card-left,
-.scaled-card-right {
-  transform: scale(0.412);
+.card-fan-scaled {
   transform-origin: top left;
   pointer-events: none;
 }
 
-.scaled-card-center {
-  transform: scale(0.43);
-  transform-origin: top left;
-  pointer-events: none;
+.card-fan-scaled--side {
+  transform: scale(0.37); 
 }
 
-.results-info-container {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 326px;
+.card-fan-scaled--center {
+  transform: scale(0.38); 
 }
 
-.category-badge-box {
-  background-color: rgba(200, 193, 183, 0.43);
-  width: 326px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 0;
-}
-
-.category-badge-text {
-  font-family: 'Georgia', serif;
-  font-weight: bold;
-  font-size: 20px;
-  line-height: 20px;
-  color: #3f3f35;
-  text-align: center;
-  word-break: break-word;
-}
-
-.stats-row {
+/* Fakes / Facts summary boxes */
+.stats-summary-row {
   display: flex;
   gap: 8px;
-  width: 326px;
+  width: 100%;
+}
+
+.stats-summary-box {
+  flex: 1;
+  min-width: 0;
   height: 32px;
-}
-
-.stat-box {
-  background-color: rgba(200, 193, 183, 0.43);
-  width: 159px;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 4px 15px;
   box-sizing: border-box;
-}
-
-.stat-label {
-  font-family: var(--font-serif);
-  font-weight: bold;
+  border-radius: var(--radius-button);
+  font-family: var(--font-sans);
   font-size: 14px;
-  line-height: 20px;
-  color: #3f3f35;
+  line-height: 22px;
+  color: var(--color-charcoal);
 }
 
-.stat-value {
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 14px;
-  line-height: 20px;
-  color: #3f3f35;
-  text-align: center;
+.stats-summary-box--fakes {
+  background-color: rgba(253, 244, 235, 0.7);
 }
 
-.try-again-message {
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 14px;
-  color: #000;
-  text-align: center;
-  margin-top: 8px;
-  margin-bottom: 8px;
+.stats-summary-box--facts {
+  background-color: #f9f0e4;
+  color: var(--color-ink);
 }
 
-.try-again-button {
-  background-color: var(--color-blue);
-  color: var(--color-white);
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 16px;
-  line-height: 20px;
-  text-align: center;
-  width: 326px;
-  height: 44px;
-  border: none;
-  border-radius: 2px;
-  cursor: pointer;
+/* Rarity breakdown: one bottom-bordered row per rarity */
+.stats-rarity-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+.stats-rarity-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  justify-content: space-between;
+  padding: 4px 15px;
+  border-bottom: 1px solid #b5aea1;
 }
 
-.try-again-button:hover {
-  background-color: var(--color-blue-dark);
-}
-
-.try-again-button:active {
-  transform: scale(0.98);
+.stats-rarity-count {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--color-charcoal);
 }
 
 /* Unified Results Layout Styles */
@@ -756,67 +626,52 @@ const handleDismiss = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 11px;
   padding-top: 10px;
   padding-bottom: 20px;
   width: 100%;
-  max-width: 360px;
   margin-left: auto;
   margin-right: auto;
-}
-
-.results-title-container {
-  width: 326px;
-  display: flex;
-  justify-content: center;
-  padding: 4px 0;
-}
-
-.results-title {
-  font-family: 'Georgia', serif;
-  font-weight: bold;
-  font-size: 24px;
-  color: #3f3f35;
-  text-align: center;
+  /* Fill the main content area so the actions can pin to the bottom when the
+     content is short, while still flowing (and scrolling) when it's tall. */
+  flex-grow: 1;
 }
 
 .results-tabs-container {
-  width: 326px;
+  width: 100%;
   margin: 0 auto;
 }
 
 .results-tabs {
-  background-color: rgba(63, 63, 53, 0.1);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-radius: 3px;
-  padding: 2px;
-  width: 326px;
+  align-items: stretch;
+  width: 100%;
+  border-bottom: 1px solid #b5aea1;
 }
 
 .results-tab-btn {
-  font-family: var(--font-serif);
-  font-weight: bold;
+  font-family: var(--font-sans);
+  font-weight: 700;
   font-size: 14px;
-  line-height: 20px;
+  line-height: 22px;
   text-align: center;
-  height: 24px;
   flex: 1;
   border: none;
-  border-radius: 3px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 1px 6px 3px;
   cursor: pointer;
   background-color: transparent;
   color: #5c5c54;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, border-color 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .results-tab-btn--active {
-  background-color: #3f3f35;
-  color: #fdf4eb;
+  color: var(--color-rust);
+  border-bottom-color: var(--color-rust);
 }
 
 .results-content-area {
@@ -829,139 +684,126 @@ const handleDismiss = () => {
   width: 100%;
 }
 
-.stats-tab-content {
+/* Shared bottom action buttons (Log in / Play Again).
+   margin-top: auto pins them to the bottom of the (flex-grown) container when
+   content is short; when content overflows they simply follow it and scroll. */
+.results-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   width: 100%;
+  margin-top: auto;
+  padding-top: 16px;
 }
 
-.results-category-badge {
-  background-color: rgba(200, 193, 183, 0.43);
-  width: 326px;
+.results-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 0;
-  font-family: 'Georgia', serif;
-  font-weight: bold;
-  font-size: 16px;
-  color: #3f3f35;
-  text-align: center;
-}
-
-.results-total-collected {
-  background-color: rgba(200, 193, 183, 0.43);
-  width: 326px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 0;
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 16px;
-  color: #3f3f35;
-  text-align: center;
-}
-
-.results-fakes-facts-row {
-  display: flex;
-  justify-content: space-between;
-  width: 326px;
-  height: 32px;
-}
-
-.results-fakes-box {
-  background-color: rgba(253, 244, 235, 0.7);
-  width: 159px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 15px;
-  box-sizing: border-box;
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 14px;
-  color: #3f3f35;
-}
-
-.results-facts-box {
-  background-color: rgba(63, 63, 53, 0.88);
-  width: 159px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 15px;
-  box-sizing: border-box;
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 14px;
-  color: #fdf4eb;
-}
-
-.results-star-breakdown-box {
-  width: 326px;
-}
-
-.star-breakdown-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   width: 100%;
-  height: 32px;
-  padding: 0 15px;
-  box-sizing: border-box;
-}
-
-.star-breakdown-stars {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.star-breakdown-count {
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 16px;
-  color: #3f3f35;
-}
-
-.keep-playing-btn {
-  background-color: var(--color-blue);
-  color: var(--color-white);
-  font-family: var(--font-serif);
-  font-weight: bold;
-  font-size: 16px;
+  height: 44px;
+  border-radius: var(--radius-button);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 14px;
   line-height: 20px;
   text-align: center;
-  width: 326px;
-  height: 44px;
-  border: none;
-  border-radius: 2px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: background-color 0.2s ease, transform 0.1s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-top: 12px;
 }
 
-.keep-playing-btn:hover {
-  background-color: var(--color-blue-dark);
-}
-
-.keep-playing-btn:active {
+.results-action-btn:active {
   transform: scale(0.98);
 }
 
-/* Cards Grid Styling.
-   --grid-card-scale shrinks the native card (--card-width/height
-   from style.css) to its grid display size. Column width, wrapper size, and the
-   inner transform all derive from it. */
+.results-action-btn--primary {
+  background-color: var(--color-rust);
+  border: 1px solid var(--color-rust);
+  color: var(--color-white);
+}
+
+.results-action-btn--primary:hover {
+  background-color: var(--color-rust-dark);
+  border-color: var(--color-rust-dark);
+}
+
+.results-action-btn--secondary {
+  background-color: var(--color-paper);
+  border: 1px solid var(--color-rust);
+  color: var(--color-rust);
+}
+
+.results-action-btn--secondary:hover {
+  background-color: var(--color-paper-dark);
+}
+
+/* Cards tab: subtitle + Correct/Incorrect grouped sections */
+.cards-tab-subtitle {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--color-ink);
+  text-align: center;
+  width: 100%;
+}
+
+.cards-groups-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.cards-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.results-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.results-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  color: var(--color-white);
+}
+
+.results-section-icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.results-section-icon--correct {
+  background-color: #8ea885;
+}
+
+.results-section-icon--incorrect {
+  background-color: #d06a4c;
+}
+
+.results-section-title {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 28px;
+  color: var(--color-charcoal);
+}
+
+/* Cards Grid Styling — two responsive columns that fill the row width.
+   --card-scale is set from the live column width in JS (updateCardScale). */
 .cards-grid-container {
-  --grid-card-scale: 0.42472;
-  --grid-card-display-width: calc(var(--card-width) * var(--grid-card-scale));
-  --grid-card-display-height: calc(var(--card-height) * var(--grid-card-scale));
+  --grid-card-display-width: calc(var(--card-width) * var(--card-scale));
+  --grid-card-display-height: calc(var(--card-height) * var(--card-scale));
 
   display: grid;
 
@@ -970,51 +812,30 @@ const handleDismiss = () => {
   margin-left: auto;
   margin-right: auto;
   width: fit-content;
+
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  width: 100%;
+  --card-scale: 0.55; /* fallback until measured (JS sets the exact value) */
 }
 
 .grid-card-wrapper {
-  width: var(--grid-card-display-width);
-  height: var(--grid-card-display-height);
+  width: 100%;
+  /* The inner card is a fixed 315×440 scaled with transform; without these the
+     grid tracks/rows blow out to its intrinsic size instead of the column width. */
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: 315 / 440;
   position: relative;
-  overflow: visible; /* so correct/incorrect badge can pop out of bounds */
+  overflow: visible;
 }
 
 .grid-card-inner {
-  transform: scale(var(--grid-card-scale));
+  transform: scale(var(--card-scale));
   transform-origin: top left;
   width: var(--card-width);
   height: var(--card-height);
   pointer-events: none;
-}
-
-.card-grid-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 38px;
-  height: 38px;
-  border-top-right-radius: 5.5px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  z-index: 30;
-  pointer-events: none;
-}
-
-.card-grid-badge--correct {
-  background: linear-gradient(225deg, #8ea885 50%, transparent 50%);
-}
-
-.card-grid-badge--incorrect {
-  background: linear-gradient(225deg, #d06a4c 50%, transparent 50%);
-}
-
-.badge-icon-svg {
-  width: 14px;
-  height: 14px;
-  margin-top: 5px;
-  margin-right: 5px;
-  color: #ffffff;
 }
 
 .card-grid-fake-overlay {
