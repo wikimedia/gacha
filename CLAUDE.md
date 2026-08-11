@@ -12,8 +12,13 @@ fake, earn points, and collect cards into a public "binder" profile.
 
 - `npm run dev` — Vite dev server (works out of the box; Supabase defaults
   are baked into `src/supabase.ts`)
-- `npm run build` — `vue-tsc -b && vite build`; run this to type-check
-- There is **no test suite and no linter** configured
+- `npm run build` — `vue-tsc -b && vite build`, then `scripts/check-compat.mjs`,
+  which fails the build if known WebKit-crashing patterns reach the output
+  (regex lookbehind; `color:color-mix(…currentcolor…)`); run this to type-check
+- `npm run lint` — ESLint flat config: Vue + TypeScript plus browser-compat
+  rules (`eslint-plugin-es-x`) that catch WebKit-unsupported syntax at
+  authoring time
+- There is **no test suite**
 
 ## Architecture
 
@@ -102,6 +107,10 @@ part of the app build. See its README for setup.
   `profiles → articles_v2` join at login. Per-user localStorage keys cache
   both.
 - The store contains many leftover `console.log` debug statements.
+- The dev server serves Tailwind/daisyUI CSS in modern *nested* form that
+  older WebKit cannot parse, so components break there in ways production
+  (flattened by the build) does not. Test browser compatibility against
+  `npm run build && npm run preview`, never against the dev server.
 
 ## Conventions
 
