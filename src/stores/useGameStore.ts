@@ -253,10 +253,15 @@ export const useGameStore = defineStore('game', () => {
       }
     }
 
-    // Standalone word 'sex' check, ignoring 'same-sex' and 'opposite-sex'
-    const sexRegex = /(?<!\b(same|opposite)-)\bsex\b/i;
+    // Standalone word 'sex' check, ignoring 'same-sex' and 'opposite-sex'.
+    // No regex lookbehind here: WebKit before 16.4 fails to parse it, which
+    // breaks the whole bundle on older iOS.
+    const sexRegex = /\bsex\b/i;
     if (sexRegex.test(title) || sexRegex.test(desc)) {
-      return false;
+      const textWithoutCompounds = combinedText.replace(/\b(same|opposite)-sex\b/g, '');
+      if (sexRegex.test(textWithoutCompounds)) {
+        return false;
+      }
     }
 
     // Standalone 'sexual' check, ignoring 'sexual dimorphism', 'sexual reproduction', 'sexual selection', 'sexual orientation', 'sexual identity'

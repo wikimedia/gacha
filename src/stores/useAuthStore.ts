@@ -269,7 +269,7 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.removeItem('moonflower_guest_gdPoints');
       }
 
-      let finalCards = dbCards;
+      const finalCards = dbCards;
 
       const mappedUser: User = {
         id: su.id,
