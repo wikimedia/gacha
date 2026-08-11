@@ -11,6 +11,25 @@ import { getFontEmbedCSS, toCanvas } from 'html-to-image';
 export const SHARE_DOMAIN = 'worldof.wiki';
 
 /**
+ * The share graphic's fixed layout size in CSS px (9:16). The export is a
+ * fixed-format asset: ShareCardGraphic always lays itself out at this size
+ * and ShareCardSheet derives its preview from the same numbers, so viewport
+ * size and responsive overrides never reach the PNG.
+ */
+const SHARE_GRAPHIC_WIDTH = 432;
+const SHARE_GRAPHIC_HEIGHT = 768;
+
+/** The layout size as custom properties, for the components' style bindings. */
+export const SHARE_GRAPHIC_SIZE_VARS = {
+  '--share-graphic-width': `${SHARE_GRAPHIC_WIDTH}px`,
+  '--share-graphic-height': `${SHARE_GRAPHIC_HEIGHT}px`,
+};
+
+/** Exported PNG width, per the design spec; height follows the 9:16 ratio. */
+const SHARE_EXPORT_WIDTH = 1080;
+const EXPORT_PIXEL_RATIO = SHARE_EXPORT_WIDTH / SHARE_GRAPHIC_WIDTH;
+
+/**
  * `navigator.share` existing does not imply file support (some desktop
  * browsers), so probe with a throwaway file.
  */
@@ -37,16 +56,16 @@ const WEBKIT_WARMUP_PASSES =
   /AppleWebKit/.test(navigator.userAgent) && !/Chrome\//.test(navigator.userAgent) ? 2 : 0;
 
 /**
- * Rasterize an element into a PNG blob at 2x resolution. Any CSS transform
- * on the element itself (e.g. the scaled-down sheet preview) is neutralized
- * so the output is always the element's natural layout size.
+ * Rasterize an element into a PNG blob at EXPORT_PIXEL_RATIO. Any CSS
+ * transform on the element itself (e.g. the scaled-down sheet preview) is
+ * neutralized so the output is always the element's natural layout size.
  */
 export async function captureElementToPng(element: HTMLElement): Promise<Blob> {
   // Embed fonts separately with default fetch options (plain cache hits);
   // the forced revalidation below is only needed for the card artwork.
   const fontEmbedCSS = await getFontEmbedCSS(element);
   const options = {
-    pixelRatio: 2,
+    pixelRatio: EXPORT_PIXEL_RATIO,
     width: element.clientWidth,
     height: element.clientHeight,
     style: { transform: 'none', transformOrigin: '0 0' },
