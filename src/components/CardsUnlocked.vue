@@ -385,14 +385,14 @@ watch(activeTab, () => nextTick(updateCardScale));
         @click="handleOpenAuth"
         class="results-action-btn results-action-btn--primary"
       >
-        Log in to collect cards
+        Sign Up To Claim
       </button>
       <router-link
         v-if="authStore.isLoggedIn"
         class="results-action-btn results-action-btn--primary"
          :to="'/@' + (authStore.user?.username)"
       >
-        View my collection
+        View My Collection
       </router-link>
       <button
         @click="handleDismiss"

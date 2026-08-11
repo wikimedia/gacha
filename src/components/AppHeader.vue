@@ -314,7 +314,7 @@ defineExpose({
         </h3>
         
         <p class="text-xs text-secondary mt-3 mb-4 leading-relaxed font-sans font-light">
-          Authenticating with your email allows you to claim and save your binder items and points securely in the cloud across all devices.
+          By authenticating with your email, you agree to have your account data, including your binder items and points, saved in the cloud across all devices.
         </p>
 
         <!-- Error Notice Block -->
@@ -346,7 +346,7 @@ defineExpose({
             class="btn btn-primary btn-sm w-full font-bold uppercase mt-2 text-white"
           >
             <span v-if="isVerifying" class="loading loading-spinner loading-xs"></span>
-            {{ isVerifying ? 'Sending Link...' : 'Send Sign-In Link' }}
+            {{ isVerifying ? 'Sending Link...' : 'Send Sign-Up Link' }}
           </button>
         </form>
 
