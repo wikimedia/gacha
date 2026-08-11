@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import BaseSheet from './BaseSheet.vue';
+import AppIcon from './AppIcon.vue';
+import { cdxIconLinkExternal } from '@wikimedia/codex-icons';
 import { TOPICS, type TopicOption } from '../data/categories';
 
 defineProps<{
   open: boolean;
-  /** Disables the tiles while a game is being started. */
+  /** Disables the Play buttons while a game is being started. */
   starting?: boolean;
 }>();
 
@@ -18,86 +20,166 @@ const topics = TOPICS;
 
 <template>
   <BaseSheet :open="open" title="Pick a Topic" @close="emit('close')">
-    <div class="grid grid-cols-2 gap-4 px-4 py-2">
-      <button
-        v-for="topic in topics"
-        :key="topic.code"
-        class="topic-tile"
-        :disabled="starting"
-        @click="emit('select', topic)"
-      >
-        <div class="topic-tile__thumb">
-          <img :src="topic.image" :alt="topic.label" class="topic-tile__img" loading="lazy" />
+    <ul class="topic-list">
+      <li v-for="topic in topics" :key="topic.code" class="topic-row">
+        <div class="topic-row__thumb">
+          <img :src="topic.image" :alt="topic.label" class="topic-row__img" loading="lazy" />
         </div>
-        <span class="topic-tile__label">{{ topic.label }}</span>
-      </button>
-    </div>
+
+        <div class="topic-row__body">
+          <span class="topic-row__title">{{ topic.label }}</span>
+          <a
+            class="topic-row__attribution"
+            :href="topic.attributionUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <AppIcon :icon="cdxIconLinkExternal" :size="14" class="topic-row__attribution-icon" />
+            <span class="topic-row__attribution-text">{{ topic.attribution }}</span>
+          </a>
+        </div>
+
+        <button
+          class="topic-row__play"
+          :disabled="starting"
+          @click="emit('select', topic)"
+        >
+          Play
+        </button>
+      </li>
+    </ul>
+
+    <p class="topic-credit">
+      Content adapted from
+      <a href="https://www.wikipedia.org" target="_blank" rel="noopener noreferrer">Wikipedia</a>
+      and
+      <a href="https://commons.wikimedia.org" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>.
+    </p>
   </BaseSheet>
 </template>
 
 <style scoped>
-.topic-tile {
+.topic-list {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  padding: 0;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: transform 0.15s ease;
+  gap: 12px;
+  margin: 0;
+  padding: 4px 16px 8px;
+  list-style: none;
 }
 
-.topic-tile:active {
+.topic-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  /* Fixed height so every row is uniform regardless of text length; the
+     thumbnail (object-fit: cover) is cropped to fill it. */
+  height: 96px;
+  /* No padding: the thumbnail bleeds to the card's edges. `overflow: hidden`
+     clips the frameless image's corners to the card's rounded curve. */
+  padding: 0;
+  /* Same fill as the sheet; the row is defined by its border, not a fill. */
+  background-color: transparent;
+  border: 1px solid var(--color-border-neutral);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.topic-row__thumb {
+  flex-shrink: 0;
+  width: 92px;
+  align-self: stretch; /* fill the row height so the image reaches top and bottom */
+  background-color: var(--color-base-300);
+}
+
+.topic-row__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.topic-row__body {
+  flex: 1 1 auto;
+  min-width: 0; /* allow the attribution text to truncate instead of overflowing */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.topic-row__title {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.topic-row__attribution {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.topic-row__attribution:hover .topic-row__attribution-text {
+  text-decoration: underline;
+}
+
+.topic-row__attribution-icon {
+  flex-shrink: 0;
+}
+
+.topic-row__attribution-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+}
+
+.topic-row__play {
+  flex-shrink: 0;
+  align-self: center;
+  margin-right: 12px; /* row has no padding, so the button sets its own right inset */
+  padding: 8px 22px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-rust);
+  color: var(--color-white);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.topic-row__play:hover {
+  background-color: var(--color-rust-dark);
+}
+
+.topic-row__play:active {
   transform: scale(0.96);
 }
 
-.topic-tile:disabled {
+.topic-row__play:disabled {
   opacity: 0.5;
   pointer-events: none;
 }
 
-.topic-tile__thumb {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 4px;
-  overflow: hidden;
-  background-color: var(--color-base-300);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  border: 2px solid transparent;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+.topic-credit {
+  margin: 4px 0 0;
+  padding: 0 16px;
+  font-size: 14px;
+  line-height: 18px;
+  color: var(--color-text-muted);
+  text-align: left;
 }
 
-.topic-tile:hover .topic-tile__thumb {
-  border-color: var(--color-ink);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 6px 16px rgba(0, 0, 0, 0.3);
-}
-
-.topic-tile__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.topic-tile:hover .topic-tile__img {
-  transform: scale(1.06);
-}
-
-.topic-tile__label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  background-color: var(--color-cream);
-  color: var(--color-ink);
-  border-radius: 2px;
-  font-family: var(--font-serif);
-  font-size: 12px;
-  font-weight: bold;
-  text-align: center;
-  padding: 0 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+.topic-credit a {
+  color: var(--color-blue);
+  text-decoration: underline;
 }
 </style>
