@@ -16,6 +16,7 @@ import {
 } from '@wikimedia/codex-icons';
 import InstructionsBody from './InstructionsBody.vue';
 import CreditsSheet from './CreditsSheet.vue';
+import BaseSheet from './BaseSheet.vue';
 
 const props = withDefaults(defineProps<{
   displayedPoints?: number;
@@ -298,52 +299,35 @@ defineExpose({
 
     </div>
 
-    <!-- AUTHENTICATION DIALOG / MODAL (DaisyUI Dialog Modal) -->
-    <dialog class="modal modal-bottom sm:modal-middle" :class="{ 'modal-open': showAuthModal }">
-      <div class="modal-box bg-base-100 border border-base-300 p-6 shadow-2xl relative text-left">
-        <!-- Close button -->
-        <button 
-          @click="closeModal" 
-          class="btn btn-sm btn-circle btn-ghost absolute right-4 top-4"
-        >
-          ✕
-        </button>
-
-        <h3 class="font-serif text-lg font-bold border-b border-base-300 pb-2 text-primary">
-          Sign In to Collect Cards
-        </h3>
-        
-        <p class="text-xs text-secondary mt-3 mb-4 leading-relaxed font-sans font-light">
+    <!-- AUTHENTICATION SHEET (standard bottom sheet) -->
+    <BaseSheet :open="showAuthModal" title="Sign In to Collect Cards" @close="closeModal">
+      <div class="px-4 pb-4 text-left">
+        <p class="m-0 mb-4 text-sm leading-body text-secondary font-light">
           By authenticating with your email, you agree to have your account data, including your binder items and points, saved in the cloud across all devices.
         </p>
 
         <!-- Error Notice Block -->
-        <div 
-          v-if="authError" 
-          class="alert alert-error text-xs p-3 rounded mb-4 font-sans font-semibold flex items-start gap-1"
-        >
-          <span>⚠️ {{ authError }}</span>
+        <div v-if="authError" class="auth-sheet__error mb-4 text-xs font-semibold">
+          ⚠️ {{ authError }}
         </div>
 
         <!-- Step 1: Request Sign-In Link -->
-        <form v-if="!otpSent" @submit.prevent="handleSendOtp" class="flex flex-col gap-4 mt-2">
-          <div class="form-control w-full">
-            <label class="label py-1">
-              <span class="label-text font-bold text-xs uppercase text-neutral-content/80">Email Address</span>
-            </label>
-            <input 
+        <form v-if="!otpSent" @submit.prevent="handleSendOtp" class="flex flex-col gap-4">
+          <label class="flex flex-col gap-1">
+            <span class="text-xs font-bold uppercase text-secondary">Email Address</span>
+            <input
               v-model="authEmail"
-              type="email" 
+              type="email"
               placeholder="e.g. scholar@wikipedia.org"
               required
               class="input input-bordered w-full input-sm font-sans"
             >
-          </div>
+          </label>
 
-          <button 
+          <button
             type="submit"
             :disabled="isVerifying"
-            class="btn btn-primary btn-sm w-full font-bold uppercase mt-2 text-white"
+            class="btn btn-primary btn-sm w-full font-bold uppercase text-white"
           >
             <span v-if="isVerifying" class="loading loading-spinner loading-xs"></span>
             {{ isVerifying ? 'Sending Link...' : 'Send Sign-Up Link' }}
@@ -351,44 +335,40 @@ defineExpose({
         </form>
 
         <!-- Step 2: Link Sent Status -->
-        <div v-else class="flex flex-col gap-4 mt-2 font-sans">
-          <div class="bg-base-200 border border-base-300 p-4 rounded text-xs text-base-content leading-relaxed">
-            <p class="mb-2">📬 We've sent a magic sign-in link to <strong class="text-primary">{{ authEmail }}</strong>.</p>
-            <p class="mb-2">Please check your inbox (and spam folder) and click the link to log in.</p>
-            <p class="text-secondary">Once you click the link, you will be automatically logged in here, and this window will update.</p>
+        <div v-else class="flex flex-col gap-4">
+          <div class="auth-sheet__status text-sm leading-body text-ink">
+            <p class="m-0 mb-2">We've sent a magic sign-in link to <strong class="text-primary">{{ authEmail }}</strong>.</p>
+            <p class="m-0 mb-2">Please check your inbox (and spam folder) and click the link to log in.</p>
+            <p class="m-0 text-secondary">Once you click the link, you will be automatically logged in here, and this window will update.</p>
           </div>
-          
-          <div class="flex justify-between text-[10px] px-1">
-            <button 
-              type="button" 
-              @click="otpSent = false" 
-              class="link link-primary font-semibold no-underline hover:underline"
+
+          <div class="flex justify-between text-xs">
+            <button
+              type="button"
+              @click="otpSent = false"
+              class="text-primary font-semibold no-underline hover:underline"
             >
               ← Change email
             </button>
-            <button 
-              type="button" 
-              @click="handleSendOtp" 
-              class="link link-primary font-semibold no-underline hover:underline"
+            <button
+              type="button"
+              @click="handleSendOtp"
+              class="text-primary font-semibold no-underline hover:underline"
             >
               Resend email
             </button>
           </div>
 
-          <button 
+          <button
             type="button"
             @click="closeModal"
-            class="btn btn-outline btn-sm w-full font-bold uppercase mt-2"
+            class="btn btn-outline btn-sm w-full font-bold uppercase"
           >
             Close Window
           </button>
         </div>
       </div>
-
-      <form method="dialog" class="modal-backdrop" @click="closeModal">
-        <button>close</button>
-      </form>
-    </dialog>
+    </BaseSheet>
 
     <!-- HOW TO PLAY — full-screen modal shown once on the first game (Rules
          heading + Start button). The footer's "Rules" link shows the same
@@ -431,6 +411,22 @@ defineExpose({
 </template>
 
 <style scoped>
+/* Authentication sheet content blocks */
+.auth-sheet__error {
+  padding: 12px;
+  border-radius: var(--radius-base);
+  background-color: rgba(191, 60, 44, 0.1);
+  border: 1px solid var(--color-red);
+  color: var(--color-red);
+}
+
+.auth-sheet__status {
+  padding: 16px;
+  border-radius: var(--radius-base);
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border-neutral);
+}
+
 .gacha-header-overlay {
   display: flex;
   justify-content: space-between;
