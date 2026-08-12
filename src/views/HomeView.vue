@@ -51,6 +51,18 @@ const subCategories: SubCategoryDef[] = CATEGORIES.map((cat) => {
 // Active subcategory on the home screen (Sports by default)
 const activeSubCategory = ref<SubCategoryDef>(subCategories[0]);
 
+// Activate a tile and scroll it to the center of the strip.
+const selectSubCategory = (subCat: SubCategoryDef, event: Event) => {
+  activeSubCategory.value = subCat;
+  const tile = event.currentTarget as HTMLElement;
+  const carousel = tile.parentElement;
+  if (!carousel) return;
+  const tileRect = tile.getBoundingClientRect();
+  const carouselRect = carousel.getBoundingClientRect();
+  carousel.scrollLeft +=
+    tileRect.left + tileRect.width / 2 - (carouselRect.left + carouselRect.width / 2);
+};
+
 
 
 // Game States
@@ -678,7 +690,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             <div
               v-for="subCat in subCategories"
               :key="subCat.id"
-              @click="activeSubCategory = subCat"
+              @click="selectSubCategory(subCat, $event)"
               class="category-slider-item"
               :class="{ 'is-active': activeSubCategory.id === subCat.id }"
             >
