@@ -17,7 +17,7 @@ const SERVICES = [
   {
     name: 'Wikipedia',
     lead: 'We source card content from Wikipedia. Refer to Wikipedia’s ',
-    policyUrl: 'https://wikimediafoundation.org/privacy-policy/',
+    policyUrl: 'https://foundation.wikimedia.org/wiki/Legal:World_of_Wikipedia_Survey_Privacy_Statement',
   },
   {
     name: 'Firebase',
