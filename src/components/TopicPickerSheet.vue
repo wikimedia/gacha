@@ -28,24 +28,27 @@ const topics = TOPICS;
 
         <div class="topic-row__body">
           <span class="topic-row__title">{{ topic.label }}</span>
-          <a
-            class="topic-row__attribution"
-            :href="topic.attributionUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <AppIcon :icon="cdxIconLinkExternal" :size="14" class="topic-row__attribution-icon" />
-            <span class="topic-row__attribution-text">{{ topic.attribution }}</span>
-          </a>
-        </div>
 
-        <button
-          class="topic-row__play"
-          :disabled="starting"
-          @click="emit('select', topic)"
-        >
-          Play
-        </button>
+          <div class="topic-row__footer">
+            <a
+              class="topic-row__attribution"
+              :href="topic.attributionUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <AppIcon :icon="cdxIconLinkExternal" :size="14" class="topic-row__attribution-icon" />
+              <span class="topic-row__attribution-text">{{ topic.attribution }}</span>
+            </a>
+
+            <button
+              class="topic-row__play"
+              :disabled="starting"
+              @click="emit('select', topic)"
+            >
+              Play
+            </button>
+          </div>
+        </div>
       </li>
     </ul>
 
@@ -62,7 +65,7 @@ const topics = TOPICS;
 .topic-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   margin: 0;
   padding: 4px 16px 8px;
   list-style: none;
@@ -72,8 +75,6 @@ const topics = TOPICS;
   display: flex;
   align-items: stretch;
   gap: 12px;
-  /* Fixed height so every row is uniform regardless of text length; the
-     thumbnail (object-fit: cover) is cropped to fill it. */
   height: 96px;
   /* No padding: the thumbnail bleeds to the card's edges. `overflow: hidden`
      clips the frameless image's corners to the card's rounded curve. */
@@ -81,7 +82,7 @@ const topics = TOPICS;
   /* Same fill as the sheet; the row is defined by its border, not a fill. */
   background-color: transparent;
   border: 1px solid var(--color-border-neutral);
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -104,8 +105,19 @@ const topics = TOPICS;
   min-width: 0; /* allow the attribution text to truncate instead of overflowing */
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 6px;
+  /* Title pinned to the top, attribution + Play pinned to the bottom. */
+  justify-content: space-between;
+  /* Row has no padding (thumb bleeds to edges); the body sets its own insets. */
+  padding: 12px 12px 12px 0;
+}
+
+.topic-row__footer {
+  display: flex;
+  /* Bottom-align the attribution with the Play button's lower edge. */
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
 }
 
 .topic-row__title {
@@ -119,8 +131,8 @@ const topics = TOPICS;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-width: 0;
-  max-width: 100%;
+  flex: 1 1 auto;
+  min-width: 0; /* shrink so the text can truncate instead of pushing Play right */
   color: var(--color-text-muted);
   text-decoration: none;
 }
@@ -142,8 +154,6 @@ const topics = TOPICS;
 
 .topic-row__play {
   flex-shrink: 0;
-  align-self: center;
-  margin-right: 12px; /* row has no padding, so the button sets its own right inset */
   padding: 8px 22px;
   border: none;
   border-radius: 8px;

@@ -743,7 +743,6 @@ body {
   justify-content: center;
   color: var(--color-cream);
   background-color: var(--color-slate);
-  border: 2px dashed rgba(253, 244, 235, 0.55);
 }
 
 .category-slider-item.is-active .category-slider-thumbnail {
