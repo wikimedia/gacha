@@ -36,4 +36,8 @@ function cacheCardFrames(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(), cacheCardFrames()],
+  build: {
+    target: 'baseline-widely-available',
+    cssTarget: ['safari15', 'chrome100', 'firefox110']
+  }
 })
