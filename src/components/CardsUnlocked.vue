@@ -8,6 +8,7 @@ import CardDetailModal from './CardDetailModal.vue';
 import Stars from './Stars.vue';
 import AppIcon from './AppIcon.vue';
 import { cdxIconCheck, cdxIconClose } from '@wikimedia/codex-icons';
+import { trackEvent } from '../analytics.ts';
 
 const props = defineProps<{
   unlockedCards: Card[];
@@ -208,6 +209,7 @@ const detailModalCards = computed(() => orderedGridItems.value.map(item => item.
 const detailModalIsCorrectArray = computed(() => orderedGridItems.value.map(item => item.isCorrect));
 
 const openCardDetail = (card: Card) => {
+  trackEvent("card_detail_opened");
   const index = orderedGridItems.value.findIndex(item => item.card.id === card.id);
   if (index !== -1) {
     detailModalInitialIndex.value = index;
