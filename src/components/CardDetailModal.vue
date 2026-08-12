@@ -109,6 +109,7 @@ const handleCardClick = (index: number) => {
 const setFlipped = (flipped: boolean) => {
   if (!activeCard.value?.isReal) return;
   isFlipped.value = flipped;
+  trackEvent("card_flipped");
   if (flipped) dismissFlipHint();
 };
 
