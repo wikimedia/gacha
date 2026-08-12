@@ -258,7 +258,12 @@ const handleShare = () => {
               <div class="card-flip" :class="{ 'is-flipped': index === activeIndex && isFlipped }">
                 <!-- Front face -->
                 <div class="card-flip__face">
-                  <CardComp :card="card" :show-link="false" />
+                  <!-- Fakes render in black & white; overlay + stamp stay colored -->
+                  <CardComp
+                    :card="card"
+                    :show-link="false"
+                    :class="{ 'card-face--fake': !card.isReal }"
+                  />
 
                   <!-- Fake Card Overlay (stamp) -->
                   <div
@@ -559,6 +564,12 @@ const handleShare = () => {
   zoom: var(--card-scale-full);
 }
 
+/* Fake cards render in black & white; the FAKE overlay + stamp are separate
+   sibling layers that keep their color on top of the desaturated card. */
+.card-face--fake {
+  filter: grayscale(1);
+}
+
 /* FAKE Overlay and Stamp. These sit in the (unzoomed) face over the zoomed
    card, so their inset/size are scaled by --card-scale-full to line up with the
    card's own 14px image frame and read at the card's scale. */
@@ -588,7 +599,7 @@ const handleShare = () => {
   font-family: 'Georgia', serif;
   font-weight: 900;
   color: #ffffff;
-  font-size: calc(48px * var(--card-scale-full));
+  font-size: calc(64px * var(--card-scale-full));
   letter-spacing: 0.05em;
   line-height: 1;
   text-align: center;

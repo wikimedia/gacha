@@ -301,8 +301,10 @@ watch(activeTab, () => nextTick(updateCardScale));
                 class="grid-card-wrapper animate-card-reveal cursor-pointer"
                 @click="openCardDetail(item.card)"
               >
-                <!-- Scaled Card -->
-                <div class="grid-card-inner">
+                <div
+                  class="grid-card-inner"
+                  :class="{ 'grid-card-inner--fake': !item.card.isReal }"
+                >
                   <CardComp :card="item.card" :show-link="false" />
                 </div>
 
@@ -853,6 +855,10 @@ watch(activeTab, () => nextTick(updateCardScale));
   pointer-events: none;
 }
 
+.grid-card-inner--fake {
+  filter: grayscale(1);
+}
+
 .card-grid-fake-overlay {
   position: absolute;
   inset: 0;
@@ -880,7 +886,7 @@ watch(activeTab, () => nextTick(updateCardScale));
   font-family: 'Georgia', serif;
   font-weight: 900;
   color: #fff;
-  font-size: 20px;
+  font-size: 32px;
   letter-spacing: 0.05em;
   line-height: 1;
   text-align: center;
