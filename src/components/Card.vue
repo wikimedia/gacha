@@ -66,7 +66,7 @@ const imageUrl = computed(() => {
   try {
     const separator = img.includes('?') ? '&' : '?';
     return `${img}${separator}retry=${imageRetryCount.value}`;
-  } catch (e) {
+  } catch {
     return img;
   }
 });
