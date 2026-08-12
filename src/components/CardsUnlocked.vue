@@ -561,7 +561,21 @@ watch(activeTab, () => nextTick(updateCardScale));
 }
 
 .card-fan-scaled--center {
-  transform: scale(0.38); 
+  transform: scale(0.38);
+}
+
+/* Phones: a smaller fan and tighter spacing pull the actions on screen. */
+@media (max-height: 820px) {
+  .stats-tab-content {
+    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .card-fan {
+    height: 150px;
+    transform: scale(0.75);
+    transform-origin: top center;
+  }
 }
 
 /* Fakes / Facts summary boxes */

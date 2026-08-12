@@ -202,6 +202,13 @@ const handleCopyText = () => {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
 
+/* Phones: a smaller preview keeps the message and Share button on screen. */
+@media (max-height: 820px) {
+  .share-sheet__preview-frame {
+    --preview-scale: 0.32;
+  }
+}
+
 .share-sheet__graphic {
   transform: scale(var(--preview-scale));
   transform-origin: top left;
