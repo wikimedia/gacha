@@ -11,6 +11,7 @@ import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import BaseButton from '../components/BaseButton.vue';
 import { trackEvent } from '../analytics';
+import { useCardFit } from '../utils/useCardFit';
 import { PhThumbsUp, PhThumbsDown } from '@phosphor-icons/vue';
 import AppIcon from '../components/AppIcon.vue';
 import { cdxIconPlay, cdxIconSuccess, cdxIconClear } from '@wikimedia/codex-icons';
@@ -246,6 +247,10 @@ const maybeShowInstructions = () => {
   localStorage.setItem(INSTRUCTIONS_SEEN_KEY, '1');
   headerRef.value?.openInfoModal();
 };
+
+// Scale the swipe card to the space left between the header and the buttons.
+const cardAreaRef = ref<HTMLElement | null>(null);
+const cardFitVars = useCardFit(cardAreaRef);
 
 // Game deck configuration
 const DECK_SIZE = 10;
@@ -735,7 +740,11 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
       <!-- FAKEOUT GAME SWIPING MECHANIC -->
       <section v-if="gameActive && currentCard" class="flex-grow flex flex-col justify-between py-2 w-full">
         <!-- Swiping Card Area -->
-        <div class="flex-grow flex items-center justify-center my-2 relative min-h-0">
+        <div
+          ref="cardAreaRef"
+          class="flex-grow flex items-center justify-center my-2 relative min-h-0"
+          :style="cardFitVars"
+        >
           
           <!-- Centered wrapper container -->
           <div class="relative w-full max-w-[var(--card-width)] h-[var(--card-height)]">

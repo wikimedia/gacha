@@ -366,7 +366,7 @@
 
   /* Card sizing. The trading card is authored at --card-base-* and rendered at
      its full, native display size via `zoom: --card-scale-full` on the wrapper
-     (see Card.vue).  */
+     (see Card.vue). Fit-to-space surfaces override these tokens (useCardFit). */
   --card-base-width: 315px;
   --card-base-height: 440px;
   --card-scale-full: 1.1302; /* ≈ 356/315 */
