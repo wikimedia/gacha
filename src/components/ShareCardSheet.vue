@@ -37,6 +37,13 @@ const canShareFiles = canShareImageFiles();
 
 const graphicRef = ref<InstanceType<typeof ShareCardGraphic> | null>(null);
 const isProcessing = ref(false);
+// Latches once a share/download succeeds for the current open sheet. The
+// capture is pre-cached so `isProcessing` resolves within a microtask, which
+// leaves it useless against a double-click (the first tap finishes before the
+// second arrives). This flag stays set until the sheet reopens, so a
+// double-click can't fire two identical downloads. Cancelled/failed attempts
+// don't latch, so retrying still works.
+const completed = ref(false);
 const textCopied = ref(false);
 const errorMessage = ref('');
 
@@ -65,6 +72,7 @@ const startCapture = (): Promise<Blob> => {
 
 watch(() => props.open, (open) => {
   isProcessing.value = false;
+  completed.value = false;
   textCopied.value = false;
   errorMessage.value = '';
   capturePromise = null;
@@ -85,7 +93,7 @@ const shareText = computed(() => {
 });
 
 const handlePrimary = async () => {
-  if (!props.card || isProcessing.value) return;
+  if (!props.card || isProcessing.value || completed.value) return;
   isProcessing.value = true;
   errorMessage.value = '';
   const promise = capturePromise ?? startCapture();
@@ -103,10 +111,13 @@ const handlePrimary = async () => {
       if (canShareFiles) {
         const result = await shareImageFile(blob, filename, shareText.value);
         if (result === 'shared') {
+          completed.value = true;
           trackEvent('card_share_completed');
         }
+        // 'cancelled' leaves `completed` false so the user can share again.
       } else {
         downloadBlob(blob, filename);
+        completed.value = true;
         trackEvent('card_share_download');
       }
     } catch (err) {
@@ -170,10 +181,14 @@ const handleCopyText = () => {
 
       <button
         class="share-sheet__btn w-full"
-        :disabled="isProcessing"
+        :disabled="isProcessing || completed"
         @click="handlePrimary"
       >
-        {{ isProcessing ? 'Generating…' : (canShareFiles ? 'Share' : 'Download') }}
+        {{ isProcessing
+          ? 'Generating…'
+          : completed
+            ? (canShareFiles ? 'Shared' : 'Downloaded')
+            : (canShareFiles ? 'Share' : 'Download') }}
       </button>
     </div>
   </BaseSheet>
