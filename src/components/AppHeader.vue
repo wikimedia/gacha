@@ -546,9 +546,8 @@ defineExpose({
   background-color: var(--color-sand);
   display: flex;
   flex-direction: column;
-  /* The content is sized to fit the viewport — never scroll (matches the
-     Figma frame, which clips rather than scrolls). */
-  overflow: hidden;
+  /* Short screens must scroll to reach the Start button. */
+  overflow-y: auto;
 }
 
 .rules-modal__content {
@@ -558,7 +557,8 @@ defineExpose({
 }
 
 .rules-modal__back {
-  position: absolute;
+  /* Fixed: keeps its position when the content scrolls. */
+  position: fixed;
   top: 1rem;
   left: 1rem;
   z-index: 1;

@@ -75,11 +75,14 @@ const RULES = [
   padding: 8px 24px 24px;
 }
 
-/* Card fan illustration (cards + Fact/Fake badges baked into the export) */
+/* Card fan illustration (cards + Fact/Fake badges baked into the export).
+   The height cap makes room for the rules and the Start button. */
 .instructions-illustration {
-  width: 292px;
-  max-width: 100%;
+  width: auto;
   height: auto;
+  max-width: min(292px, 100%);
+  max-height: 30vh;
+  max-height: 30dvh;
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -168,4 +171,11 @@ const RULES = [
 
 .instructions-start:hover { background-color: var(--color-rust-dark); }
 .instructions-start:active { transform: scale(0.98); }
+
+/* Short viewports: tighter spacing so the panel fits. */
+@media (max-height: 600px) {
+  .instructions {
+    gap: 16px;
+  }
+}
 </style>
