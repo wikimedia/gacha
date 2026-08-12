@@ -12,6 +12,7 @@ import {
   downloadBlob,
   shareFilename,
   SHARE_DOMAIN,
+  SHARE_GRAPHIC_SIZE_VARS,
 } from '../utils/shareCardImage';
 import { trackEvent } from '../analytics.ts';
 
@@ -131,14 +132,19 @@ const handleCopyText = () => {
 </script>
 
 <template>
-  <BaseSheet :open="open" title="Share card" @close="emit('close')">
+  <BaseSheet :open="open" title="Share this card" @close="emit('close')">
+    <template #header>
+      <p class="share-sheet__title">Share this card</p>
+    </template>
     <div class="flex flex-col gap-4 px-4 pb-2">
-      <div class="share-sheet__preview">
+      <div
+        v-if="card"
+        class="share-sheet__preview-frame"
+        :style="SHARE_GRAPHIC_SIZE_VARS"
+      >
         <ShareCardGraphic
-          v-if="card"
           ref="graphicRef"
           :card="card"
-          :username="username"
           class="share-sheet__graphic"
         />
       </div>
@@ -163,7 +169,7 @@ const handleCopyText = () => {
       </div>
 
       <button
-        class="share-sheet__btn share-sheet__btn--primary w-full"
+        class="share-sheet__btn w-full"
         :disabled="isProcessing"
         @click="handlePrimary"
       >
@@ -174,20 +180,31 @@ const handleCopyText = () => {
 </template>
 
 <style scoped>
-.share-sheet__preview {
-  /* The graphic renders at natural size (371×566, see ShareCardGraphic) and
-     is scaled down for preview; the capture neutralizes this transform.
-     Height must be reserved manually because transforms don't affect layout. */
-  --preview-scale: 0.5;
-  display: flex;
-  justify-content: center;
-  height: calc(566px * var(--preview-scale));
+.share-sheet__title {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 32px; /* matches the close button height */
+  color: var(--color-ink);
+}
+
+.share-sheet__preview-frame {
+  /* Reserves the graphic's scaled-down size manually (transforms don't
+     affect layout) and carries the preview-only rounding — the export
+     itself must have square corners. */
+  --preview-scale: 0.42;
+  align-self: center;
+  width: calc(var(--share-graphic-width) * var(--preview-scale));
+  height: calc(var(--share-graphic-height) * var(--preview-scale));
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
 
 .share-sheet__graphic {
   transform: scale(var(--preview-scale));
-  transform-origin: top center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  transform-origin: top left;
 }
 
 .share-sheet__error {
@@ -195,20 +212,28 @@ const handleCopyText = () => {
 }
 
 .share-sheet__btn {
-  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  padding: 0 16px;
   border: none;
-  border-radius: 2px;
-  font-family: var(--font-serif);
-  font-weight: 900;
+  border-radius: var(--radius-button);
+  background-color: var(--color-rust);
+  color: var(--color-white);
+  font-family: var(--font-sans);
+  font-weight: 700;
   font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.25);
+  line-height: 20px;
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.1s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
-.share-sheet__btn:active {
+.share-sheet__btn:hover:not(:disabled) {
+  background-color: var(--color-rust-dark);
+}
+
+.share-sheet__btn:active:not(:disabled) {
   transform: scale(0.98);
 }
 
@@ -217,30 +242,21 @@ const handleCopyText = () => {
   cursor: default;
 }
 
-.share-sheet__btn--primary {
-  background-color: var(--color-slate);
-  color: var(--color-cream);
-}
-
-.share-sheet__btn--primary:hover:not(:disabled) {
-  background-color: var(--color-slate-light);
-}
-
 .share-sheet__message {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 8px 10px 12px;
+  padding: 12px 8px 12px 12px;
   background-color: var(--color-cream);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-base);
+  border: 1px solid var(--color-rust);
+  border-radius: var(--radius-button);
 }
 
 .share-sheet__message-text {
   flex: 1;
   min-width: 0;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.4;
   color: var(--color-ink);
   overflow-wrap: break-word;
@@ -258,7 +274,7 @@ const handleCopyText = () => {
   border: 0;
   border-radius: var(--radius-base);
   background: transparent;
-  color: var(--color-ink);
+  color: var(--color-rust);
   cursor: pointer;
   transition: background-color 0.15s ease, transform 0.1s ease;
 }
