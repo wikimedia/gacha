@@ -18,7 +18,6 @@ const SERVICES = [
     name: 'Wikipedia',
     lead: 'We source card content from Wikipedia. Refer to Wikipedia’s ',
     policyUrl: 'https://wikimediafoundation.org/privacy-policy/',
-    privacyStatementUrl: 'https://foundation.wikimedia.org/wiki/Legal:World_of_Wikipedia_Survey_Privacy_Statement',
   },
   {
     name: 'Firebase',
@@ -35,6 +34,11 @@ const SERVICES = [
     lead: 'We use Google Analytics to monitor app usage. Refer to Google’s ',
     policyUrl: 'https://policies.google.com/technologies/partner-sites',
   },
+  {
+    name: 'Feedback Survey',
+    lead: 'To fill out the feedback survey, click "Contact Us". This feedback survey will be conducted via a third-party service, which may subject it to additional terms. For more information on privacy and data-handling, see the survey\'s ',
+    policyUrl: 'https://foundation.wikimedia.org/wiki/Legal:World_of_Wikipedia_Survey_Privacy_Statement'
+  }
 ];
 </script>
 
@@ -63,15 +67,7 @@ const SERVICES = [
               target="_blank"
               rel="noopener noreferrer"
               class="text-primary no-underline hover:underline"
-            >Privacy Policy</a>
-            <span v-if="!!service.privacyStatementUrl">
-              and <a
-              class="text-primary no-underline hover:underline"
-              :href="service.privacyStatementUrl"
-              >
-                Privacy Statement
-              </a>
-            </span>
+            >Privacy Policy</a>.
           </span>
         </div>
       </li>
