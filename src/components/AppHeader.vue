@@ -437,7 +437,7 @@ defineExpose({
   width: 100%;
   max-width: 28rem; /* max-w-md */
   margin: 0 auto;
-  padding: 1rem 1rem 0rem 1rem;
+  padding: 0.75rem 1rem;
   background: transparent;
   user-select: none;
 }
