@@ -499,6 +499,17 @@ const binderSections = computed(() => {
   return sections;
 });
 
+// Reading-order index for the staggered card-pop hint (see .card-pop-hint in
+// style.css). Object.values preserves the same order the sections render in.
+const popIndexMap = computed(() => {
+  const map = new Map<string, number>();
+  let i = 0;
+  Object.values(binderSections.value).forEach(cards => {
+    cards.forEach(card => map.set(card.id, i++));
+  });
+  return map;
+});
+
 // Card management actions
 const toggleCardShowcase = async (cardId: string) => {
   await gameStore.toggleShowcase(cardId);
@@ -712,10 +723,11 @@ const toggleCardShowcase = async (cardId: string) => {
 
                   <!-- Card Grid (dependent on gridColumns selector) -->
                   <div class="binder-grid" :class="'binder-grid--' + gridColumns + 'col'">
-                    <div 
-                      v-for="card in sectionCards" 
-                      :key="card.id" 
-                      class="card-scale-wrapper"
+                    <div
+                      v-for="card in sectionCards"
+                      :key="card.id"
+                      class="card-scale-wrapper card-pop-hint"
+                      :style="{ '--pop-i': popIndexMap.get(card.id) ?? 0 }"
                     >
                       <div 
                         class="card-scaled-content"
