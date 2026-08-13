@@ -153,7 +153,10 @@ defineExpose({
 </script>
 
 <template>
-  <header class="w-full z-40 select-none pointer-events-none sticky top-0">
+  <header
+    class="w-full z-40 select-none pointer-events-none sticky top-0"
+    :class="{ 'app-header--page-solid': route.name === 'profile' }"
+  >
     <!-- Figma Mock Header (Stacked overlay with icons) -->
     <div class="gacha-header-overlay pointer-events-auto" :class="{ 'gacha-header-overlay--solid': gachaActive }">
       
@@ -434,7 +437,7 @@ defineExpose({
   width: 100%;
   max-width: 28rem; /* max-w-md */
   margin: 0 auto;
-  padding: 1rem 1rem 0rem 1rem;
+  padding: 0.75rem 1rem;
   background: transparent;
   user-select: none;
 }
@@ -443,6 +446,13 @@ defineExpose({
    background so content scrolling underneath is occluded rather than showing
    through. Matches the page background (--color-sand). */
 .gacha-header-overlay--solid {
+  background-color: var(--color-sand);
+}
+
+/* On the profile page the content is wider than the centered overlay, so the
+   sticky header needs a full-width opaque background to occlude cards scrolling
+   underneath rather than letting them show through. Really only matters for desktop. */
+.app-header--page-solid {
   background-color: var(--color-sand);
 }
 
