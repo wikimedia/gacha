@@ -848,7 +848,7 @@ watch(activeTab, () => nextTick(updateCardScale));
   gap: 8px;
   width: 100%;
   --card-scale: 0.55; /* fallback until measured (JS sets the exact value) */
-  --pop-base-delay: 1s; /* let the entrance reveal + layout settle before popping */
+  --pop-base-delay: 0.4s; /* let the entrance reveal + layout settle before popping */
 }
 
 .grid-card-wrapper {
