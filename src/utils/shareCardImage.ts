@@ -102,9 +102,19 @@ export async function shareImageFile(
   text: string
 ): Promise<'shared' | 'cancelled'> {
   const file = new File([blob], filename, { type: 'image/png' });
-  // The link rides inside `text` rather than a `url` field: several share
-  // targets drop one of the two when both are present.
-  const data: ShareData = { files: [file], title: 'World of Wikipedia', text };
+  // Attaching `text`/`title` alongside the file makes macOS put the image on
+  // the pasteboard in two representations, so choosing "Copy" from the share
+  // sheet and pasting into Finder yields two identical PNGs. Touch devices
+  // don't expose that Copy→Finder path and their share targets (Messages,
+  // WhatsApp, …) actually use the caption, so send it there and share the file
+  // alone on desktop. The caption stays reachable via the sheet's separate
+  // copy-message button. (When the link does ride along it goes inside `text`
+  // rather than a `url` field: several share targets drop one when both are
+  // present.)
+  const isTouchDevice = (navigator.maxTouchPoints ?? 0) > 0;
+  const data: ShareData = isTouchDevice
+    ? { files: [file], title: 'World of Wikipedia', text }
+    : { files: [file] };
   try {
     await navigator.share(data);
     return 'shared';
