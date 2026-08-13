@@ -17,7 +17,8 @@ const SERVICES = [
   {
     name: 'Wikipedia',
     lead: 'We source card content from Wikipedia. Refer to Wikipedia’s ',
-    policyUrl: 'https://foundation.wikimedia.org/wiki/Legal:World_of_Wikipedia_Survey_Privacy_Statement',
+    policyUrl: 'https://wikimediafoundation.org/privacy-policy/',
+    privacyStatementUrl: 'https://foundation.wikimedia.org/wiki/Legal:World_of_Wikipedia_Survey_Privacy_Statement',
   },
   {
     name: 'Firebase',
@@ -62,7 +63,15 @@ const SERVICES = [
               target="_blank"
               rel="noopener noreferrer"
               class="text-primary no-underline hover:underline"
-            >Privacy Policy</a>.
+            >Privacy Policy</a>
+            <span v-if="!!service.privacyStatementUrl">
+              and <a
+              class="text-primary no-underline hover:underline"
+              :href="service.privacyStatementUrl"
+              >
+                Privacy Statement
+              </a>
+            </span>
           </span>
         </div>
       </li>
