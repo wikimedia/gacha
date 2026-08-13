@@ -11,6 +11,7 @@ import PageLayout from '../components/PageLayout.vue';
 import Loader from '../components/Loader.vue';
 import BaseButton from '../components/BaseButton.vue';
 import { trackEvent } from '../analytics';
+import { useCardFit } from '../utils/useCardFit';
 import { PhThumbsUp, PhThumbsDown } from '@phosphor-icons/vue';
 import AppIcon from '../components/AppIcon.vue';
 import { cdxIconPlay, cdxIconSuccess, cdxIconClear } from '@wikimedia/codex-icons';
@@ -50,6 +51,18 @@ const subCategories: SubCategoryDef[] = CATEGORIES.map((cat) => {
 
 // Active subcategory on the home screen (Sports by default)
 const activeSubCategory = ref<SubCategoryDef>(subCategories[0]);
+
+// Activate a tile and scroll it to the center of the strip.
+const selectSubCategory = (subCat: SubCategoryDef, event: Event) => {
+  activeSubCategory.value = subCat;
+  const tile = event.currentTarget as HTMLElement;
+  const carousel = tile.parentElement;
+  if (!carousel) return;
+  const tileRect = tile.getBoundingClientRect();
+  const carouselRect = carousel.getBoundingClientRect();
+  carousel.scrollLeft +=
+    tileRect.left + tileRect.width / 2 - (carouselRect.left + carouselRect.width / 2);
+};
 
 
 
@@ -234,6 +247,10 @@ const maybeShowInstructions = () => {
   localStorage.setItem(INSTRUCTIONS_SEEN_KEY, '1');
   headerRef.value?.openInfoModal();
 };
+
+// Scale the swipe card to the space left between the header and the buttons.
+const cardAreaRef = ref<HTMLElement | null>(null);
+const cardFitVars = useCardFit(cardAreaRef);
 
 // Game deck configuration
 const DECK_SIZE = 10;
@@ -678,7 +695,7 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             <div
               v-for="subCat in subCategories"
               :key="subCat.id"
-              @click="activeSubCategory = subCat"
+              @click="selectSubCategory(subCat, $event)"
               class="category-slider-item"
               :class="{ 'is-active': activeSubCategory.id === subCat.id }"
             >
@@ -723,7 +740,11 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
       <!-- FAKEOUT GAME SWIPING MECHANIC -->
       <section v-if="gameActive && currentCard" class="flex-grow flex flex-col justify-between py-2 w-full">
         <!-- Swiping Card Area -->
-        <div class="flex-grow flex items-center justify-center my-2 relative min-h-0">
+        <div
+          ref="cardAreaRef"
+          class="flex-grow flex items-center justify-center my-2 relative min-h-0"
+          :style="cardFitVars"
+        >
           
           <!-- Centered wrapper container -->
           <div class="relative w-full max-w-[var(--card-width)] h-[var(--card-height)]">

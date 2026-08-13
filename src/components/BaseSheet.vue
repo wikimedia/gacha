@@ -84,6 +84,7 @@ onUnmounted(() => {
   width: 100%;
   max-width: 28rem; /* max-w-md — matches the app content column */
   max-height: calc(80vh + var(--sheet-fill));
+  max-height: calc(80dvh + var(--sheet-fill)); /* prefer dvh over vh if supported */
   display: flex;
   flex-direction: column;
   padding: 10px 0 calc(10px + var(--sheet-fill));
@@ -91,6 +92,14 @@ onUnmounted(() => {
   border-radius: 12px 12px 0 0;
   box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.28);
   font-family: var(--font-sans);
+}
+
+/* Short viewports need more of the screen than the 80% cap allows. */
+@media (max-height: 700px) {
+  .base-sheet {
+    max-height: calc(92vh + var(--sheet-fill));
+    max-height: calc(92dvh + var(--sheet-fill)); /* prefer dvh over vh if supported */
+  }
 }
 
 .base-sheet__header {

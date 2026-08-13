@@ -8,6 +8,7 @@ import ShareCardSheet from './ShareCardSheet.vue';
 import { cdxIconClose, cdxIconCheck, cdxIconInfoFilled } from '@wikimedia/codex-icons';
 import { trackEvent } from '../analytics.ts';
 import { lockBodyScroll, unlockBodyScroll } from '../utils/scrollLock';
+import { useCardFit } from '../utils/useCardFit';
 
 const props = withDefaults(defineProps<{
   show: boolean;
@@ -30,6 +31,10 @@ const emit = defineEmits<{
 
 const activeIndex = ref(props.initialIndex);
 const isShareSheetOpen = ref(false);
+
+// Scale the carousel card to the space between the top bar and the buttons.
+const carouselViewportRef = ref<HTMLElement | null>(null);
+const cardFitVars = useCardFit(carouselViewportRef);
 // Whether the active card is flipped to show its back side.
 const isFlipped = ref(false);
 
@@ -196,9 +201,10 @@ const handleShare = () => {
     <Transition name="modal-fade">
       <div 
         v-if="show" 
-        class="modal-scrim fixed inset-0 z-50 flex flex-col justify-between items-center py-8 select-none bg-charcoal/65"
+        class="modal-scrim fixed z-50 flex flex-col justify-between items-center select-none bg-charcoal/65"
         role="dialog"
         aria-modal="true"
+        :style="cardFitVars"
       >
         <!-- Top bar: answer status (centered) + close (aligned right) -->
         <div class="relative flex items-center justify-center w-full h-9 shrink-0 px-6">
@@ -231,8 +237,8 @@ const handleShare = () => {
           </button>
         </div>
 
-        <div class="carousel-viewport relative w-full flex items-center py-4 flex-grow">
-          <div 
+        <div ref="carouselViewportRef" class="carousel-viewport relative w-full flex items-center py-4 flex-grow min-h-0">
+          <div
             class="carousel-track"
             :style="{ transform: `translateX(calc(50vw - var(--card-width) / 2 - ${activeIndex} * (var(--card-width) + var(--carousel-gap))))` }"
             @touchstart="handleTouchStart"
@@ -286,7 +292,7 @@ const handleShare = () => {
         </div>
 
         <!-- Bottom Controls & Actions -->
-        <div class="relative flex flex-col items-center w-full gap-6 px-4">
+        <div class="modal-bottom-controls relative flex flex-col items-center w-full gap-6 px-4">
           <!-- Flip hint popover (dismissable, remembered in localStorage) -->
           <Transition name="flip-hint-fade">
             <div v-if="showFlipHint" class="flip-hint" role="status">
@@ -303,8 +309,9 @@ const handleShare = () => {
             </div>
           </Transition>
 
-          <!-- Front/back indicator (two dots). Only real cards have a back. -->
-          <div v-if="activeCard?.isReal" class="flex items-center justify-center gap-2">
+          <!-- Front/back indicator (two dots). Only real cards have a back;
+               hidden (not removed) for fakes so the card area keeps its size. -->
+          <div class="flex items-center justify-center gap-2" :class="{ invisible: !activeCard?.isReal }">
             <button
               @click="setFlipped(false)"
               class="w-2 h-2 rounded-full transition-all duration-300 outline-none bg-transparent border-none"
@@ -320,7 +327,7 @@ const handleShare = () => {
           </div>
 
           <!-- Action buttons -->
-          <div class="flex gap-3 w-full pb-4">
+          <div class="modal-actions-row flex gap-3 w-full pb-4">
             <button
               @click="handleShare"
               :disabled="actionsDisabled"
@@ -357,6 +364,37 @@ const handleShare = () => {
   --scrim-blur: 2.6px;
   backdrop-filter: blur(var(--scrim-blur));
   -webkit-backdrop-filter: blur(var(--scrim-blur));
+  top: 0;
+  left: 0;
+  width: 100%;
+  /* Visible-viewport height; `inset: 0` puts the buttons behind the iOS toolbar. */
+  height: 100vh;
+  height: 100dvh;
+  padding: 32px 0;
+  /* If the height is still wrong, scroll rather than hide the buttons. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Short viewports: tighter spacing gives the card more room. */
+@media (max-height: 760px) {
+  .modal-scrim {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .carousel-viewport {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .modal-bottom-controls {
+    gap: 12px;
+  }
+
+  .modal-actions-row {
+    padding-bottom: 8px;
+  }
 }
 
 /* Answer status badge colors — local to this component (not shared tokens) */
@@ -368,12 +406,17 @@ const handleShare = () => {
   color: #db8059;
 }
 
-/* Clip neighbour cards horizontally while letting the flip's vertical
-   perspective bulge overflow. `clip` (unlike `hidden`) permits a per-axis value
-   without forcing the other axis to a scroll container. */
+/* Pre-16 WebKit fallback; without it the card track scrolls the whole modal sideways. */
 .carousel-viewport {
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow-x: hidden;
+}
+
+/* `clip` also lets the flip's perspective bulge overflow vertically. */
+@supports (overflow: clip) {
+  .carousel-viewport {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
 }
 
 .carousel-track {

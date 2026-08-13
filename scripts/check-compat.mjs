@@ -8,6 +8,10 @@
 //    applying the value (bad_variant_access in applyValueColor) and the
 //    tab dies with "A problem repeatedly occurred". @supports guards do
 //    not help: 16.x parses color-mix fine and crashes only on application.
+//  - Media-query range syntax (`@media (height<=760px)`): WebKit < 16.4
+//    cannot parse it and silently drops the full query with all rules in
+//    it. The minifier rewrites min-/max- queries into this form unless
+//    build.cssTarget sets an older engine (vite.config.ts).
 //
 // Scans the dist/ output rather than source so dependency upgrades
 // (Tailwind, daisyUI) are covered too — the color-mix crash came from
@@ -40,6 +44,14 @@ for (const file of readdirSync(dist)) {
       if (before.includes('::placeholder')) continue;
       failures.push(
         `${file}: color:color-mix(…currentcolor…) — renderer crash on WebKit 16.x`
+      );
+    }
+    // Each `<` or `>` in an @media prelude is range syntax. This includes
+    // the double form `(400px<=width<=800px)`. @container ranges are safe:
+    // all engines with container queries can parse them.
+    for (const m of src.matchAll(/@media[^{]*[<>]/g)) {
+      failures.push(
+        `${file} (offset ${m.index}): media range syntax — dropped by WebKit < 16.4; check build.cssTarget`
       );
     }
   }
