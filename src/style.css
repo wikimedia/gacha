@@ -735,6 +735,16 @@ body {
   transition: filter 0.25s ease, transform 0.3s ease;
 }
 
+/* "More" tile in the category slider — opens the topic picker. Uses the shared
+   thumbnail wrapper but replaces the image with a centered dashed placeholder. */
+.category-slider-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-cream);
+  background-color: var(--color-slate);
+}
+
 .category-slider-item.is-active .category-slider-thumbnail {
   filter: grayscale(0);
 }

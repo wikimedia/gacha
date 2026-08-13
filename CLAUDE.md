@@ -91,10 +91,6 @@ part of the app build. See its README for setup.
 
 ## Gotchas
 
-- **Dead code**: `src/services/db.ts` and `src/utils/cardHelpers.ts` are not
-  imported by the app (only by each other). They are an unfinished extraction
-  of logic that still lives — and is actually used — in `useGameStore.ts`.
-  Make sampling/filtering/mapping changes in the store, not in `db.ts`.
 - **Persistence is duplicated**: the game store persists via explicit
   `persistState()` calls *and* five `watch`ers writing the same localStorage
   keys. Be careful when changing persistence; prefer consolidating over

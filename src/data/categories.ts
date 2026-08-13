@@ -97,3 +97,39 @@ export const CATEGORY_HOME_CONFIG: Record<Category, CategoryHomeConfig> = {
     ],
   },
 };
+
+/**
+ * A fine-grained topic in the home-screen "More" picker. Each maps a
+ * human-readable label to a Wikimedia article-topic code stored in the DB's
+ * `topic` column, matched exactly (leaf topics only, canonical casing).
+ */
+export interface TopicOption {
+  /** Display name on the picker tile. */
+  label: string;
+  /** Exact DB `topic` value; the pool query filters on this. */
+  code: string;
+  /**
+   * Broader sub_category the topic lives under. Used as the fallback fakes pool
+   * when the topic itself is too thin, so backfilled fakes stay thematically
+   * close.
+   */
+  category: Category;
+  /** Picker tile thumbnail (Wikimedia Commons). */
+  image: string;
+  /** Short credit line shown under the topic title (describes `image`). */
+  attribution: string;
+  /** Source page for `image` (Wikimedia Commons); opened from the credit line. */
+  attributionUrl: string;
+}
+
+/**
+ * Topics surfaced in the "More" picker. We only list topics with enough
+ * real + fake content to build full decks (currently all under "Media").
+ */
+export const TOPICS: TopicOption[] = [
+  { label: 'Films', code: 'Culture.Media.Films', category: 'Media', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Jaws_movie_poster.jpg/960px-Jaws_movie_poster.jpg', attribution: 'Jaws theatrical poster', attributionUrl: 'https://commons.wikimedia.org/wiki/File:Jaws_movie_poster.jpg' },
+  { label: 'Television', code: 'Culture.Media.Television', category: 'Media', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Dizzy_Dishes_%281930%29.webm/330px--Dizzy_Dishes_%281930%29.webm.jpg', attribution: 'Dizzy Dishes (1930) by Dave Fleischer ', attributionUrl: 'https://en.wikipedia.org/wiki/File:Dizzy_Dishes_(1930).webm' },
+  { label: 'Music', code: 'Culture.Media.Music', category: 'Media', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Doja_Cat_x_Amazon1.1_%28cropped%29.jpg/250px-Doja_Cat_x_Amazon1.1_%28cropped%29.jpg', attribution: "American rapper, singer, songwriter and record producer Doja Cat", attributionUrl: "https://commons.wikimedia.org/wiki/File:Doja_Cat_x_Amazon1.1_(cropped).jpg" },
+  { label: 'Video Games', code: 'Culture.Media.Video_games', category: 'Media', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Fez_%28video_game%29_cover_art.png/500px-Fez_%28video_game%29_cover_art.png', attribution: "Cover art by Bryan Lee O'Malley", attributionUrl: 'https://commons.wikimedia.org/wiki/File:Fez_(video_game)_cover_art.png' },
+  { label: 'Entertainment', code: 'Culture.Media.Entertainment', category: 'Media', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Christopher_Daniels_1.jpg/330px-Christopher_Daniels_1.jpg', attribution: "Christopher Daniels performing a flying crossbody on Jonny Storm; like all wrestling moves, this requires coordination between both wrestlers in order to ensure each other's safety", attributionUrl: 'https://commons.wikimedia.org/wiki/File:Christopher_Daniels_1.jpg' },
+];
