@@ -61,6 +61,15 @@ watch(() => props.show, (newVal) => {
 
 const activeCard = computed(() => props.cards[activeIndex.value] || null);
 
+// Only cards near the active index mount their content; distant ones stay
+// empty fixed-size boxes, so the track keeps its geometry (the centering
+// transform is index-based) without paying for every card's DOM, image and
+// GPU layer at once. ±2 keeps both edge neighbors mounted through a one-step
+// slide and preloads the next card in each direction.
+const WINDOW_RADIUS = 2;
+const isNearActive = (index: number) =>
+  Math.abs(index - activeIndex.value) <= WINDOW_RADIUS;
+
 // Answer status for the active card (results screen only). Null when the modal
 // is opened from a context without correctness info (e.g. the binder).
 const answerStatus = computed<'correct' | 'incorrect' | null>(() => {
@@ -255,7 +264,7 @@ const handleShare = () => {
               }"
               @click="handleCardClick(index)"
             >
-              <div class="card-flip" :class="{ 'is-flipped': index === activeIndex && isFlipped }">
+              <div v-if="isNearActive(index)" class="card-flip" :class="{ 'is-flipped': index === activeIndex && isFlipped }">
                 <!-- Front face -->
                 <div class="card-flip__face">
                   <!-- Fakes render in black & white; overlay + stamp stay colored -->
