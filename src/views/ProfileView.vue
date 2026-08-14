@@ -729,7 +729,7 @@ const toggleCardShowcase = async (cardId: string) => {
                         <button 
                           v-if="isPrivateMode && isShowcaseMode"
                           @click="toggleCardShowcase(card.id)"
-                          class="absolute top-4 right-4 z-30 w-8 h-8 flex items-center justify-center p-0 rounded-[2px] shadow-lg border transition-colors duration-200 cursor-pointer"
+                          class="absolute top-4 right-4 z-30 w-16 h-16 flex items-center justify-center p-0 rounded-[2px] shadow-lg border transition-colors duration-200 cursor-pointer"
                           :class="[
                             card.isShowcase 
                               ? 'bg-[#d9754b] text-[#fdf4eb] border-[#d9754b] hover:bg-[#c05c33]' 
@@ -737,7 +737,7 @@ const toggleCardShowcase = async (cardId: string) => {
                           ]"
                           :title="card.isShowcase ? 'Remove from Showcase' : 'Set as Showcase Pinned Card'"
                         >
-                          <AppIcon :icon="cdxIconPushPin" :size="14" />
+                          <AppIcon :icon="cdxIconPushPin" :size="30" />
                         </button>
                       </div>
                     </div>
