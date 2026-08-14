@@ -73,7 +73,6 @@ export const useGameStore = defineStore('game', () => {
   const clearNewCards = () => {
     hasNewCards.value = false;
   };
-  const categoryCooldowns = ref<Record<string, number>>({});
   const customSections = ref<string[]>(['Showcase', 'Real Rarities', 'Historical Gems']);
   const gameCards = ref<Card[]>([]);
 
@@ -118,19 +117,6 @@ export const useGameStore = defineStore('game', () => {
       collectedCards.value = [];
     }
 
-    // Load category cooldowns
-    const savedCooldowns = localStorage.getItem('moonflower_guest_categoryCooldowns');
-    if (savedCooldowns) {
-      try {
-        categoryCooldowns.value = JSON.parse(savedCooldowns);
-      } catch (err) {
-        console.error('[loadGuestState] Failed to parse categoryCooldowns from localStorage:', err);
-        categoryCooldowns.value = {};
-      }
-    } else {
-      categoryCooldowns.value = {};
-    }
-
     // Load custom sections
     const savedSections = localStorage.getItem('moonflower_guest_customSections');
     if (savedSections) {
@@ -145,7 +131,7 @@ export const useGameStore = defineStore('game', () => {
     }
   };
 
-  // Load logged-in user custom sections and cooldowns from localStorage
+  // Load logged-in user custom sections from localStorage
   const loadUserState = (userId: string) => {
     console.log('[loadUserState] Loading localStorage state for user:', userId);
     
@@ -165,20 +151,6 @@ export const useGameStore = defineStore('game', () => {
       }
     } else {
       customSections.value = ['Showcase', 'Real Rarities', 'Historical Gems'];
-    }
-
-    // Load category cooldowns
-    const savedCooldowns = localStorage.getItem(`moonflower_user_${userId}_categoryCooldowns`);
-    if (savedCooldowns) {
-      try {
-        categoryCooldowns.value = JSON.parse(savedCooldowns);
-        console.log('[loadUserState] Loaded categoryCooldowns from localStorage:', categoryCooldowns.value);
-      } catch (err) {
-        console.error('[loadUserState] Failed to parse categoryCooldowns:', err);
-        categoryCooldowns.value = {};
-      }
-    } else {
-      categoryCooldowns.value = {};
     }
   };
 
@@ -649,13 +621,11 @@ export const useGameStore = defineStore('game', () => {
       authStore.syncStoreToUser(gdPoints.value, collectedCards.value);
       localStorage.setItem(`moonflower_user_${authStore.user.id}_gdPoints`, String(gdPoints.value));
       localStorage.setItem(`moonflower_user_${authStore.user.id}_collectedCards`, JSON.stringify(collectedCards.value));
-      localStorage.setItem(`moonflower_user_${authStore.user.id}_categoryCooldowns`, JSON.stringify(categoryCooldowns.value));
       localStorage.setItem(`moonflower_user_${authStore.user.id}_customSections`, JSON.stringify(customSections.value));
       localStorage.setItem(`moonflower_user_${authStore.user.id}_hasNewCards`, String(hasNewCards.value));
     } else if (!authStore.isLoggedIn) {
       localStorage.setItem('moonflower_guest_gdPoints', String(gdPoints.value));
       localStorage.setItem('moonflower_guest_collectedCards', JSON.stringify(collectedCards.value));
-      localStorage.setItem('moonflower_guest_categoryCooldowns', JSON.stringify(categoryCooldowns.value));
       localStorage.setItem('moonflower_guest_customSections', JSON.stringify(customSections.value));
       localStorage.setItem('moonflower_guest_hasNewCards', String(hasNewCards.value));
     }
@@ -815,22 +785,6 @@ export const useGameStore = defineStore('game', () => {
     }
   };
 
-  // Cooldown handlers
-  const setCooldown = (category: string) => {
-    const expiry = Date.now() + 60 * 1000; // 60 seconds cooldown
-    categoryCooldowns.value[category] = expiry;
-  };
-
-  const getCooldownTimeRemaining = (category: string): number => {
-    const expiry = categoryCooldowns.value[category] || 0;
-    const diff = expiry - Date.now();
-    return diff > 0 ? Math.ceil(diff / 1000) : 0;
-  };
-
-  const isCooldownActive = (category: string): boolean => {
-    return getCooldownTimeRemaining(category) > 0;
-  };
-
   // Load a public user profile from the Supabase "profile" table by username or user id
   const loadProfileFromDB = async (usernameOrId: string): Promise<{ userProfile: any, cards: CollectedCard[] } | null> => {
     try {
@@ -979,17 +933,6 @@ export const useGameStore = defineStore('game', () => {
     }
   }, { deep: true });
 
-  watch(categoryCooldowns, (newVal) => {
-    const authStore = useAuthStore();
-    console.log('[watch categoryCooldowns] triggered. authStore.isLoggedIn =', authStore.isLoggedIn);
-    if (authStore.isLoggedIn && authStore.user?.id) {
-      localStorage.setItem(`moonflower_user_${authStore.user.id}_categoryCooldowns`, JSON.stringify(newVal));
-    } else if (!authStore.isLoggedIn) {
-      localStorage.setItem('moonflower_guest_categoryCooldowns', JSON.stringify(newVal));
-      console.log('[watch categoryCooldowns] Saved guest progress to localStorage:', newVal);
-    }
-  }, { deep: true });
-
   watch(customSections, (newVal) => {
     const authStore = useAuthStore();
     console.log('[watch customSections] triggered. count =', newVal?.length, ', authStore.isLoggedIn =', authStore.isLoggedIn);
@@ -1013,7 +956,6 @@ export const useGameStore = defineStore('game', () => {
   return {
     gdPoints,
     collectedCards,
-    categoryCooldowns,
     customSections,
     gameCards,
     hasNewCards,
@@ -1033,9 +975,6 @@ export const useGameStore = defineStore('game', () => {
     updateCardSection,
     addCustomSection,
     removeCustomSection,
-    setCooldown,
-    getCooldownTimeRemaining,
-    isCooldownActive,
     loadProfileFromDB,
     claimArticlesForProfile,
     mapArticleRowToCard

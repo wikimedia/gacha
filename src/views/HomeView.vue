@@ -93,9 +93,6 @@ const touchStartX = ref(0);
 const roundWasCorrect = ref(false);
 const swipeDirection = ref<'left' | 'right' | null>(null);
 
-// Cooldown ticking
-const cooldownTimers = ref<Record<string, number>>({});
-
 // Fact Frenzy States
 const gachaActive = ref(false);
 const gachaTimer = ref(5);
@@ -197,18 +194,9 @@ watch([() => authStore.isLoggedIn, () => gameStore.gdPoints], () => {
 });
 
 
-// Cooldown tracking
-const updateCooldowns = () => {
-  CATEGORIES.forEach(cat => {
-    cooldownTimers.value[cat] = gameStore.getCooldownTimeRemaining(cat);
-  });
-};
-
-// Cooldown decrement loop
 onMounted(async () => {
   authStore.initAuth();
   gameStore.loadGuestState();
-  updateCooldowns();
 
   displayedPoints.value = gameStore.gdPoints;
 
@@ -216,10 +204,6 @@ onMounted(async () => {
   // has started (or we've redirected away) so the home screen doesn't flash.
   await syncGameToRoute();
   isLoading.value = false;
-
-  setInterval(() => {
-    updateCooldowns();
-  }, 1000);
 
   checkTriggerGacha();
 });
@@ -276,7 +260,7 @@ const shuffle = (arr: Card[]): Card[] => {
 
 // Core game initialization, shared by category and topic games. `fetchPool`
 // returns the candidate card pool; `category`/`topicLabel` identify the run for
-// the results badge, cooldown, and analytics (exactly one is set).
+// the results badge and analytics (exactly one is set).
 const beginGame = async (
   fetchPool: () => Promise<Card[]>,
   { category, topicLabel }: { category?: Category; topicLabel?: string }
@@ -336,7 +320,7 @@ const beginGame = async (
 
 // Category selection & game initialization
 const startFakeoutGame = async (category: Category) => {
-  if (gameStore.isCooldownActive(category) || isStartingGame.value) return;
+  if (isStartingGame.value) return;
   await beginGame(() => gameStore.fetchCategoryPool(category), { category });
 };
 
@@ -357,7 +341,7 @@ const startTopicGame = async (topic: TopicOption) => {
 // Keeping start logic route-driven means the Play button and direct links
 // (/play/<slug>) take the exact same path.
 const playCategory = (category: Category) => {
-  if (gameStore.isCooldownActive(category) || isStartingGame.value) return;
+  if (isStartingGame.value) return;
   maybeShowInstructions();
   router.push(`/play/${categoryToSlug(category)}`);
 };
@@ -375,20 +359,12 @@ const syncGameToRoute = async () => {
     return;
   }
 
-  // Reflect the category in the home selection UI (matters if a cooldown blocks
-  // the game and we show the selection screen instead).
+  // Reflect the category in the home selection UI.
   const sub = subCategories.find(s => s.mainCategory === category);
   if (sub) activeSubCategory.value = sub;
 
   // Don't restart a game that's already running for this category.
   if (gameActive.value && selectedCategory.value === category) return;
-
-  // Can't start while on cooldown — drop back to the home URL (the category is
-  // already selected above, so its cooldown is visible on the selection screen).
-  if (gameStore.isCooldownActive(category)) {
-    if (route.name === 'play') router.replace('/');
-    return;
-  }
 
   await startFakeoutGame(category);
 };
@@ -472,9 +448,6 @@ const nextRound = () => {
 
 const endFakeoutGame = () => {
   gameActive.value = false;
-  if (selectedCategory.value) {
-    gameStore.setCooldown(selectedCategory.value);
-  }
 
   trackEvent('end_fakeout_game', {
     logged_in: authStore.isLoggedIn,
@@ -486,8 +459,6 @@ const endFakeoutGame = () => {
       : 0,
   });
 
-  updateCooldowns();
-  
   // Automatically collect all correctly guessed real cards (win or lose)
   if (collectedThisGame.value.length > 0) {
     const realCardIds: string[] = [];
@@ -763,10 +734,9 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
             </div>
           </div>
         </div>
-        <!-- Play/Cooldown Button -->
+        <!-- Play Button -->
         <div class="play-button-wrapper">
-          <BaseButton 
-            v-if="!cooldownTimers[activeSubCategory.mainCategory]"
+          <BaseButton
             variant="primary"
             :loading="isStartingGame"
             @click="playCategory(activeSubCategory.mainCategory)"
@@ -775,13 +745,6 @@ const handleGachaGlobeTap = (event?: MouseEvent) => {
               <AppIcon :icon="cdxIconPlay" :size="18" class="play-icon" />
             </template>
             Play
-          </BaseButton>
-          <BaseButton 
-            v-else
-            disabled
-            variant="primary"
-          >
-            {{ cooldownTimers[activeSubCategory.mainCategory] }} Seconds
           </BaseButton>
         </div>
 
