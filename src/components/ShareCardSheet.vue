@@ -55,6 +55,16 @@ const errorMessage = ref('');
 // capture that resolves late is never shared.
 let capturePromise: Promise<Blob> | null = null;
 
+// Capture is the flaky step: the WebKit image-cache bug and the forced
+// no-cache re-fetch of the card art both fail intermittently. Retry a few
+// times from scratch before surfacing an error, so a transient miss recovers
+// without the user tapping again.
+const CAPTURE_MAX_ATTEMPTS = 3;
+const CAPTURE_RETRY_DELAY_MS = 300;
+
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 const startCapture = (): Promise<Blob> => {
   const promise = (async () => {
     await nextTick(); // the graphic mounts together with the sheet
@@ -96,12 +106,25 @@ const handlePrimary = async () => {
   if (!props.card || isProcessing.value || completed.value) return;
   isProcessing.value = true;
   errorMessage.value = '';
-  const promise = capturePromise ?? startCapture();
   let blob: Blob | null = null;
-  try {
-    blob = await promise;
-  } catch (err) {
-    console.error('Failed to generate share image:', err);
+  let promise: Promise<Blob> | null = null;
+  for (let attempt = 0; attempt < CAPTURE_MAX_ATTEMPTS; attempt++) {
+    if (attempt > 0) {
+      // Bail if the sheet closed between attempts; don't revive the capture.
+      if (!props.open) break;
+      await delay(CAPTURE_RETRY_DELAY_MS);
+      if (!props.open) break;
+    }
+    // The first attempt reuses the eager on-open capture; retries restart it.
+    promise = attempt === 0 ? (capturePromise ?? startCapture()) : startCapture();
+    try {
+      blob = await promise;
+      break;
+    } catch (err) {
+      console.error(`Failed to generate share image (attempt ${attempt + 1}):`, err);
+    }
+  }
+  if (!blob) {
     errorMessage.value = "Couldn't generate the image. Please try again.";
   }
   // Skip if the sheet closed (or reopened) while capturing.
