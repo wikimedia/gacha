@@ -17,7 +17,7 @@ const SERVICES = [
   {
     name: 'Wikipedia',
     lead: 'We source card content from Wikipedia. Refer to Wikipedia’s ',
-    policyUrl: 'https://foundation.wikimedia.org/wiki/Legal:World_of_Wikipedia_Survey_Privacy_Statement',
+    policyUrl: 'https://wikimediafoundation.org/privacy-policy/',
   },
   {
     name: 'Firebase',
@@ -34,6 +34,11 @@ const SERVICES = [
     lead: 'We use Google Analytics to monitor app usage. Refer to Google’s ',
     policyUrl: 'https://policies.google.com/technologies/partner-sites',
   },
+  {
+    name: 'Feedback Survey',
+    lead: 'To fill out the feedback survey, click "Contact Us". This feedback survey will be conducted via a third-party service, which may subject it to additional terms. For more information on privacy and data-handling, see the survey\'s ',
+    policyUrl: 'https://foundation.wikimedia.org/wiki/Legal:World_of_Wikipedia_Survey_Privacy_Statement'
+  }
 ];
 </script>
 
