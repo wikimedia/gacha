@@ -293,7 +293,7 @@ export const useAuthStore = defineStore('auth', () => {
       gameStore.gdPoints = mappedUser.gdPoints;
       gameStore.collectedCards = mappedUser.collectedCards;
 
-      // Load user-specific localStorage state (sections & cooldowns)
+      // Load user-specific localStorage state (custom sections)
       gameStore.loadUserState(su.id);
 
       // Migrate guest cards to database under the user's profile
@@ -311,7 +311,6 @@ export const useAuthStore = defineStore('auth', () => {
             // Clear guest progress in localStorage
             localStorage.removeItem('moonflower_guest_collectedCards');
             localStorage.removeItem('moonflower_guest_gdPoints');
-            localStorage.removeItem('moonflower_guest_categoryCooldowns');
             localStorage.removeItem('moonflower_guest_customSections');
           }
         } catch (err) {
