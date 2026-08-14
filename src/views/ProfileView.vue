@@ -739,22 +739,21 @@ const toggleCardShowcase = async (cardId: string) => {
                       class="card-scale-wrapper card-pop-hint"
                       :style="{ '--pop-i': popIndexMap.get(card.id) ?? 0 }"
                     >
-                      <div 
+                      <div
                         class="card-scaled-content"
-                        :class="{ 'cursor-pointer': !isShowcaseMode }"
-                        @click="openCardDetail(card, sectionCards)"
+                        :class="{ 'card-scaled-content--catcher-off': !isShowcaseMode }"
                       >
                         <!-- Render Card itself -->
                         <CardComp :card="card" :show-link="false" shiny-trigger="off" :display-width="binderCardWidth" />
 
                         <!-- Showcase pin overlays (only in showcase edit mode) -->
-                        <button 
+                        <button
                           v-if="isPrivateMode && isShowcaseMode"
                           @click="toggleCardShowcase(card.id)"
                           class="absolute top-4 right-4 z-30 w-16 h-16 flex items-center justify-center p-0 rounded-[2px] shadow-lg border transition-colors duration-200 cursor-pointer"
                           :class="[
-                            card.isShowcase 
-                              ? 'bg-[#d9754b] text-[#fdf4eb] border-[#d9754b] hover:bg-[#c05c33]' 
+                            card.isShowcase
+                              ? 'bg-[#d9754b] text-[#fdf4eb] border-[#d9754b] hover:bg-[#c05c33]'
                               : 'bg-[#fdf4eb] hover:bg-white text-[#4a6783] border-[#c4b69d]'
                           ]"
                           :title="card.isShowcase ? 'Remove from Showcase' : 'Set as Showcase Pinned Card'"
@@ -762,6 +761,18 @@ const toggleCardShowcase = async (cardId: string) => {
                           <AppIcon :icon="cdxIconPushPin" :size="30" />
                         </button>
                       </div>
+
+                      <!-- Hit-catcher: a transparent click target that lives in the
+                           wiggling wrapper but OUTSIDE the card's `zoom` subtree, so
+                           Blink hit-tests it at the right coordinates while the pop
+                           animation runs (the zoomed card's own hit rect desyncs
+                           under an animating transform). Only in normal view — in
+                           showcase mode the pin button inside the card needs clicks. -->
+                      <div
+                        v-if="!isShowcaseMode"
+                        class="card-hit-catcher"
+                        @click="openCardDetail(card, sectionCards)"
+                      ></div>
                     </div>
                   </div>
                 </div>
@@ -1092,6 +1103,21 @@ const toggleCardShowcase = async (cardId: string) => {
   display: grid;
   justify-content: center;
   width: 100%;
+}
+
+/* Transparent tap target overlaying each card. Sits in the wiggling wrapper but
+   outside the `zoom`ed card, so its hit rect stays correct during the pop. */
+.card-hit-catcher {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  cursor: pointer;
+}
+
+/* When the catcher is active (normal view), take the zoomed card visual out of
+   hit-testing entirely — only the catcher should receive clicks. */
+.card-scaled-content--catcher-off {
+  pointer-events: none;
 }
 
 /* 1 Column View */

@@ -611,6 +611,15 @@ const handleShare = () => {
 .modal-fade-leave-active {
   transition: opacity 0.25s ease;
 }
+
+/* Animating opacity while `backdrop-filter: blur` is still active forces WebKit
+   to re-composite a full-screen blur every frame over the busy profile page —
+   an iOS GPU-process crash trigger on close. Drop the blur the instant the
+   modal starts leaving so the fade-out is a plain opacity fade. */
+.modal-fade-leave-active.modal-scrim {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
 .modal-fade-enter-from,
 .modal-fade-leave-to {
   opacity: 0;
