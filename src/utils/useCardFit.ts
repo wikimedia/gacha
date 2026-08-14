@@ -1,15 +1,29 @@
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue';
 
 /**
+ * Fallbacks mirroring the :root card tokens in style.css. WebKit can run
+ * module scripts before the stylesheet's CSSOM is applied, so a token read
+ * during component setup may come back empty on iOS Safari; throwing there
+ * aborted the mount of the calling component and its later siblings.
+ */
+const TOKEN_FALLBACKS: Record<string, number> = {
+  '--card-base-width': 315,
+  '--card-base-height': 440,
+  '--card-scale-full': 1.1302,
+};
+
+/**
  * Read a numeric CSS variable from the :root element (CSS values cannot be
- * imported directly).
+ * imported directly), falling back to the mirrored constant when the
+ * stylesheet has not been applied yet.
  */
 function readToken(name: string): number {
   const value = parseFloat(
     getComputedStyle(document.documentElement).getPropertyValue(name)
   );
   if (!Number.isFinite(value)) {
-    throw new Error(`useCardFit: cannot read ${name} from :root`);
+    console.warn(`useCardFit: cannot read ${name} from :root, using fallback`);
+    return TOKEN_FALLBACKS[name];
   }
   return value;
 }
