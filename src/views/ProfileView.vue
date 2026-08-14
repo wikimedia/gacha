@@ -735,7 +735,7 @@ const toggleCardShowcase = async (cardId: string) => {
                         @click="openCardDetail(card, sectionCards)"
                       >
                         <!-- Render Card itself -->
-                        <CardComp :card="card" :show-link="false" />
+                        <CardComp :card="card" :show-link="false" shiny-trigger="off" />
 
                         <!-- Showcase pin overlays (only in showcase edit mode) -->
                         <button 
