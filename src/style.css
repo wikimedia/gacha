@@ -703,8 +703,6 @@ body {
 }
 
 .category-slider-carousel {
-  /* Keep equal to the width of .category-slider-item. */
-  --tile-width: 91.5px;
   display: flex;
   gap: 16px;
   overflow-x: auto;
@@ -718,12 +716,15 @@ body {
   display: none; /* Safari and Chrome */
 }
 
-/* Edge spacers (flex items, minus the 16px gap they add): let the first and
-   last tiles rest centered. WebKit cannot scroll a container's end padding. */
+/* Edge spacers: real boxes, because neither the container's end padding nor
+   a zero-width box reliably extends the scroll range (WebKit). Spacer plus
+   the 16px gap it adds insets the end tiles 1.5rem from the screen edge when
+   the strip overflows; when all tiles fit, the spacers grow equally and
+   centre the strip. */
 .category-slider-carousel::before,
 .category-slider-carousel::after {
   content: "";
-  flex: 0 0 calc(50vw - var(--tile-width) / 2 - 16px);
+  flex: 1 0 calc(1.5rem - 16px);
 }
 
 /* Category card (Figma "gameCategory"): bordered vertical card with a
