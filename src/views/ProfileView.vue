@@ -47,6 +47,16 @@ const editBio = ref('');
 // Custom Redesign States
 const binderColor = ref('#4a6783');
 const gridColumns = ref(2); // default to 2 columns
+
+// Displayed card width per column count, in CSS px — sizes the thumbnails
+// Card requests. Mirrors the .binder-grid--*col wrapper widths in the CSS
+// below (mobile vs ≥640px desktop).
+const binderCardWidth = computed(() => {
+  const widths: Record<number, number> = window.innerWidth >= 640
+    ? { 1: 315, 2: 267.75, 3: 189 }
+    : { 1: 267.75, 2: 132.3, 3: 88.2 };
+  return widths[gridColumns.value] ?? 315;
+});
 const showEditDropdown = ref(false);
 const dropdownDirection = ref<'down' | 'up'>('down');
 const editBtnRef = ref<HTMLElement | null>(null);
@@ -735,7 +745,7 @@ const toggleCardShowcase = async (cardId: string) => {
                         @click="openCardDetail(card, sectionCards)"
                       >
                         <!-- Render Card itself -->
-                        <CardComp :card="card" :show-link="false" shiny-trigger="off" />
+                        <CardComp :card="card" :show-link="false" shiny-trigger="off" :display-width="binderCardWidth" />
 
                         <!-- Showcase pin overlays (only in showcase edit mode) -->
                         <button 

@@ -4,6 +4,7 @@ import type { Card } from '../stores/useGameStore';
 import { CATEGORY_SLUG } from '../stores/useGameStore';
 import Stars from './Stars.vue';
 import ShinyOverlay from './ShinyOverlay.vue';
+import { thumbUrl } from '../utils/thumbnails';
 
 const PLACEHOLDER_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Missing-image-232x150.png';
 
@@ -12,9 +13,12 @@ const props = withDefaults(defineProps<{
   showLink?: boolean;
   shinyTrigger?: 'auto' | 'on' | 'off'; // auto = in view, on = always, off = never
   badge?: 'correct' | 'incorrect';
+  /** On-screen card width in CSS px; sizes the image thumbnail requested. */
+  displayWidth?: number;
 }>(), {
   showLink: true,
-  shinyTrigger: 'auto'
+  shinyTrigger: 'auto',
+  displayWidth: 356 // full-size card (--card-width)
 });
 
 // ── Computed Properties ──────────────────────────────────────────
@@ -41,13 +45,20 @@ const isCSSImage = computed(() => {
 // card's image changes (e.g. the same Card component is reused for a new card).
 const imageFailed = ref(false);
 const imageRetryCount = ref(0);
+const thumbFailed = ref(false);
 
 watch(() => props.card.image, () => {
   imageFailed.value = false;
   imageRetryCount.value = 0;
+  thumbFailed.value = false;
 });
 
 const onImageError = () => {
+  // A failed thumbnail falls back to the original file URL before retrying.
+  if (!thumbFailed.value && baseImageSrc.value !== props.card.image) {
+    thumbFailed.value = true;
+    return;
+  }
   imageFailed.value = true;
   // retry after a short delay
   setTimeout(() => {
@@ -57,18 +68,19 @@ const onImageError = () => {
   }, 3000);
 };
 
+// Thumbnail sized to the card's display width; the original if the thumb failed.
+const baseImageSrc = computed(() => {
+  const img = props.card.image;
+  if (!img || isCSSImage.value) return img || '';
+  return thumbFailed.value ? img : thumbUrl(img, props.displayWidth);
+});
+
 // Cache-busted URL for retrying image loads
 const imageUrl = computed(() => {
-  const img = props.card.image;
-  if (!img) return '';
-  if (isCSSImage.value) return img;
-  if (imageRetryCount.value === 0) return img;
-  try {
-    const separator = img.includes('?') ? '&' : '?';
-    return `${img}${separator}retry=${imageRetryCount.value}`;
-  } catch {
-    return img;
-  }
+  const src = baseImageSrc.value;
+  if (!src || isCSSImage.value || imageRetryCount.value === 0) return src;
+  const separator = src.includes('?') ? '&' : '?';
+  return `${src}${separator}retry=${imageRetryCount.value}`;
 });
 
 const imageStyle = computed(() => {
