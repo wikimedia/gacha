@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { prefetchAllFrames } from './components/shinyFrames';
+import PerfHud from './components/PerfHud.vue';
 
 // Warm every rarity's foil frames once the app is idle, so a card's intro is
 // ready to play the instant it comes into view (no first-frame fetch hitch).
@@ -16,6 +17,7 @@ onMounted(() => {
 
 <template>
   <router-view />
+  <PerfHud />
 </template>
 
 <style>

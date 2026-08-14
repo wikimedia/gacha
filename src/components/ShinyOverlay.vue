@@ -18,6 +18,7 @@
  */
 import { ref, watch, onUnmounted } from 'vue';
 import { getFrameSequence, prefetchFrames, type FrameLayer, type Rarity } from './shinyFrames';
+import { subscribe } from './frameClock';
 
 const props = withDefaults(defineProps<{
   rarity: Rarity;
@@ -43,15 +44,17 @@ interface LayerState {
   done: boolean; // intro-only: reached last frame
 }
 
-let rafId = 0;
+let unsubscribe: (() => void) | null = null;
 let phase: 'intro' | 'loop' = 'intro';
 let baseLayers: FrameLayer[] = []; // static, always at the bottom of the stack
 let layers: LayerState[] = [];     // animated layers for the current phase
-let lastTs = 0;
 
+// Detach this overlay's ticker from the shared frame clock (see ./frameClock).
 function stopRaf() {
-  if (rafId) cancelAnimationFrame(rafId);
-  rafId = 0;
+  if (unsubscribe) {
+    unsubscribe();
+    unsubscribe = null;
+  }
 }
 
 function reset() {
@@ -87,7 +90,6 @@ function start() {
     return;
   }
   stopRaf();
-  lastTs = 0;
   baseLayers = s.base;
 
   // Reduced motion: skip the animation, park on a representative still (base
@@ -114,10 +116,9 @@ function start() {
     if (layers.length === 0) return;
   }
 
-  const tick = (ts: number) => {
-    const dt = lastTs ? ts - lastTs : 0;
-    lastTs = ts;
-
+  // dt is pushed in by the shared frame clock instead of pulled from an
+  // own-owned rAF loop, so every visible overlay advances from one timestamp.
+  const tick = (dt: number) => {
     if (phase === 'intro') {
       let allDone = true;
       for (const ls of layers) {
@@ -149,10 +150,10 @@ function start() {
       render();
     }
 
-    if (layers.length) rafId = requestAnimationFrame(tick);
-    else stopRaf();
+    // Nothing left to animate (e.g. a loop-less rarity settled) → leave the clock.
+    if (!layers.length) stopRaf();
   };
-  rafId = requestAnimationFrame(tick);
+  unsubscribe = subscribe(tick);
 }
 
 // Warm the shared prefetch cache whenever the active rarity changes, so the
