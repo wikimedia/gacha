@@ -301,24 +301,18 @@ watch(activeTab, () => nextTick(updateCardScale));
                 class="grid-card-wrapper animate-card-reveal cursor-pointer"
                 @click="openCardDetail(item.card)"
               >
-                <!-- Scaled Card -->
-                <div class="grid-card-inner">
+                <div
+                  class="grid-card-inner"
+                  :class="{ 'grid-card-inner--fake': !item.card.isReal }"
+                >
                   <CardComp :card="item.card" :show-link="false" />
                 </div>
 
                 <!-- Fake Card Overlay (with diagonal FAKE stamp) -->
-                <div
-                  v-if="!item.card.isReal"
-                  class="card-grid-fake-overlay"
-                ></div>
-                <div
-                  v-if="!item.card.isReal"
-                  class="card-grid-fake-stamp"
-                >
-                  <div class="fake-stamp-text">
-                    FAKE
-                  </div>
-                </div>
+                <template v-if="!item.card.isReal">
+                  <div class="fake-overlay"></div>
+                  <div class="fake-stamp"><div class="fake-stamp-text">FAKE</div></div>
+                </template>
               </div>
             </div>
           </div>
@@ -333,23 +327,38 @@ watch(activeTab, () => nextTick(updateCardScale));
           <div
             v-if="stackCards.left"
             class="card-fan-item card-fan-item--left cursor-pointer"
+            :class="{ 'card-fan-item--fake': !stackCards.left.isReal }"
             @click="openCardDetail(stackCards.left)"
           >
             <CardComp :card="stackCards.left" :show-link="false" class="card-fan-scaled card-fan-scaled--side" />
+            <template v-if="!stackCards.left.isReal">
+              <div class="fake-overlay"></div>
+              <div class="fake-stamp"><div class="fake-stamp-text">FAKE</div></div>
+            </template>
           </div>
           <div
             v-if="stackCards.right"
             class="card-fan-item card-fan-item--right cursor-pointer"
+            :class="{ 'card-fan-item--fake': !stackCards.right.isReal }"
             @click="openCardDetail(stackCards.right)"
           >
             <CardComp :card="stackCards.right" :show-link="false" class="card-fan-scaled card-fan-scaled--side" />
+            <template v-if="!stackCards.right.isReal">
+              <div class="fake-overlay"></div>
+              <div class="fake-stamp"><div class="fake-stamp-text">FAKE</div></div>
+            </template>
           </div>
           <div
             v-if="stackCards.center"
             class="card-fan-item card-fan-item--center cursor-pointer"
+            :class="{ 'card-fan-item--fake': !stackCards.center.isReal }"
             @click="openCardDetail(stackCards.center)"
           >
             <CardComp :card="stackCards.center" :show-link="false" class="card-fan-scaled card-fan-scaled--center" />
+            <template v-if="!stackCards.center.isReal">
+              <div class="fake-overlay"></div>
+              <div class="fake-stamp"><div class="fake-stamp-text">FAKE</div></div>
+            </template>
           </div>
         </div>
 
@@ -578,6 +587,19 @@ watch(activeTab, () => nextTick(updateCardScale));
     transform: scale(0.75);
     transform-origin: top center;
   }
+}  
+/* Fake treatment for fan cards — grayscale + smaller stamp; overlay/stamp
+   styles are shared with the grid (.fake-overlay / .fake-stamp below). */
+.card-fan-item--fake .card-fan-scaled {
+  filter: grayscale(1);
+}
+
+.card-fan-item {
+  --fake-stamp-size: 22px;
+}
+
+.card-fan-item--center {
+  --fake-stamp-size: 24px;
 }
 
 /* Fakes / Facts summary boxes */
@@ -853,7 +875,14 @@ watch(activeTab, () => nextTick(updateCardScale));
   pointer-events: none;
 }
 
-.card-grid-fake-overlay {
+.grid-card-inner--fake {
+  filter: grayscale(1);
+}
+
+/* Shared fake-card treatment (grid + stats-tab fan). The stamp size is driven
+   by --fake-stamp-size so each context can scale it (grid 32px default; the
+   smaller fan cards override it above). */
+.fake-overlay {
   position: absolute;
   inset: 0;
   background-color: rgba(148, 136, 119, 0.35);
@@ -863,7 +892,7 @@ watch(activeTab, () => nextTick(updateCardScale));
   z-index: 10;
 }
 
-.card-grid-fake-stamp {
+.fake-stamp {
   position: absolute;
   inset: 0;
   display: flex;
@@ -880,7 +909,7 @@ watch(activeTab, () => nextTick(updateCardScale));
   font-family: 'Georgia', serif;
   font-weight: 900;
   color: #fff;
-  font-size: 20px;
+  font-size: var(--fake-stamp-size, 32px);
   letter-spacing: 0.05em;
   line-height: 1;
   text-align: center;
