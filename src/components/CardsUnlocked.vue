@@ -208,6 +208,15 @@ const orderedGridItems = computed(() => cardGroups.value.flatMap(group => group.
 const detailModalCards = computed(() => orderedGridItems.value.map(item => item.card));
 const detailModalIsCorrectArray = computed(() => orderedGridItems.value.map(item => item.isCorrect));
 
+// Reading-order index for the staggered card-pop hint (see .card-pop-hint in
+// style.css). orderedGridItems is already the flat on-screen order.
+const popIndexMap = computed(() => {
+  const map = new Map<string, number>();
+  orderedGridItems.value.forEach((item, i) => map.set(item.card.id, i));
+  return map;
+});
+const popIndex = (id: string) => popIndexMap.value.get(id) ?? 0;
+
 const openCardDetail = (card: Card) => {
   trackEvent("card_detail_opened");
   const index = orderedGridItems.value.findIndex(item => item.card.id === card.id);
@@ -301,18 +310,23 @@ watch(activeTab, () => nextTick(updateCardScale));
                 class="grid-card-wrapper animate-card-reveal cursor-pointer"
                 @click="openCardDetail(item.card)"
               >
+                <!-- Pop-hint wrapper (scales the whole card from its center;
+                     kept separate from the entrance transform above). -->
                 <div
-                  class="grid-card-inner"
-                  :class="{ 'grid-card-inner--fake': !item.card.isReal }"
+                  class="grid-card-pop card-pop-hint"
+                  :style="{ '--pop-i': popIndex(item.card.id) }"
                 >
-                  <CardComp :card="item.card" :show-link="false" />
-                </div>
+                  <!-- Scaled Card -->
+                  <div class="grid-card-inner" :class="{ 'grid-card-inner--fake': !item.card.isReal }">
+                    <CardComp :card="item.card" :show-link="false" />
+                  </div>
 
-                <!-- Fake Card Overlay (with diagonal FAKE stamp) -->
-                <template v-if="!item.card.isReal">
-                  <div class="fake-overlay"></div>
-                  <div class="fake-stamp"><div class="fake-stamp-text">FAKE</div></div>
-                </template>
+                  <!-- Fake Card Overlay (with diagonal FAKE stamp) -->
+                  <template v-if="!item.card.isReal">
+                    <div class="fake-overlay"></div>
+                    <div class="fake-stamp"><div class="fake-stamp-text">FAKE</div></div>
+                  </template>
+                </div>
               </div>
             </div>
           </div>
@@ -854,6 +868,7 @@ watch(activeTab, () => nextTick(updateCardScale));
   gap: 8px;
   width: 100%;
   --card-scale: 0.55; /* fallback until measured (JS sets the exact value) */
+  --pop-base-delay: 0.4s; /* let the entrance reveal + layout settle before popping */
 }
 
 .grid-card-wrapper {
@@ -865,6 +880,12 @@ watch(activeTab, () => nextTick(updateCardScale));
   aspect-ratio: 315 / 440;
   position: relative;
   overflow: visible;
+}
+
+/* Fills the cell so the pop hint scales the card about its true center. */
+.grid-card-pop {
+  position: absolute;
+  inset: 0;
 }
 
 .grid-card-inner {
