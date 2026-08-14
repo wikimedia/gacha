@@ -4,6 +4,7 @@ import type { Card } from '../stores/useGameStore';
 import { CATEGORY_SLUG } from '../stores/useGameStore';
 import Stars from './Stars.vue';
 import ShinyOverlay from './ShinyOverlay.vue';
+import { backgroundFoilPaused } from './foilFocus';
 
 const PLACEHOLDER_IMAGE_URL = 'https://upload.wikimedia.org/wikipedia/commons/b/b1/Missing-image-232x150.png';
 
@@ -129,7 +130,9 @@ let observer: IntersectionObserver | null = null;
 const shinyInView = computed(() => {
   if (props.shinyTrigger === 'on') return true;
   if (props.shinyTrigger === 'off') return false;
-  return autoInView.value;
+  // 'auto': viewport-gated, and additionally paused while a focused-card modal
+  // is open over this card, so background cards don't animate unseen (foilFocus).
+  return autoInView.value && !backgroundFoilPaused.value;
 });
 
 onMounted(() => {

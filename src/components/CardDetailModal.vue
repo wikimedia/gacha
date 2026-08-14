@@ -9,6 +9,7 @@ import { cdxIconClose, cdxIconCheck, cdxIconInfoFilled } from '@wikimedia/codex-
 import { trackEvent } from '../analytics.ts';
 import { lockBodyScroll, unlockBodyScroll } from '../utils/scrollLock';
 import { useCardFit } from '../utils/useCardFit';
+import { pushFoilFocus, popFoilFocus } from './foilFocus';
 
 const props = withDefaults(defineProps<{
   show: boolean;
@@ -48,14 +49,27 @@ watch(activeIndex, () => {
   isFlipped.value = false;
 });
 
+// While the modal is open it holds a "foil focus" token so background cards
+// (the grid behind it) pause their foil animation. A local flag keeps push/pop
+// balanced across show toggles and unmount.
+let foilFocusHeld = false;
+function setFoilFocus(on: boolean) {
+  if (on === foilFocusHeld) return;
+  foilFocusHeld = on;
+  if (on) pushFoilFocus();
+  else popFoilFocus();
+}
+
 watch(() => props.show, (newVal) => {
   if (newVal) {
     activeIndex.value = props.initialIndex;
     lockBodyScroll();
     isFlipped.value = false;
+    setFoilFocus(true);
   } else {
     isShareSheetOpen.value = false;
     unlockBodyScroll();
+    setFoilFocus(false);
   }
 });
 
@@ -157,6 +171,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown);
   if (props.show) unlockBodyScroll();
+  setFoilFocus(false); // release the token if we unmount while open
 });
 
 // Touch swipe navigation
@@ -262,6 +277,7 @@ const handleShare = () => {
                   <CardComp
                     :card="card"
                     :show-link="false"
+                    :shiny-trigger="index === activeIndex ? 'on' : 'off'"
                     :class="{ 'card-face--fake': !card.isReal }"
                   />
 
