@@ -12,6 +12,7 @@ import Loader from '../components/Loader.vue';
 import BaseButton from '../components/BaseButton.vue';
 import TopicPickerSheet from '../components/TopicPickerSheet.vue';
 import { trackEvent } from '../analytics';
+import { isTestUser } from '../utils/testOverrides';
 import { useCardFit } from '../utils/useCardFit';
 import { PhThumbsUp, PhThumbsDown, PhDotsThreeOutline } from '@phosphor-icons/vue';
 import AppIcon from '../components/AppIcon.vue';
@@ -255,25 +256,35 @@ const beginGame = async (
 ) => {
   isStartingGame.value = true;
   try {
-    // Fetch a fresh randomized pool each game so the cards vary between games.
-    // Fall back to the cached sample if the fetch is empty (offline/mock).
-    let poolCards = await fetchPool();
-    if (poolCards.length === 0 && category) {
-      poolCards = gameStore.gameCards.filter((c: Card) => c.category === category);
+    let deck: Card[];
+    let deckFakes: Card[];
+
+    if (isTestUser(authStore.user?.id)) {
+      // Test override: serve a fixed, fixed-order deck (see testOverrides.ts)
+      // regardless of the requested category/topic.
+      deck = await gameStore.fetchTestDeck();
+      deckFakes = deck.filter((c: Card) => !c.isReal);
+    } else {
+      // Fetch a fresh randomized pool each game so the cards vary between games.
+      // Fall back to the cached sample if the fetch is empty (offline/mock).
+      let poolCards = await fetchPool();
+      if (poolCards.length === 0 && category) {
+        poolCards = gameStore.gameCards.filter((c: Card) => c.category === category);
+      }
+
+      // Build the deck: a fully shuffled, balanced mix of real and fake cards
+      const reals = shuffle(poolCards.filter((c: Card) => c.isReal));
+      const fakes = shuffle(poolCards.filter((c: Card) => !c.isReal));
+
+      // Aim for an even real/fake split; if one side is short, backfill from the other
+      let numReal = Math.min(TARGET_REAL, reals.length);
+      let numFake = Math.min(DECK_SIZE - numReal, fakes.length);
+      numReal = Math.min(reals.length, DECK_SIZE - numFake);
+
+      // Combine and shuffle again so reals and fakes are interleaved
+      deckFakes = fakes.slice(0, numFake);
+      deck = shuffle([...reals.slice(0, numReal), ...deckFakes]);
     }
-
-    // Build the deck: a fully shuffled, balanced mix of real and fake cards
-    const reals = shuffle(poolCards.filter((c: Card) => c.isReal));
-    const fakes = shuffle(poolCards.filter((c: Card) => !c.isReal));
-
-    // Aim for an even real/fake split; if one side is short, backfill from the other
-    let numReal = Math.min(TARGET_REAL, reals.length);
-    let numFake = Math.min(DECK_SIZE - numReal, fakes.length);
-    numReal = Math.min(reals.length, DECK_SIZE - numFake);
-
-    // Combine and shuffle again so reals and fakes are interleaved
-    const deckFakes = fakes.slice(0, numFake);
-    const deck = shuffle([...reals.slice(0, numReal), ...deckFakes]);
 
     // Remember the fakes shown this game so future pools avoid repeating them.
     gameStore.markFakesSeen(deckFakes.map((c: Card) => c.id));
