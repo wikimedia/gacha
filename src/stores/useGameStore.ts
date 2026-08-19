@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { useAuthStore } from './useAuthStore';
 import { supabase } from '../supabase';
 import { BloomFilter, createSeenFakesFilter, loadSeenFakesFilter, saveSeenFakesFilter } from '../utils/seenFakesFilter';
+import { TEST_PROFILE_COLLECTION, TEST_GAME_DECK_ORDER, isTestUser } from '../utils/testOverrides';
 
 export const MAX_LIVES = 3;
 
@@ -378,6 +379,7 @@ export const useGameStore = defineStore('game', () => {
   const FLAG_SCORE_MAX = 0.9;
 
   // Real cards come from articles_v2, fake cards from fake_articles_v3.
+  const REAL_TABLE = 'articles_v2';
   const FAKES_TABLE = 'fake_articles_v3';
 
   // Exact match on the `topic` column. TOPICS surfaces only leaf topics (no
@@ -471,7 +473,7 @@ export const useGameStore = defineStore('game', () => {
 
   // Real cards always come from articles_v2.
   const fetchRealSample = (sampleSize: number, category?: Category, topic?: string): Promise<any[]> =>
-    fetchRandomSample('articles_v2', (q) => applyArticleFilters(q, category, topic), sampleSize);
+    fetchRandomSample(REAL_TABLE, (q) => applyArticleFilters(q, category, topic), sampleSize);
 
   // Fake cards come from the dedicated fakes table.
   const fetchFakeSample = (sampleSize: number, category?: Category, topic?: string): Promise<any[]> =>
@@ -558,6 +560,51 @@ export const useGameStore = defineStore('game', () => {
       console.error('Failed to fetch topic pool from Supabase:', err.message);
       return [];
     }
+  };
+
+  // ── Test overrides ──────────────────────────────────────────────────────
+  // Fake cards live in a separate table and carry negative ("Q-") qids.
+  const isFakeQid = (qid: string): boolean => qid.startsWith('Q-');
+
+  const fetchCardsByQids = async (qids: string[]): Promise<Card[]> => {
+    const realQids = qids.filter((q) => !isFakeQid(q));
+    const fakeQids = qids.filter((q) => isFakeQid(q));
+
+    const [realRows, fakeRows] = await Promise.all([
+      realQids.length
+        ? runQueryWithRetry(() => supabase.from(REAL_TABLE).select('*').in('qid', realQids))
+        : Promise.resolve([] as any[]),
+      fakeQids.length
+        ? runQueryWithRetry(() => supabase.from(FAKES_TABLE).select('*').in('qid', fakeQids))
+        : Promise.resolve([] as any[]),
+    ]);
+
+    realRows.forEach((row: any) => { row._isReal = true; });
+    fakeRows.forEach((row: any) => { row._isReal = false; });
+
+    const byQid = new Map<string, Card>();
+    for (const row of [...realRows, ...fakeRows]) {
+      if (row.qid) byQid.set(row.qid, mapArticleRowToCard(row));
+    }
+
+    return qids
+      .map((q) => byQid.get(q))
+      .filter((c): c is Card => !!c);
+  };
+
+  // Fixed, fixed-order deck for the test user (see testOverrides.ts).
+  const fetchTestDeck = (): Promise<Card[]> => fetchCardsByQids(TEST_GAME_DECK_ORDER);
+
+  // Fixed binder collection for the test user's profile.
+  const loadTestProfileCards = async (): Promise<CollectedCard[]> => {
+    const cards = await fetchCardsByQids(TEST_PROFILE_COLLECTION);
+    return cards.map((card) => ({
+      id: card.id,
+      collectedAt: new Date().toISOString(),
+      isShowcase: false,
+      customSection: null,
+      cardDetails: card,
+    }));
   };
 
   // Tracks whether we already have a playable sample, plus the in-flight load so
@@ -710,7 +757,7 @@ export const useGameStore = defineStore('game', () => {
             if (targetState) {
               // 1. Unpin all other articles belonging to this user
               const { error: unpinError } = await supabase
-                .from('articles_v2')
+                .from(REAL_TABLE)
                 .update({ pinned: false })
                 .eq('profile_id', profileId);
               
@@ -720,7 +767,7 @@ export const useGameStore = defineStore('game', () => {
 
               // 2. Pin this specific article
               const { error: pinError } = await supabase
-                .from('articles_v2')
+                .from(REAL_TABLE)
                 .update({ pinned: true })
                 .eq('profile_id', profileId)
                 .eq('qid', cardId);
@@ -731,7 +778,7 @@ export const useGameStore = defineStore('game', () => {
             } else {
               // Unpin this specific article
               const { error: unpinError } = await supabase
-                .from('articles_v2')
+                .from(REAL_TABLE)
                 .update({ pinned: false })
                 .eq('profile_id', profileId)
                 .eq('qid', cardId);
@@ -812,14 +859,17 @@ export const useGameStore = defineStore('game', () => {
 
       const articlesData = profileData.articles_v2 || [];
 
-      // Map articles to CollectedCard format
-      const cards: CollectedCard[] = articlesData.map((article: any) => ({
-        id: article.qid,
-        collectedAt: new Date().toISOString(),
-        isShowcase: !!article.pinned,
-        customSection: null,
-        cardDetails: mapArticleRowToCard(article)
-      }));
+      // Test override: for the hard-coded test user, ignore DB card ownership and
+      // serve a fixed binder collection instead.
+      const cards: CollectedCard[] = isTestUser(profileData.id)
+        ? await loadTestProfileCards()
+        : articlesData.map((article: any) => ({
+            id: article.qid,
+            collectedAt: new Date().toISOString(),
+            isShowcase: !!article.pinned,
+            customSection: null,
+            cardDetails: mapArticleRowToCard(article)
+          }));
 
       return {
         userProfile: {
@@ -850,7 +900,7 @@ export const useGameStore = defineStore('game', () => {
       // Update articles_v2 table, setting profile_id for each collected article's qid
       // Only claim articles that are currently unclaimed (profile_id IS NULL)
       const { error } = await supabase
-        .from('articles_v2')
+        .from(REAL_TABLE)
         .update({ profile_id: profileId })
         .in('qid', articleQids)
         .is('profile_id', null);
@@ -977,6 +1027,7 @@ export const useGameStore = defineStore('game', () => {
     removeCustomSection,
     loadProfileFromDB,
     claimArticlesForProfile,
-    mapArticleRowToCard
+    mapArticleRowToCard,
+    fetchTestDeck
   };
 });
