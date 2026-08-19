@@ -19,7 +19,6 @@ import {
   cdxIconPushPin
 } from '@wikimedia/codex-icons';
 import { trackEvent } from '../analytics.ts';
-import { isTestUser } from '../utils/testOverrides';
 
 const route = useRoute();
 const router = useRouter();
@@ -201,19 +200,12 @@ const loadProfile = async (force = false) => {
         || '#4a6783';
 
       const dbCards = dbProfile?.cards ?? [];
-      if (isTestUser(profileUser.value?.id)) {
-        // Test override: show exactly the fixed collection from the DB lookup,
-        // never merged with the local/claimed collection.
-        profileCards.value = dbCards;
-        gameStore.collectedCards = dbCards;
-      } else {
-        const dbCardIds = new Set(dbCards.map((c: any) => c.id));
-        const localOnly = gameStore.collectedCards.filter(c => !dbCardIds.has(c.id));
-        const mergedCards = [...dbCards, ...localOnly];
+      const dbCardIds = new Set(dbCards.map((c: any) => c.id));
+      const localOnly = gameStore.collectedCards.filter(c => !dbCardIds.has(c.id));
+      const mergedCards = [...dbCards, ...localOnly];
 
-        profileCards.value = mergedCards;
-        gameStore.collectedCards = mergedCards;
-      }
+      profileCards.value = mergedCards;
+      gameStore.collectedCards = mergedCards;
     } else if (dbProfile) {
       profileUser.value = dbProfile.userProfile;
       binderColor.value = dbProfile.userProfile.backgroundColor || '#4a6783';

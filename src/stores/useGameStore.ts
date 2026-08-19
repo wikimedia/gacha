@@ -3,7 +3,6 @@ import { ref, watch } from 'vue';
 import { useAuthStore } from './useAuthStore';
 import { supabase } from '../supabase';
 import { BloomFilter, createSeenFakesFilter, loadSeenFakesFilter, saveSeenFakesFilter } from '../utils/seenFakesFilter';
-import { TEST_PROFILE_COLLECTION, TEST_GAME_DECK_ORDER, isTestUser } from '../utils/testOverrides';
 
 export const MAX_LIVES = 3;
 
@@ -562,51 +561,6 @@ export const useGameStore = defineStore('game', () => {
     }
   };
 
-  // ── Test overrides ──────────────────────────────────────────────────────
-  // Fake cards live in a separate table and carry negative ("Q-") qids.
-  const isFakeQid = (qid: string): boolean => qid.startsWith('Q-');
-
-  const fetchCardsByQids = async (qids: string[]): Promise<Card[]> => {
-    const realQids = qids.filter((q) => !isFakeQid(q));
-    const fakeQids = qids.filter((q) => isFakeQid(q));
-
-    const [realRows, fakeRows] = await Promise.all([
-      realQids.length
-        ? runQueryWithRetry(() => supabase.from(REAL_TABLE).select('*').in('qid', realQids))
-        : Promise.resolve([] as any[]),
-      fakeQids.length
-        ? runQueryWithRetry(() => supabase.from(FAKES_TABLE).select('*').in('qid', fakeQids))
-        : Promise.resolve([] as any[]),
-    ]);
-
-    realRows.forEach((row: any) => { row._isReal = true; });
-    fakeRows.forEach((row: any) => { row._isReal = false; });
-
-    const byQid = new Map<string, Card>();
-    for (const row of [...realRows, ...fakeRows]) {
-      if (row.qid) byQid.set(row.qid, mapArticleRowToCard(row));
-    }
-
-    return qids
-      .map((q) => byQid.get(q))
-      .filter((c): c is Card => !!c);
-  };
-
-  // Fixed, fixed-order deck for the test user (see testOverrides.ts).
-  const fetchTestDeck = (): Promise<Card[]> => fetchCardsByQids(TEST_GAME_DECK_ORDER);
-
-  // Fixed binder collection for the test user's profile.
-  const loadTestProfileCards = async (): Promise<CollectedCard[]> => {
-    const cards = await fetchCardsByQids(TEST_PROFILE_COLLECTION);
-    return cards.map((card) => ({
-      id: card.id,
-      collectedAt: new Date().toISOString(),
-      isShowcase: false,
-      customSection: null,
-      cardDetails: card,
-    }));
-  };
-
   // Tracks whether we already have a playable sample, plus the in-flight load so
   // concurrent callers (multiple views mounting) share one fetch instead of each
   // hitting the database.
@@ -859,17 +813,14 @@ export const useGameStore = defineStore('game', () => {
 
       const articlesData = profileData.articles_v2 || [];
 
-      // Test override: for the hard-coded test user, ignore DB card ownership and
-      // serve a fixed binder collection instead.
-      const cards: CollectedCard[] = isTestUser(profileData.id)
-        ? await loadTestProfileCards()
-        : articlesData.map((article: any) => ({
-            id: article.qid,
-            collectedAt: new Date().toISOString(),
-            isShowcase: !!article.pinned,
-            customSection: null,
-            cardDetails: mapArticleRowToCard(article)
-          }));
+      // Map articles to CollectedCard format
+      const cards: CollectedCard[] = articlesData.map((article: any) => ({
+        id: article.qid,
+        collectedAt: new Date().toISOString(),
+        isShowcase: !!article.pinned,
+        customSection: null,
+        cardDetails: mapArticleRowToCard(article)
+      }));
 
       return {
         userProfile: {
@@ -1027,7 +978,6 @@ export const useGameStore = defineStore('game', () => {
     removeCustomSection,
     loadProfileFromDB,
     claimArticlesForProfile,
-    mapArticleRowToCard,
-    fetchTestDeck
+    mapArticleRowToCard
   };
 });
