@@ -21,6 +21,12 @@ export const TEST_PROFILE_COLLECTION: string[] = [
   'Q816198',
   'Q7053400',
   'Q1602782',
+  // collected ones
+  'Q25108667',
+  'Q133869040',
+  'Q550412',
+  'Q1124833',
+  'Q122452271',
 ];
 
 // Fixed game deck for the test user, in the exact order it should be played.
